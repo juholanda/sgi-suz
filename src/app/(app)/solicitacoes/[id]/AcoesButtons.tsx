@@ -21,6 +21,8 @@ interface Props {
   tipo: string | null // FISICO | LOGICO | DISPOSITIVO_SEGURANCA
   aprovacoes: { nivel: number; status: string; aprovador: { nome: string } }[]
   totalNiveis: number
+  periodoFim?: Date | null
+  classeMaxDias?: number | null
 }
 
 const CHECKLIST_DESABILITACAO: Omit<ChecklistItemState, 'resposta' | 'observacao'>[] = [
@@ -37,12 +39,15 @@ const CHECKLIST_REABILITACAO: Omit<ChecklistItemState, 'resposta' | 'observacao'
 
 export default function AcoesButtons({
   solicitacaoId, status, isAprovador, isSolicitante, isExecutante, tipo, aprovacoes, totalNiveis,
+  periodoFim, classeMaxDias,
 }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [modal, setModal] = useState<string | null>(null)
   const [motivo, setMotivo] = useState('')
   const [comentario, setComentario] = useState('')
+  const [novaDataFim, setNovaDataFim] = useState('')
+  const [justificativaExtensao, setJustificativaExtensao] = useState('')
 
   // Checklist de desabilitação — RF-053, RF-054
   const [checklistDesab, setChecklistDesab] = useState<ChecklistItemState[]>(
@@ -108,9 +113,10 @@ export default function AcoesButtons({
   const canIniciarReab = isSolicitante && status === 'DESABILITADO'
   const canConcluirReab = (isSolicitante || isExecutante) && status === 'EM_REABILITACAO'
   const canCancelar = isSolicitante && ['RASCUNHO', 'EM_APROVACAO', 'EXECUCAO_AUTORIZADA'].includes(status)
+  const canSolicitarExtensao = isSolicitante && status === 'DESABILITADO'
 
   const hasAcoes = canAprovar || canValidarReab || canIniciarExec || canConfirmarDesab ||
-    canIniciarReab || canConcluirReab || canCancelar
+    canIniciarReab || canConcluirReab || canCancelar || canSolicitarExtensao
 
   if (!hasAcoes) return null
 
@@ -208,6 +214,17 @@ export default function AcoesButtons({
             style={{ background: '#8B5CF6', borderRadius: '4px' }}
           >
             Iniciar Reabilitação
+          </button>
+        )}
+
+        {/* Solicitar Extensão */}
+        {canSolicitarExtensao && (
+          <button
+            onClick={() => setModal('SOLICITAR_EXTENSAO')}
+            className="px-4 py-2 text-sm font-medium"
+            style={{ background: '#FEF3C7', color: '#92400E', borderRadius: '4px', border: '1px solid #FDE68A' }}
+          >
+            Solicitar Extensão
           </button>
         )}
 
@@ -512,6 +529,69 @@ export default function AcoesButtons({
               style={{ background: motivo.trim() ? '#DC2626' : '#94A3B8', borderRadius: '4px' }}
             >
               Confirmar cancelamento
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal: Solicitar Extensão */}
+      {modal === 'SOLICITAR_EXTENSAO' && (
+        <Modal title="Solicitar Extensão de Prazo" onClose={() => setModal(null)}>
+          {/* Info: período original e SLA máximo */}
+          <div className="mb-4 px-3 py-2.5 text-sm" style={{ background: '#F8FAFC', color: '#374151', borderRadius: '4px', border: '1px solid #E2E8F0' }}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="material-symbols-outlined" style={{ fontSize: 14, lineHeight: 1, color: '#94A3B8' }}>event</span>
+              <span><strong>Fim original:</strong> {periodoFim ? new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }).format(new Date(periodoFim)) : '—'}</span>
+            </div>
+            {classeMaxDias && (
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined" style={{ fontSize: 14, lineHeight: 1, color: '#94A3B8' }}>timer</span>
+                <span><strong>Prazo máximo da classe:</strong> {classeMaxDias} dia(s)</span>
+              </div>
+            )}
+          </div>
+
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>
+            Nova data fim *
+          </label>
+          <input
+            type="datetime-local"
+            value={novaDataFim}
+            onChange={e => setNovaDataFim(e.target.value)}
+            className="w-full px-3 py-2 border text-sm outline-none mb-4"
+            style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
+          />
+
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>
+            Justificativa *
+          </label>
+          <textarea
+            rows={3}
+            value={justificativaExtensao}
+            onChange={e => setJustificativaExtensao(e.target.value)}
+            className="w-full px-3 py-2 border text-sm outline-none"
+            style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
+            placeholder="Descreva o motivo da extensão solicitada..."
+          />
+
+          <div className="flex justify-end gap-2 mt-4">
+            <button
+              onClick={() => setModal(null)}
+              className="px-4 py-2 text-sm border"
+              style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}
+            >
+              Voltar
+            </button>
+            <button
+              disabled={!novaDataFim || !justificativaExtensao.trim() || loading}
+              onClick={() => acao('SOLICITAR_EXTENSAO', { novaDataFim: new Date(novaDataFim).toISOString(), justificativa: justificativaExtensao })}
+              className="px-4 py-2 text-sm font-medium text-white"
+              style={{
+                background: (novaDataFim && justificativaExtensao.trim()) ? '#D97706' : '#94A3B8',
+                borderRadius: '4px',
+              }}
+            >
+              {loading ? 'Enviando...' : 'Solicitar Extensão'}
             </button>
           </div>
         </Modal>

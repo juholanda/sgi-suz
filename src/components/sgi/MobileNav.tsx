@@ -27,8 +27,7 @@ export default function MobileNav({ isAprovador = false, isSolicitante = false }
   const items: NavItem[] = [
     { href: '/dashboard',    label: 'Início',       icon: 'home' },
     { href: '/solicitacoes', label: 'Solicitações', icon: 'description' },
-    ...(isAprovador   ? [{ href: '/aprovacoes', label: 'Aprovações', icon: 'task_alt' }] : []),
-    ...(isSolicitante ? [{ href: '/execucao',   label: 'Execução',   icon: 'engineering' }] : []),
+    { href: '/relatorios',   label: 'Métricas',     icon: 'bar_chart' },
     { href: '/perfil',       label: 'Perfil',       icon: 'manage_accounts' },
   ]
 

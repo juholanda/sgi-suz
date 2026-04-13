@@ -1,12 +1,9 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { cookies } from 'next/headers'
-import { StatusBadge } from '@/components/sgi/StatusBadge'
-import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { tokens, StatusSolicitacao, ClasseNum } from '@/lib/tokens'
 import Link from 'next/link'
-import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { SolicitacaoCard } from '@/components/sgi/SolicitacaoCard'
 
 async function getMetrics() {
   const [
@@ -33,12 +30,12 @@ async function getMetrics() {
   return { emAprovacao, execucaoAutorizada, desabilitados, aguardandoValidacao, encerradasMes, violacoesSla }
 }
 
-async function getRecentSolicitacoes() {
+async function getSolicitacoesByStatus(status: string) {
   return prisma.solicitacao.findMany({
-    where: { status: { notIn: ['ENCERRADA', 'CANCELADA', 'REJEITADA', 'RASCUNHO'] } },
+    where: { status },
     include: {
       equipamento: true,
-      area: true,
+      area: { include: { planta: true } },
       classe: true,
       solicitante: { select: { nome: true } },
       aprovacoes: {
@@ -47,21 +44,12 @@ async function getRecentSolicitacoes() {
         select: {
           nivel: true,
           status: true,
-          aprovador: {
-            select: {
-              nome: true,
-              perfis: {
-                where: { perfil: { in: ['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'] } },
-                select: { perfil: true },
-                take: 1,
-              },
-            },
-          },
+          aprovador: { select: { nome: true } },
         },
       },
     },
     orderBy: { updatedAt: 'desc' },
-    take: 8,
+    take: 20,
   })
 }
 
@@ -125,20 +113,34 @@ export default async function DashboardPage() {
   // Fallback: verifica todos os perfis do usuário
   const perfis = await prisma.usuarioPerfil.findMany({ where: { userId } })
 
-  // Se há perfil ativo via cookie, usa apenas ele; senão usa todos (retrocompat)
   const isAprovador = perfilAtivo
     ? ['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'].includes(perfilAtivo)
     : perfis.some(p => ['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'].includes(p.perfil))
   const isSolicitante = perfilAtivo
     ? ['SOLICITANTE', 'EXECUTANTE', 'ADMINISTRADOR'].includes(perfilAtivo)
     : perfis.some(p => ['SOLICITANTE', 'EXECUTANTE', 'ADMINISTRADOR'].includes(p.perfil))
+  const isExecutante = perfilAtivo
+    ? ['EXECUTANTE', 'ADMINISTRADOR'].includes(perfilAtivo)
+    : perfis.some(p => ['EXECUTANTE', 'ADMINISTRADOR'].includes(p.perfil))
 
-  const [metrics, solicitacoes] = await Promise.all([getMetrics(), getRecentSolicitacoes()])
+  const [
+    metrics,
+    solEmAprovacao,
+    solExecucaoAutorizada,
+    solDesabilitado,
+    solEmValidacao,
+  ] = await Promise.all([
+    getMetrics(),
+    getSolicitacoesByStatus('EM_APROVACAO'),
+    getSolicitacoesByStatus('EXECUCAO_AUTORIZADA'),
+    getSolicitacoesByStatus('DESABILITADO'),
+    getSolicitacoesByStatus('EM_VALIDACAO_DA_REABILITACAO'),
+  ])
 
   const tarefasAprovador = isAprovador ? await getTarefasAprovador() : []
   const tarefasSolicitante = isSolicitante ? await getTarefasSolicitante() : { paraExecutar: [], paraReabilitar: [], paraProrrogar: [] }
 
-  const cards = [
+  const metricCards = [
     { label: 'Em Aprovação',      value: metrics.emAprovacao,          status: 'EM_APROVACAO' as StatusSolicitacao,                   href: '/solicitacoes?filter=andamento',  icon: 'pending_actions' },
     { label: 'Exec. Autorizada',  value: metrics.execucaoAutorizada,   status: 'EXECUCAO_AUTORIZADA' as StatusSolicitacao,            href: '/solicitacoes?filter=andamento',  icon: 'engineering' },
     { label: 'Desabilitados',     value: metrics.desabilitados,        status: 'DESABILITADO' as StatusSolicitacao,                   href: '/solicitacoes?filter=andamento',  icon: 'lock_open' },
@@ -199,6 +201,35 @@ export default async function DashboardPage() {
     })),
   ]
 
+  // Helper to deduplicate by id+acao
+  const uniqueTarefas = tarefas.reduce((acc, t) => {
+    if (!acc.find(x => x.id === t.id && x.acao === t.acao)) acc.push(t)
+    return acc
+  }, [] as typeof tarefas)
+
+  const worklist = [
+    {
+      label: 'Desabilitação em Aprovação',
+      status: 'EM_APROVACAO',
+      items: solEmAprovacao,
+    },
+    {
+      label: 'Execução Autorizada',
+      status: 'EXECUCAO_AUTORIZADA',
+      items: solExecucaoAutorizada,
+    },
+    {
+      label: 'Desabilitado (Reabilitar)',
+      status: 'DESABILITADO',
+      items: solDesabilitado,
+    },
+    {
+      label: 'Reabilitação Aguardando Validação',
+      status: 'EM_VALIDACAO_DA_REABILITACAO',
+      items: solEmValidacao,
+    },
+  ]
+
   return (
     <div className="p-4 md:p-6 max-w-full">
       {/* Header */}
@@ -222,7 +253,7 @@ export default async function DashboardPage() {
 
       {/* ─── MÉTRICAS — linha compacta ─── */}
       <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 mb-5">
-        {cards.map(card => {
+        {metricCards.map(card => {
           const colors = tokens.colors.status[card.status]
           return (
             <Link key={card.status} href={card.href} className="h-full">
@@ -289,22 +320,22 @@ export default async function DashboardPage() {
           <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: '#0F172A' }}>
             <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#0038A8', lineHeight: 1 }} aria-hidden="true">checklist</span>
             Minhas tarefas pendentes
-            {tarefas.length > 0 && (
+            {uniqueTarefas.length > 0 && (
               <span className="text-xs font-bold px-1.5 py-0.5" style={{ background: '#0038A8', color: 'white', borderRadius: '4px' }}>
-                {tarefas.length}
+                {uniqueTarefas.length}
               </span>
             )}
           </h2>
         </div>
 
-        {tarefas.length === 0 ? (
+        {uniqueTarefas.length === 0 ? (
           <div className="bg-white border rounded flex items-center gap-3 px-5 py-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
             <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#10B981' }}>check_circle</span>
             <p className="text-sm" style={{ color: '#475569' }}>Nenhuma tarefa pendente. Tudo em dia!</p>
           </div>
         ) : (
           <div className="flex flex-col gap-2">
-            {tarefas.map(t => (
+            {uniqueTarefas.map(t => (
               <div
                 key={`${t.id}-${t.acao}`}
                 className="bg-white border flex items-center gap-3 px-4 py-3"
@@ -341,62 +372,61 @@ export default async function DashboardPage() {
         )}
       </section>
 
-      {/* ─── SOLICITAÇÕES ─── */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: '#0F172A' }}>
-            <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#475569', lineHeight: 1 }} aria-hidden="true">description</span>
-            Solicitações
-          </h2>
-          <Link href="/solicitacoes" className="text-xs" style={{ color: '#0038A8' }}>Ver todas →</Link>
-        </div>
+      {/* ─── WORKLIST POR STATUS (UC001) ─── */}
+      {worklist.map(section => (
+        <section key={section.status} className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: '#0F172A' }}>
+              <span
+                className="text-xs font-bold px-1.5 py-0.5"
+                style={{
+                  background: tokens.colors.status[section.status as StatusSolicitacao]?.bg ?? '#F1F5F9',
+                  color: tokens.colors.status[section.status as StatusSolicitacao]?.text ?? '#475569',
+                  borderRadius: '4px',
+                }}
+              >
+                {section.items.length}
+              </span>
+              {section.label}
+            </h2>
+            <Link href={`/solicitacoes?status=${section.status}`} className="text-xs" style={{ color: '#0038A8' }}>
+              Ver todas →
+            </Link>
+          </div>
 
-        {solicitacoes.length === 0 ? (
-          <div className="bg-white border px-5 py-8 text-center" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-            <p className="text-sm" style={{ color: '#94A3B8' }}>Nenhuma solicitação ativa.</p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-2">
-            {solicitacoes.map(s => {
-              const statusColors = tokens.colors.status[s.status as StatusSolicitacao]
-              return (
-                <Link key={s.id} href={`/solicitacoes/${s.id}`}>
-                  <div
-                    className="bg-white border flex items-center gap-3 px-4 py-3 hover:shadow-sm transition-shadow"
-                    style={{ borderColor: '#E2E8F0', borderRadius: '4px', borderLeft: `3px solid ${statusColors?.text ?? '#94A3B8'}` }}
-                  >
-                    <div className="shrink-0">
-                      <span className="font-mono text-xs font-semibold px-2 py-1" style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}>
-                        {s.equipamento.tag}
-                      </span>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-0.5">
-                        <span className="text-sm font-medium font-mono" style={{ color: '#0F172A' }}>{s.protocolo}</span>
-                        {s.prazoMaximoAtingido && (
-                          <span className="text-xs px-1.5 py-0.5 font-medium" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>⚠ Prazo máximo</span>
-                        )}
-                      </div>
-                      <p className="text-xs" style={{ color: '#6B7280' }}>
-                        {s.area.nome} · {s.solicitante.nome}
-                        {s.aprovacoes.length > 0 && (
-                          <> · <span style={{ color: '#94A3B8' }}>
-                            {s.aprovacoes.map(a => `N${a.nivel} ${a.aprovador.nome.split(' ')[0]}`).join(' · ')}
-                          </span></>
-                        )}
-                      </p>
-                    </div>
-                    <div className="shrink-0 flex items-center gap-2">
-                      {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
-                      <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
-                    </div>
-                  </div>
-                </Link>
-              )
-            })}
-          </div>
-        )}
-      </section>
+          {section.items.length === 0 ? (
+            <div className="bg-white border px-5 py-5 flex items-center gap-3" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#10B981' }}>check_circle</span>
+              <p className="text-sm" style={{ color: '#94A3B8' }}>Nenhuma solicitação nesta etapa.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              {section.items.map(s => (
+                <SolicitacaoCard
+                  key={s.id}
+                  id={s.id}
+                  protocolo={s.protocolo}
+                  status={s.status}
+                  classe={s.classe ? { numero: s.classe.numero, prazoMaxDias: s.classe.prazoMaximoDias } : null}
+                  equipamento={{ tag: s.equipamento.tag, descricao: s.equipamento.descricao }}
+                  area={{ nome: s.area.nome }}
+                  planta={(s.area as any).planta ? { nome: (s.area as any).planta.nome } : undefined}
+                  solicitante={{ nome: s.solicitante.nome }}
+                  periodoInicio={(s as any).periodoInicio}
+                  periodoFim={(s as any).periodoFim}
+                  dataDesabilitacao={(s as any).dataDesabilitacao}
+                  prazoMaximoAtingido={(s as any).prazoMaximoAtingido}
+                  prazoPrevitoAtingido={(s as any).prazoPrevitoAtingido}
+                  aprovacoes={s.aprovacoes}
+                  isAprovador={isAprovador}
+                  isSolicitante={isSolicitante}
+                  isExecutante={isExecutante}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      ))}
 
       {/* Mobile FAB for new solicitacao */}
       {isSolicitante && (
