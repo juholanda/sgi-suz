@@ -15,19 +15,28 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     select: { perfil: true, plantaId: true, areaId: true },
   })
 
-  // Garante que há pelo menos um perfil (caso admin não tenha perfil associado)
-  const perfisUnicos = Array.from(
-    new Map(perfisReais.map(p => [p.perfil, p])).values()
-  )
-
   const plantaIds = Array.from(new Set(perfisReais.map(p => p.plantaId).filter(Boolean))) as string[]
   const plantas = plantaIds.length > 0
     ? await prisma.planta.findMany({ where: { id: { in: plantaIds } }, select: { id: true, nome: true } })
     : []
 
-  // Lê o perfil ativo do cookie (atualizado pelo cliente ao trocar)
   const cookieStore = await cookies()
+  const plantaCookie = cookieStore.get('sgi_planta_ativa')?.value
   const perfilCookie = cookieStore.get('sgi_perfil_ativo')?.value
+
+  // Filtra perfis pela planta ativa para evitar que perfis de outras plantas
+  // (ex: APROVADOR em Aracruz) apareçam ao usar uma planta diferente (ex: Limeira)
+  const perfisNaPlantaAtiva = plantaCookie
+    ? perfisReais.filter(p => p.plantaId === plantaCookie)
+    : perfisReais
+
+  const perfisBase = perfisNaPlantaAtiva.length > 0 ? perfisNaPlantaAtiva : perfisReais
+
+  // Deduplica por perfil (para o switcher de perfil no sidebar)
+  const perfisUnicos = Array.from(
+    new Map(perfisBase.map(p => [p.perfil, p])).values()
+  )
+
   const perfilAtivo = perfilCookie && perfisUnicos.some(p => p.perfil === perfilCookie)
     ? perfilCookie
     : perfisUnicos[0]?.perfil ?? ''

@@ -49,10 +49,18 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
   const [selecting, setSelecting] = useState<string | null>(null)
   const [signingOut, setSigningOut] = useState(false)
 
-  function handleSelect(plantaId: string) {
+  function handleSelect(plantaId: string, perfis: string[]) {
     setSelecting(plantaId)
     localStorage.setItem('sgi_demo_planta', plantaId)
     document.cookie = `sgi_planta_ativa=${plantaId};path=/;max-age=86400`
+    // Reset perfil ativo para o primeiro perfil válido desta planta
+    // Evita que cookie de perfil de outra planta (ex: APROVADOR em Aracruz)
+    // apareça ao entrar em uma planta onde o usuário só é Solicitante/Executante
+    const firstPerfil = Array.from(new Set(perfis))[0]
+    if (firstPerfil) {
+      localStorage.setItem('sgi_demo_perfil', firstPerfil)
+      document.cookie = `sgi_perfil_ativo=${firstPerfil};path=/;max-age=86400`
+    }
     router.push('/dashboard')
   }
 
@@ -156,7 +164,7 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
           return (
             <button
               key={planta.id}
-              onClick={() => handleSelect(planta.id)}
+              onClick={() => handleSelect(planta.id, planta.perfis)}
               disabled={!!selecting || signingOut}
               className="w-full flex items-center gap-4 text-left transition-all"
               style={{

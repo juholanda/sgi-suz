@@ -7,6 +7,14 @@ import Link from 'next/link'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
+const PERFIL_LABELS: Record<string, string> = {
+  APROVADOR: 'Aprovador',
+  GESTOR_SMS: 'Gestor SMS',
+  ADMINISTRADOR: 'Administrador',
+  SOLICITANTE: 'Solicitante',
+  EXECUTANTE: 'Executante',
+}
+
 async function getSolicitacoes() {
   return prisma.solicitacao.findMany({
     include: {
@@ -15,6 +23,25 @@ async function getSolicitacoes() {
       classe: true,
       solicitante: { select: { nome: true } },
       executante: { select: { nome: true } },
+      aprovacoes: {
+        where: { tipo: 'DESABILITACAO' },
+        orderBy: { nivel: 'asc' },
+        select: {
+          nivel: true,
+          status: true,
+          aprovador: {
+            select: {
+              nome: true,
+              matricula: true,
+              perfis: {
+                where: { perfil: { in: ['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'] } },
+                select: { perfil: true },
+                take: 1,
+              },
+            },
+          },
+        },
+      },
     },
     orderBy: { updatedAt: 'desc' },
     take: 50,
@@ -81,22 +108,22 @@ export default async function SolicitacoesPage() {
 
                     {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="text-sm font-medium font-mono" style={{ color: '#0F172A' }}>
                           {s.protocolo}
                         </span>
                         {s.prazoMaximoAtingido && (
                           <span className="text-xs px-1.5 py-0.5 font-medium" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
-                            ⚠ Prazo máximo atingido
+                            ⚠ Prazo máximo
                           </span>
                         )}
                         {s.prazoPrevitoAtingido && !s.prazoMaximoAtingido && (
                           <span className="text-xs px-1.5 py-0.5 font-medium" style={{ background: '#FEF3C7', color: '#B45309', borderRadius: '4px' }}>
-                            ⏱ Prazo previsto atingido
+                            ⏱ Prazo previsto
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center gap-3 text-xs" style={{ color: '#6B7280' }}>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs" style={{ color: '#6B7280' }}>
                         <span>{s.area.planta.nome} · {s.area.nome}</span>
                         <span>·</span>
                         <span>Solicitante: {s.solicitante.nome}</span>
@@ -107,6 +134,37 @@ export default async function SolicitacoesPage() {
                           </>
                         )}
                       </div>
+
+                      {/* Aprovadores — visíveis sempre */}
+                      {s.aprovacoes.length > 0 && (
+                        <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                          <span className="text-xs font-medium" style={{ color: '#94A3B8' }}>Aprovadores:</span>
+                          {s.aprovacoes.map(a => {
+                            const statusColor =
+                              a.status === 'APROVADO' ? '#16A34A' :
+                              a.status === 'REJEITADO' ? '#DC2626' :
+                              a.status === 'PENDENTE' ? '#2563EB' : '#94A3B8'
+                            const statusBg =
+                              a.status === 'APROVADO' ? '#DCFCE7' :
+                              a.status === 'REJEITADO' ? '#FEE2E2' :
+                              a.status === 'PENDENTE' ? '#DBEAFE' : '#F1F5F9'
+                            const perfil = a.aprovador.perfis[0]?.perfil
+                            const primeiroNome = a.aprovador.nome.split(' ')[0]
+                            return (
+                              <span
+                                key={a.nivel}
+                                className="flex items-center gap-1 px-1.5 py-0.5 text-xs font-medium"
+                                style={{ background: statusBg, color: statusColor, borderRadius: '4px' }}
+                                title={`${a.aprovador.nome}${perfil ? ` · ${PERFIL_LABELS[perfil] ?? perfil}` : ''} · ${a.status}`}
+                              >
+                                <span style={{ opacity: 0.6 }}>N{a.nivel}</span>
+                                {primeiroNome}
+                                {perfil && <span style={{ opacity: 0.7 }}>· {PERFIL_LABELS[perfil] ?? perfil}</span>}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      )}
                     </div>
 
                     {/* Classe */}

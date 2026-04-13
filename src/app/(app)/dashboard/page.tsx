@@ -41,6 +41,24 @@ async function getRecentSolicitacoes() {
       area: true,
       classe: true,
       solicitante: { select: { nome: true } },
+      aprovacoes: {
+        where: { tipo: 'DESABILITACAO' },
+        orderBy: { nivel: 'asc' },
+        select: {
+          nivel: true,
+          status: true,
+          aprovador: {
+            select: {
+              nome: true,
+              perfis: {
+                where: { perfil: { in: ['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'] } },
+                select: { perfil: true },
+                take: 1,
+              },
+            },
+          },
+        },
+      },
     },
     orderBy: { updatedAt: 'desc' },
     take: 8,
@@ -392,7 +410,7 @@ export default async function DashboardPage() {
           <table className="w-full">
             <thead>
               <tr style={{ background: '#F8FAFC' }}>
-                {['Protocolo', 'TAG', 'Área', 'Classe', 'Status', 'Solicitante'].map(h => (
+                {['Protocolo', 'TAG', 'Área', 'Classe', 'Status', 'Solicitante', 'Aprovadores'].map(h => (
                   <th key={h} className="text-left px-4 py-2.5 text-xs font-medium" style={{ color: '#6B7280' }}>
                     {h}
                   </th>
@@ -402,7 +420,7 @@ export default async function DashboardPage() {
             <tbody>
               {solicitacoes.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-sm" style={{ color: '#94A3B8' }}>
+                  <td colSpan={7} className="text-center py-8 text-sm" style={{ color: '#94A3B8' }}>
                     Nenhuma solicitação ativa
                   </td>
                 </tr>
@@ -429,6 +447,34 @@ export default async function DashboardPage() {
                     <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>
                       {s.solicitante.nome}
                     </td>
+                    <td className="px-4 py-3">
+                      {s.aprovacoes.length === 0 ? (
+                        <span className="text-xs" style={{ color: '#94A3B8' }}>—</span>
+                      ) : (
+                        <div className="flex flex-wrap gap-1">
+                          {s.aprovacoes.map(a => {
+                            const statusColor =
+                              a.status === 'APROVADO' ? '#16A34A' :
+                              a.status === 'REJEITADO' ? '#DC2626' :
+                              a.status === 'PENDENTE' ? '#2563EB' : '#94A3B8'
+                            const statusBg =
+                              a.status === 'APROVADO' ? '#DCFCE7' :
+                              a.status === 'REJEITADO' ? '#FEE2E2' :
+                              a.status === 'PENDENTE' ? '#DBEAFE' : '#F1F5F9'
+                            return (
+                              <span
+                                key={a.nivel}
+                                className="text-xs px-1.5 py-0.5 font-medium"
+                                style={{ background: statusBg, color: statusColor, borderRadius: '4px' }}
+                                title={`N${a.nivel} · ${a.aprovador.nome} · ${a.status}`}
+                              >
+                                N{a.nivel} {a.aprovador.nome.split(' ')[0]}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
@@ -452,6 +498,23 @@ export default async function DashboardPage() {
                 </div>
                 <p className="text-xs" style={{ color: '#6B7280' }}>{s.protocolo} · {s.area.nome}</p>
                 <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>{s.solicitante.nome}</p>
+                {s.aprovacoes.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {s.aprovacoes.map(a => (
+                      <span
+                        key={a.nivel}
+                        className="text-xs px-1 py-0.5 font-medium"
+                        style={{
+                          background: a.status === 'APROVADO' ? '#DCFCE7' : a.status === 'PENDENTE' ? '#DBEAFE' : '#F1F5F9',
+                          color: a.status === 'APROVADO' ? '#16A34A' : a.status === 'PENDENTE' ? '#2563EB' : '#94A3B8',
+                          borderRadius: '4px',
+                        }}
+                      >
+                        N{a.nivel} {a.aprovador.nome.split(' ')[0]}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </Link>
             ))
           )}
