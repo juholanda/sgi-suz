@@ -145,14 +145,68 @@ export default async function DashboardPage() {
     { label: 'Aguard. Validação', value: metrics.aguardandoValidacao,  status: 'EM_VALIDACAO_DA_REABILITACAO' as StatusSolicitacao,   href: '/solicitacoes?status=EM_VALIDACAO_DA_REABILITACAO',   icon: 'fact_check' },
   ]
 
+  // Collect all pending tasks in one unified list
+  const tarefas: { id: string; tag: string; protocolo: string; area: string; planta?: string; acao: string; acaoLabel: string; acaoColor: string; acaoBg: string; ctaLabel: string; ctaColor: string; urgente?: boolean }[] = [
+    ...tarefasAprovador.map(s => ({
+      id: s.id,
+      tag: s.equipamento.tag,
+      protocolo: s.protocolo,
+      area: s.area.nome,
+      planta: (s.area as any).planta?.nome,
+      acao: s.status === 'EM_APROVACAO' ? 'APROVAR' : 'VALIDAR_REAB',
+      acaoLabel: s.status === 'EM_APROVACAO' ? 'Aprovar' : 'Validar Reab.',
+      acaoColor: '#1D4ED8',
+      acaoBg: '#DBEAFE',
+      ctaLabel: s.status === 'EM_APROVACAO' ? 'Analisar' : 'Validar',
+      ctaColor: '#0038A8',
+    })),
+    ...tarefasSolicitante.paraExecutar.map(s => ({
+      id: s.id,
+      tag: s.equipamento.tag,
+      protocolo: s.protocolo,
+      area: s.area.nome,
+      acao: 'EXECUTAR',
+      acaoLabel: 'Executar',
+      acaoColor: '#0E7490',
+      acaoBg: '#CFFAFE',
+      ctaLabel: 'Executar',
+      ctaColor: '#0891B2',
+    })),
+    ...tarefasSolicitante.paraReabilitar.map(s => ({
+      id: s.id,
+      tag: s.equipamento.tag,
+      protocolo: s.protocolo,
+      area: s.area.nome,
+      acao: 'REABILITAR',
+      acaoLabel: 'Reabilitar',
+      acaoColor: '#B91C1C',
+      acaoBg: '#FEE2E2',
+      ctaLabel: 'Reabilitar',
+      ctaColor: '#8B5CF6',
+      urgente: (s as any).prazoMaximoAtingido,
+    })),
+    ...tarefasSolicitante.paraProrrogar.map(s => ({
+      id: s.id,
+      tag: s.equipamento.tag,
+      protocolo: s.protocolo,
+      area: s.area.nome,
+      acao: 'PRORROGAR',
+      acaoLabel: 'Prorrogar',
+      acaoColor: '#B45309',
+      acaoBg: '#FEF3C7',
+      ctaLabel: 'Prorrogar',
+      ctaColor: '#F59E0B',
+    })),
+  ]
+
   return (
     <div className="p-4 md:p-6 max-w-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Dashboard</h1>
+          <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Início</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
-            Bom dia, {session?.user?.name?.split(' ')[0]}. Visão geral dos intertravamentos.
+            Olá, {session?.user?.name?.split(' ')[0]}. Veja o que precisa da sua atenção.
           </p>
         </div>
         {isSolicitante && (
@@ -229,297 +283,120 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ─── TAREFAS PENDENTES ─── */}
-      {isAprovador && tarefasAprovador.length > 0 && (
-        <section className="mb-5">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: '#0F172A' }}>
-              <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#1D4ED8', lineHeight: 1 }} aria-hidden="true">task_alt</span>
-              Aprovações pendentes
-              <span className="text-xs font-medium px-1.5 py-0.5" style={{ background: '#DBEAFE', color: '#1D4ED8', borderRadius: '4px' }}>
-                {tarefasAprovador.length}
+      {/* ─── MINHAS TAREFAS PENDENTES ─── */}
+      <section className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: '#0F172A' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#0038A8', lineHeight: 1 }} aria-hidden="true">checklist</span>
+            Minhas tarefas pendentes
+            {tarefas.length > 0 && (
+              <span className="text-xs font-bold px-1.5 py-0.5" style={{ background: '#0038A8', color: 'white', borderRadius: '4px' }}>
+                {tarefas.length}
               </span>
-            </h2>
-            <Link href="/aprovacoes" className="text-xs" style={{ color: '#0038A8' }}>Ver todas →</Link>
-          </div>
+            )}
+          </h2>
+        </div>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {tarefasAprovador.map(s => {
-              const statusColors = tokens.colors.status[s.status as StatusSolicitacao]
-              const tempo = s.dataEnvio
-                ? formatDistanceToNow(s.dataEnvio, { locale: ptBR, addSuffix: true })
-                : '—'
-              return (
-                <div
-                  key={s.id}
-                  className="bg-white border p-4 flex flex-col gap-3"
-                  style={{ borderColor: '#BFDBFE', borderRadius: '4px', borderLeft: '4px solid #2563EB' }}
+        {tarefas.length === 0 ? (
+          <div className="bg-white border rounded flex items-center gap-3 px-5 py-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#10B981' }}>check_circle</span>
+            <p className="text-sm" style={{ color: '#475569' }}>Nenhuma tarefa pendente. Tudo em dia!</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {tarefas.map(t => (
+              <div
+                key={`${t.id}-${t.acao}`}
+                className="bg-white border flex items-center gap-3 px-4 py-3"
+                style={{ borderColor: '#E2E8F0', borderRadius: '4px', borderLeft: `3px solid ${t.acaoColor}` }}
+              >
+                <span
+                  className="shrink-0 text-xs font-semibold px-2 py-1"
+                  style={{ background: t.acaoBg, color: t.acaoColor, borderRadius: '4px', minWidth: 72, textAlign: 'center' }}
                 >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-sm font-bold" style={{ color: '#0038A8' }}>
-                          {s.equipamento.tag}
-                        </span>
-                        {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
-                      </div>
-                      <p className="text-xs" style={{ color: '#6B7280' }}>
-                        {s.area.nome} · {s.solicitante.nome}
-                      </p>
-                      <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>Aguardando {tempo}</p>
-                    </div>
-                    <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
+                  {t.acaoLabel}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-mono text-sm font-bold" style={{ color: '#0F172A' }}>{t.tag}</span>
+                    <span className="text-xs font-mono" style={{ color: '#94A3B8' }}>{t.protocolo}</span>
+                    {t.urgente && (
+                      <span className="text-xs px-1.5 py-0.5 font-medium" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
+                        ⚠ Urgente
+                      </span>
+                    )}
                   </div>
-                  <Link
-                    href={`/solicitacoes/${s.id}`}
-                    className="w-full text-center py-2 text-sm font-medium text-white"
-                    style={{ background: '#0038A8', borderRadius: '4px' }}
-                  >
-                    Analisar
-                  </Link>
+                  <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{t.area}{t.planta ? ` · ${t.planta}` : ''}</p>
                 </div>
-              )
-            })}
+                <Link
+                  href={`/solicitacoes/${t.id}`}
+                  className="shrink-0 px-3 py-1.5 text-xs font-semibold text-white"
+                  style={{ background: t.ctaColor, borderRadius: '4px' }}
+                >
+                  {t.ctaLabel}
+                </Link>
+              </div>
+            ))}
           </div>
-        </section>
-      )}
+        )}
+      </section>
 
-      {isSolicitante && (
-        <>
-          {/* Executar desabilitação */}
-          {tarefasSolicitante.paraExecutar.length > 0 && (
-            <section className="mb-4">
-              <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#0F172A' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#0E7490', lineHeight: 1 }} aria-hidden="true">engineering</span>
-                Executar Desabilitação
-                <span className="text-xs font-medium px-1.5 py-0.5" style={{ background: '#CFFAFE', color: '#0E7490', borderRadius: '4px' }}>
-                  {tarefasSolicitante.paraExecutar.length}
-                </span>
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {tarefasSolicitante.paraExecutar.map(s => (
-                  <div
-                    key={s.id}
-                    className="bg-white border p-4 flex items-center justify-between gap-3"
-                    style={{ borderColor: '#A5F3FC', borderRadius: '4px', borderLeft: '4px solid #0891B2' }}
-                  >
-                    <div>
-                      <span className="font-mono text-sm font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
-                      <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{s.area.nome}</p>
-                    </div>
-                    <Link
-                      href={`/solicitacoes/${s.id}`}
-                      className="shrink-0 px-3 py-2 text-sm font-medium text-white"
-                      style={{ background: '#0891B2', borderRadius: '4px' }}
-                    >
-                      Executar
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Reabilitar */}
-          {tarefasSolicitante.paraReabilitar.length > 0 && (
-            <section className="mb-4">
-              <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#0F172A' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#B91C1C', lineHeight: 1 }} aria-hidden="true">restart_alt</span>
-                Reabilitar
-                <span className="text-xs font-medium px-1.5 py-0.5" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
-                  {tarefasSolicitante.paraReabilitar.length}
-                </span>
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {tarefasSolicitante.paraReabilitar.map(s => (
-                  <div
-                    key={s.id}
-                    className="bg-white border p-4 flex items-center justify-between gap-3"
-                    style={{ borderColor: '#FECACA', borderRadius: '4px', borderLeft: '4px solid #EF4444' }}
-                  >
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
-                        {s.prazoMaximoAtingido && (
-                          <span className="text-xs px-1.5 py-0.5 font-medium flex items-center gap-0.5" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
-                            <span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>warning</span>
-                            Prazo máximo
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{s.area.nome}</p>
-                    </div>
-                    <Link
-                      href={`/solicitacoes/${s.id}`}
-                      className="shrink-0 px-3 py-2 text-sm font-medium text-white"
-                      style={{ background: '#8B5CF6', borderRadius: '4px' }}
-                    >
-                      Reabilitar
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Prorrogar prazo */}
-          {tarefasSolicitante.paraProrrogar.length > 0 && (
-            <section className="mb-4">
-              <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#0F172A' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#B45309', lineHeight: 1 }} aria-hidden="true">schedule</span>
-                Prorrogar Prazo
-                <span className="text-xs font-medium px-1.5 py-0.5" style={{ background: '#FEF3C7', color: '#B45309', borderRadius: '4px' }}>
-                  {tarefasSolicitante.paraProrrogar.length}
-                </span>
-              </h2>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {tarefasSolicitante.paraProrrogar.map(s => (
-                  <div
-                    key={s.id}
-                    className="bg-white border p-4 flex items-center justify-between gap-3"
-                    style={{ borderColor: '#FDE68A', borderRadius: '4px', borderLeft: '4px solid #F59E0B' }}
-                  >
-                    <div>
-                      <span className="font-mono text-sm font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
-                      <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{s.area.nome}</p>
-                    </div>
-                    <Link
-                      href={`/solicitacoes/${s.id}`}
-                      className="shrink-0 px-3 py-2 text-sm font-medium"
-                      style={{ background: '#FEF3C7', color: '#B45309', borderRadius: '4px' }}
-                    >
-                      Prorrogar
-                    </Link>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-        </>
-      )}
-
-      {/* Recent Solicitacoes Table */}
-      <div className="bg-white border" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-        <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: '#E2E8F0' }}>
-          <h2 className="text-sm font-semibold" style={{ color: '#0F172A' }}>Solicitações ativas</h2>
+      {/* ─── SOLICITAÇÕES ─── */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: '#0F172A' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#475569', lineHeight: 1 }} aria-hidden="true">description</span>
+            Solicitações
+          </h2>
           <Link href="/solicitacoes" className="text-xs" style={{ color: '#0038A8' }}>Ver todas →</Link>
         </div>
 
-        {/* Desktop table */}
-        <div className="hidden md:block overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr style={{ background: '#F8FAFC' }}>
-                {['Protocolo', 'TAG', 'Área', 'Classe', 'Status', 'Solicitante', 'Aprovadores'].map(h => (
-                  <th key={h} className="text-left px-4 py-2.5 text-xs font-medium" style={{ color: '#6B7280' }}>
-                    {h}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {solicitacoes.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="text-center py-8 text-sm" style={{ color: '#94A3B8' }}>
-                    Nenhuma solicitação ativa
-                  </td>
-                </tr>
-              ) : (
-                solicitacoes.map(s => (
-                  <tr key={s.id} className="border-t hover:bg-gray-50 transition-colors" style={{ borderColor: '#F1F5F9' }}>
-                    <td className="px-4 py-3">
-                      <Link href={`/solicitacoes/${s.id}`} className="text-sm font-mono font-medium" style={{ color: '#0038A8' }}>
-                        {s.protocolo}
-                      </Link>
-                    </td>
-                    <td className="px-4 py-3 text-sm font-mono" style={{ color: '#0F172A' }}>
-                      {s.equipamento.tag}
-                    </td>
-                    <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>
-                      {s.area.nome}
-                    </td>
-                    <td className="px-4 py-3">
-                      {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
-                    </td>
-                    <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>
-                      {s.solicitante.nome}
-                    </td>
-                    <td className="px-4 py-3">
-                      {s.aprovacoes.length === 0 ? (
-                        <span className="text-xs" style={{ color: '#94A3B8' }}>—</span>
-                      ) : (
-                        <div className="flex flex-wrap gap-1">
-                          {s.aprovacoes.map(a => {
-                            const statusColor =
-                              a.status === 'APROVADO' ? '#16A34A' :
-                              a.status === 'REJEITADO' ? '#DC2626' :
-                              a.status === 'PENDENTE' ? '#2563EB' : '#94A3B8'
-                            const statusBg =
-                              a.status === 'APROVADO' ? '#DCFCE7' :
-                              a.status === 'REJEITADO' ? '#FEE2E2' :
-                              a.status === 'PENDENTE' ? '#DBEAFE' : '#F1F5F9'
-                            return (
-                              <span
-                                key={a.nivel}
-                                className="text-xs px-1.5 py-0.5 font-medium"
-                                style={{ background: statusBg, color: statusColor, borderRadius: '4px' }}
-                                title={`N${a.nivel} · ${a.aprovador.nome} · ${a.status}`}
-                              >
-                                N{a.nivel} {a.aprovador.nome.split(' ')[0]}
-                              </span>
-                            )
-                          })}
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile cards */}
-        <div className="md:hidden divide-y" style={{ borderColor: '#F1F5F9' }}>
-          {solicitacoes.length === 0 ? (
-            <p className="text-center py-8 text-sm" style={{ color: '#94A3B8' }}>Nenhuma solicitação ativa</p>
-          ) : (
-            solicitacoes.map(s => (
-              <Link key={s.id} href={`/solicitacoes/${s.id}`} className="block p-4 hover:bg-gray-50">
-                <div className="flex items-start justify-between gap-2 mb-1">
-                  <div className="flex items-center gap-2">
-                    <span className="font-mono text-sm font-semibold" style={{ color: '#0038A8' }}>{s.equipamento.tag}</span>
-                    {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
-                  </div>
-                  <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
-                </div>
-                <p className="text-xs" style={{ color: '#6B7280' }}>{s.protocolo} · {s.area.nome}</p>
-                <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>{s.solicitante.nome}</p>
-                {s.aprovacoes.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {s.aprovacoes.map(a => (
-                      <span
-                        key={a.nivel}
-                        className="text-xs px-1 py-0.5 font-medium"
-                        style={{
-                          background: a.status === 'APROVADO' ? '#DCFCE7' : a.status === 'PENDENTE' ? '#DBEAFE' : '#F1F5F9',
-                          color: a.status === 'APROVADO' ? '#16A34A' : a.status === 'PENDENTE' ? '#2563EB' : '#94A3B8',
-                          borderRadius: '4px',
-                        }}
-                      >
-                        N{a.nivel} {a.aprovador.nome.split(' ')[0]}
+        {solicitacoes.length === 0 ? (
+          <div className="bg-white border px-5 py-8 text-center" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+            <p className="text-sm" style={{ color: '#94A3B8' }}>Nenhuma solicitação ativa.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {solicitacoes.map(s => {
+              const statusColors = tokens.colors.status[s.status as StatusSolicitacao]
+              return (
+                <Link key={s.id} href={`/solicitacoes/${s.id}`}>
+                  <div
+                    className="bg-white border flex items-center gap-3 px-4 py-3 hover:shadow-sm transition-shadow"
+                    style={{ borderColor: '#E2E8F0', borderRadius: '4px', borderLeft: `3px solid ${statusColors?.text ?? '#94A3B8'}` }}
+                  >
+                    <div className="shrink-0">
+                      <span className="font-mono text-xs font-semibold px-2 py-1" style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}>
+                        {s.equipamento.tag}
                       </span>
-                    ))}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-0.5">
+                        <span className="text-sm font-medium font-mono" style={{ color: '#0F172A' }}>{s.protocolo}</span>
+                        {s.prazoMaximoAtingido && (
+                          <span className="text-xs px-1.5 py-0.5 font-medium" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>⚠ Prazo máximo</span>
+                        )}
+                      </div>
+                      <p className="text-xs" style={{ color: '#6B7280' }}>
+                        {s.area.nome} · {s.solicitante.nome}
+                        {s.aprovacoes.length > 0 && (
+                          <> · <span style={{ color: '#94A3B8' }}>
+                            {s.aprovacoes.map(a => `N${a.nivel} ${a.aprovador.nome.split(' ')[0]}`).join(' · ')}
+                          </span></>
+                        )}
+                      </p>
+                    </div>
+                    <div className="shrink-0 flex items-center gap-2">
+                      {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
+                      <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
+                    </div>
                   </div>
-                )}
-              </Link>
-            ))
-          )}
-        </div>
-      </div>
+                </Link>
+              )
+            })}
+          </div>
+        )}
+      </section>
 
       {/* Mobile FAB for new solicitacao */}
       {isSolicitante && (
