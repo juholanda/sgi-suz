@@ -14,21 +14,18 @@ const PERFIL_LABELS: Record<string, string> = {
   EXECUTANTE: 'Executante',
 }
 
-const STATUS_FILTERS = [
-  { value: '', label: 'Todas' },
-  { value: 'EM_APROVACAO', label: 'Em Aprovação' },
-  { value: 'EXECUCAO_AUTORIZADA', label: 'Exec. Autorizada' },
-  { value: 'EM_EXECUCAO', label: 'Em Execução' },
-  { value: 'DESABILITADO', label: 'Desabilitados' },
-  { value: 'EM_REABILITACAO', label: 'Em Reabilitação' },
-  { value: 'EM_VALIDACAO_DA_REABILITACAO', label: 'Aguard. Validação' },
-  { value: 'ENCERRADA', label: 'Encerradas' },
-  { value: 'RASCUNHO', label: 'Rascunhos' },
-]
+const FILTER_GROUPS: Record<string, { label: string; statuses: string[] }> = {
+  todas:      { label: 'Todas',        statuses: [] }, // empty = no filter
+  andamento:  { label: 'Em andamento', statuses: ['EM_APROVACAO', 'EXECUCAO_AUTORIZADA', 'EM_EXECUCAO', 'DESABILITADO', 'EM_REABILITACAO', 'EM_VALIDACAO_DA_REABILITACAO'] },
+  encerradas: { label: 'Encerradas',   statuses: ['ENCERRADA', 'CANCELADA', 'REJEITADA'] },
+  rascunho:   { label: 'Rascunho',     statuses: ['RASCUNHO'] },
+}
 
-async function getSolicitacoes(status?: string) {
+async function getSolicitacoes(filter: string) {
+  const group = FILTER_GROUPS[filter] ?? FILTER_GROUPS.todas
+  const statuses = group.statuses
   return prisma.solicitacao.findMany({
-    where: status ? { status } : { status: { notIn: ['CANCELADA', 'REJEITADA'] } },
+    where: statuses.length > 0 ? { status: { in: statuses } } : undefined,
     include: {
       equipamento: true,
       area: { include: { planta: true } },
@@ -62,10 +59,10 @@ async function getSolicitacoes(status?: string) {
 export default async function SolicitacoesPage({
   searchParams,
 }: {
-  searchParams: { status?: string }
+  searchParams: { filter?: string }
 }) {
-  const activeStatus = searchParams.status ?? ''
-  const solicitacoes = await getSolicitacoes(activeStatus || undefined)
+  const activeFilter = searchParams.filter && FILTER_GROUPS[searchParams.filter] ? searchParams.filter : 'todas'
+  const solicitacoes = await getSolicitacoes(activeFilter)
 
   return (
     <div className="p-4 md:p-6">
@@ -75,7 +72,6 @@ export default async function SolicitacoesPage({
           <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Solicitações</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
             {solicitacoes.length} {solicitacoes.length === 1 ? 'solicitação' : 'solicitações'}
-            {activeStatus && ` · filtrando por status`}
           </p>
         </div>
         <Link
@@ -87,17 +83,14 @@ export default async function SolicitacoesPage({
         </Link>
       </div>
 
-      {/* Status filter chips */}
+      {/* Filter chips */}
       <div className="flex flex-wrap gap-2 mb-5">
-        {STATUS_FILTERS.map(f => {
-          const isActive = activeStatus === f.value
-          const count = f.value
-            ? solicitacoes.filter(s => s.status === f.value).length
-            : solicitacoes.length
+        {Object.entries(FILTER_GROUPS).map(([key, group]) => {
+          const isActive = activeFilter === key
           return (
             <Link
-              key={f.value}
-              href={f.value ? `/solicitacoes?status=${f.value}` : '/solicitacoes'}
+              key={key}
+              href={key === 'todas' ? '/solicitacoes' : `/solicitacoes?filter=${key}`}
               className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium transition-colors"
               style={{
                 borderRadius: '20px',
@@ -106,20 +99,7 @@ export default async function SolicitacoesPage({
                 color: isActive ? '#0038A8' : '#475569',
               }}
             >
-              {f.label}
-              {f.value && (
-                <span
-                  className="text-xs font-bold px-1 rounded-full"
-                  style={{
-                    background: isActive ? '#0038A8' : '#F1F5F9',
-                    color: isActive ? 'white' : '#6B7280',
-                    minWidth: 18,
-                    textAlign: 'center',
-                  }}
-                >
-                  {f.value ? solicitacoes.filter(s => s.status === f.value).length : count}
-                </span>
-              )}
+              {group.label}
             </Link>
           )
         })}

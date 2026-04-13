@@ -139,10 +139,10 @@ export default async function DashboardPage() {
   const tarefasSolicitante = isSolicitante ? await getTarefasSolicitante() : { paraExecutar: [], paraReabilitar: [], paraProrrogar: [] }
 
   const cards = [
-    { label: 'Em Aprovação',      value: metrics.emAprovacao,          status: 'EM_APROVACAO' as StatusSolicitacao,                   href: '/solicitacoes?status=EM_APROVACAO',                   icon: 'pending_actions' },
-    { label: 'Exec. Autorizada',  value: metrics.execucaoAutorizada,   status: 'EXECUCAO_AUTORIZADA' as StatusSolicitacao,            href: '/solicitacoes?status=EXECUCAO_AUTORIZADA',            icon: 'engineering' },
-    { label: 'Desabilitados',     value: metrics.desabilitados,        status: 'DESABILITADO' as StatusSolicitacao,                   href: '/solicitacoes?status=DESABILITADO',                   icon: 'lock' },
-    { label: 'Aguard. Validação', value: metrics.aguardandoValidacao,  status: 'EM_VALIDACAO_DA_REABILITACAO' as StatusSolicitacao,   href: '/solicitacoes?status=EM_VALIDACAO_DA_REABILITACAO',   icon: 'fact_check' },
+    { label: 'Em Aprovação',      value: metrics.emAprovacao,          status: 'EM_APROVACAO' as StatusSolicitacao,                   href: '/solicitacoes?filter=andamento',  icon: 'pending_actions' },
+    { label: 'Exec. Autorizada',  value: metrics.execucaoAutorizada,   status: 'EXECUCAO_AUTORIZADA' as StatusSolicitacao,            href: '/solicitacoes?filter=andamento',  icon: 'engineering' },
+    { label: 'Desabilitados',     value: metrics.desabilitados,        status: 'DESABILITADO' as StatusSolicitacao,                   href: '/solicitacoes?filter=andamento',  icon: 'lock' },
+    { label: 'Aguard. Validação', value: metrics.aguardandoValidacao,  status: 'EM_VALIDACAO_DA_REABILITACAO' as StatusSolicitacao,   href: '/solicitacoes?filter=andamento',  icon: 'fact_check' },
   ]
 
   // Collect all pending tasks in one unified list
@@ -257,7 +257,7 @@ export default async function DashboardPage() {
           )
         })}
         {/* Encerradas este mês */}
-        <Link href="/solicitacoes?status=ENCERRADA" className="h-full">
+        <Link href="/solicitacoes?filter=encerradas" className="h-full">
           <div className="bg-white border cursor-pointer transition-shadow hover:shadow-sm h-full flex items-center justify-between px-3 py-2.5 gap-2" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
             <div className="flex items-center gap-2 min-w-0">
               <span className="material-symbols-outlined shrink-0" style={{ fontSize: 15, color: '#10B981', lineHeight: 1, background: '#10B98114', borderRadius: '6px', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true">check_circle</span>
