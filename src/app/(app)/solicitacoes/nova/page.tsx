@@ -275,7 +275,7 @@ export default function NovaSolicitacaoPage() {
     const fmtDate = (s: string) => s ? new Date(s + 'T00:00:00').toLocaleDateString('pt-BR') : '—'
 
     return (
-      <div className="p-4 md:p-6 w-full max-w-2xl">
+      <div className="p-4 md:p-6 w-full max-w-2xl mx-auto">
         {/* Success header */}
         <div className="flex flex-col items-center text-center mb-8 pt-4">
           <div
@@ -381,7 +381,7 @@ export default function NovaSolicitacaoPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 w-full max-w-4xl">
+    <div className="p-4 md:p-6 w-full max-w-4xl mx-auto">
       <div className="mb-6">
         <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Nova solicitação de desabilitação</h1>
       </div>

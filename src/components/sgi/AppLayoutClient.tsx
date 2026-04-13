@@ -111,7 +111,7 @@ export default function AppLayoutClient({ children, user, perfisReais, plantas, 
       </div>
 
       {/* Main — com header mobile no topo */}
-      <main className="flex-1 overflow-auto pb-20 md:pb-0">
+      <main className="flex-1 overflow-auto pb-20 md:pb-0 min-w-0">
         <MobileHeader
           user={user}
           perfil={perfilAtivo}

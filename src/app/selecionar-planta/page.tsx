@@ -9,14 +9,13 @@ export default async function SelecionarPlantaPage() {
 
   const userId = (session.user as any)?.id as string
 
-  const perfisReais = await prisma.usuarioPerfil.findMany({
-    where: { userId },
-    include: { planta: true },
-  })
+  const [perfisReais, userRecord] = await Promise.all([
+    prisma.usuarioPerfil.findMany({ where: { userId }, include: { planta: true } }),
+    prisma.user.findUnique({ where: { id: userId }, select: { nome: true, email: true, matricula: true } }),
+  ])
 
   // Group by plant
   const plantaMap = new Map<string, { id: string; nome: string; perfis: string[] }>()
-
   for (const p of perfisReais) {
     if (!p.plantaId || !p.planta) continue
     if (!plantaMap.has(p.plantaId)) {
@@ -27,22 +26,15 @@ export default async function SelecionarPlantaPage() {
 
   const plantas = Array.from(plantaMap.values())
 
-  // If only one plant, redirect directly
-  if (plantas.length === 1) {
-    redirect('/dashboard')
-  }
-
-  // If no plants at all, also go to dashboard (admin without plant)
-  if (plantas.length === 0) {
-    redirect('/dashboard')
-  }
-
-  const userName = session.user?.name ?? 'Usuário'
+  if (plantas.length === 1) redirect('/dashboard')
+  if (plantas.length === 0) redirect('/dashboard')
 
   return (
     <SelecionarPlantaClient
       plantas={plantas}
-      userName={userName}
+      userName={userRecord?.nome ?? session.user?.name ?? 'Usuário'}
+      userEmail={userRecord?.email ?? session.user?.email ?? ''}
+      userMatricula={userRecord?.matricula ?? ''}
     />
   )
 }
