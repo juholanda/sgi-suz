@@ -1,0 +1,256 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Auth ───────────────────────────────────────────────────────────────────
+
+model User {
+  id            String   @id @default(cuid())
+  matricula     String   @unique
+  nome          String
+  email         String   @unique
+  passwordHash  String
+  ativo         Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  perfis        UsuarioPerfil[]
+  solicitacoesCriadas    Solicitacao[] @relation("Solicitante")
+  solicitacoesExecutadas Solicitacao[] @relation("Executante")
+  aprovacoes    Aprovacao[]
+  delegacoesDe  Delegacao[]   @relation("DelegadoPor")
+  delegacoesPara Delegacao[]  @relation("DelegadoPara")
+  eventosAuditoria EventoAuditoria[]
+  alcadas       AlcadaAprovacao[]
+}
+
+// ─── Dados Mestres ───────────────────────────────────────────────────────────
+
+model Planta {
+  id        String   @id @default(cuid())
+  nome      String
+  codigo    String?
+  ativa     Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  areas     Area[]
+  alcadas   AlcadaAprovacao[]
+  perfisUsuario UsuarioPerfil[]
+}
+
+model Area {
+  id        String   @id @default(cuid())
+  nome      String
+  codigo    String?
+  ativa     Boolean  @default(true)
+  plantaId  String
+  createdAt DateTime @default(now())
+
+  planta      Planta      @relation(fields: [plantaId], references: [id])
+  equipamentos Equipamento[]
+  perfisUsuario UsuarioPerfil[]
+  solicitacoes Solicitacao[]
+}
+
+model Equipamento {
+  id          String   @id @default(cuid())
+  tag         String   @unique
+  descricao   String
+  ativo       Boolean  @default(true)
+  areaId      String
+  createdAt   DateTime @default(now())
+
+  area         Area         @relation(fields: [areaId], references: [id])
+  solicitacoes Solicitacao[]
+}
+
+model Classe {
+  id             String   @id @default(cuid())
+  numero         Int      @unique // 1 a 5
+  descricao      String
+  prazoMaximoDias Int?    // null = NÃO FORÇÁVEL (classe 5)
+  cor            String   // hex color
+  ativa          Boolean  @default(true)
+
+  alcadas     AlcadaAprovacao[]
+  solicitacoes Solicitacao[]
+}
+
+// ─── Perfis e Permissões ─────────────────────────────────────────────────────
+// TipoPerfil: SOLICITANTE | EXECUTANTE | APROVADOR | GESTOR_SMS | ADMINISTRADOR
+
+model UsuarioPerfil {
+  id       String  @id @default(cuid())
+  userId   String
+  perfil   String  // SOLICITANTE | EXECUTANTE | APROVADOR | GESTOR_SMS | ADMINISTRADOR
+  plantaId String?
+  areaId   String?
+
+  user    User    @relation(fields: [userId], references: [id])
+  planta  Planta? @relation(fields: [plantaId], references: [id])
+  area    Area?   @relation(fields: [areaId], references: [id])
+
+  @@unique([userId, perfil, plantaId, areaId])
+}
+
+// ─── Alçadas de Aprovação ────────────────────────────────────────────────────
+
+model AlcadaAprovacao {
+  id        String @id @default(cuid())
+  plantaId  String
+  classeId  String
+  nivel     Int    // 1 = primeiro aprovador, 2 = segundo, etc.
+  userId    String
+
+  planta Planta @relation(fields: [plantaId], references: [id])
+  classe Classe @relation(fields: [classeId], references: [id])
+  user   User   @relation(fields: [userId], references: [id])
+
+  @@unique([plantaId, classeId, nivel, userId])
+}
+
+// ─── Delegações ──────────────────────────────────────────────────────────────
+
+model Delegacao {
+  id            String   @id @default(cuid())
+  delegadoPorId String
+  delegadoParaId String
+  dataInicio    DateTime
+  dataFim       DateTime
+  ativa         Boolean  @default(true)
+  createdAt     DateTime @default(now())
+
+  delegadoPor  User @relation("DelegadoPor",  fields: [delegadoPorId],  references: [id])
+  delegadoPara User @relation("DelegadoPara", fields: [delegadoParaId], references: [id])
+}
+
+// ─── Solicitações ─────────────────────────────────────────────────────────────
+// tipo: LOGICO | FISICO | DISPOSITIVO_SEGURANCA
+// status: RASCUNHO | EM_APROVACAO | EXECUCAO_AUTORIZADA | EM_EXECUCAO | DESABILITADO
+//         | EM_REABILITACAO | EM_VALIDACAO_DA_REABILITACAO | ENCERRADA | REJEITADA
+//         | CANCELADA | EXTENSAO_EM_ANALISE
+
+model Solicitacao {
+  id              String  @id @default(cuid())
+  protocolo       String  @unique
+  status          String  @default("RASCUNHO")
+
+  // Etapa 1 — Identificação
+  areaId          String
+  equipamentoId   String
+  executanteId    String?
+  tipo            String?  // LOGICO | FISICO | DISPOSITIVO_SEGURANCA
+  classeId        String?
+  funcaoIntertravamento String?
+  motivoDesabilitacao   String?
+  periodoInicio   DateTime?
+  periodoFim      DateTime?
+  duracaoPrevistaDias Float?
+
+  // Solicitante
+  solicitanteId   String
+  emNomeDe        String?  // se aberto em nome de outro
+
+  // Etapa 2 — Contingência
+  medidasContingenciais String?
+
+  // SLA Flags
+  prazoPrevitoAtingido  Boolean @default(false)
+  prazoMaximoAtingido   Boolean @default(false)
+
+  // Timestamps de ciclo de vida
+  dataEnvio       DateTime?
+  dataAprovacaoFinal DateTime?
+  dataDesabilitacao  DateTime?
+  dataReabilitacao   DateTime?
+  dataEncerramento   DateTime?
+
+  // Auditoria
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relações
+  area            Area          @relation(fields: [areaId], references: [id])
+  equipamento     Equipamento   @relation(fields: [equipamentoId], references: [id])
+  executante      User?         @relation("Executante", fields: [executanteId], references: [id])
+  classe          Classe?       @relation(fields: [classeId], references: [id])
+  solicitante     User          @relation("Solicitante", fields: [solicitanteId], references: [id])
+
+  aprovacoes      Aprovacao[]
+  checklists      ChecklistItem[]
+  anexos          Anexo[]
+  extensoes       ExtensaoPrazo[]
+  eventos         EventoAuditoria[]
+}
+
+model Aprovacao {
+  id              String   @id @default(cuid())
+  solicitacaoId   String
+  aprovadorId     String
+  nivel           Int
+  tipo            String   // DESABILITACAO | REABILITACAO | EXTENSAO
+  status          String   // PENDENTE | APROVADO | REJEITADO
+  comentario      String?
+  motivoRejeicao  String?
+  createdAt       DateTime @default(now())
+  respondidaEm    DateTime?
+
+  solicitacao Solicitacao @relation(fields: [solicitacaoId], references: [id])
+  aprovador   User        @relation(fields: [aprovadorId], references: [id])
+}
+
+model ChecklistItem {
+  id             String   @id @default(cuid())
+  solicitacaoId  String
+  numero         Int
+  descricao      String
+  resposta       String?  // SIM | NA
+  tipo           String   // DESABILITACAO | REABILITACAO
+  observacao     String?
+  createdAt      DateTime @default(now())
+
+  solicitacao Solicitacao @relation(fields: [solicitacaoId], references: [id])
+}
+
+model Anexo {
+  id            String   @id @default(cuid())
+  solicitacaoId String
+  nome          String
+  url           String
+  tamanho       Int
+  mimeType      String
+  uploadadoPor  String
+  createdAt     DateTime @default(now())
+
+  solicitacao Solicitacao @relation(fields: [solicitacaoId], references: [id])
+}
+
+model ExtensaoPrazo {
+  id              String   @id @default(cuid())
+  solicitacaoId   String
+  novoPeriodoFim  DateTime
+  justificativa   String
+  status          String   // PENDENTE | APROVADA | REJEITADA
+  createdAt       DateTime @default(now())
+
+  solicitacao Solicitacao @relation(fields: [solicitacaoId], references: [id])
+}
+
+model EventoAuditoria {
+  id            String   @id @default(cuid())
+  solicitacaoId String?
+  userId        String
+  acao          String
+  detalhes      String?
+  ip            String?
+  userAgent     String?
+  createdAt     DateTime @default(now())
+
+  solicitacao Solicitacao? @relation(fields: [solicitacaoId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+}
