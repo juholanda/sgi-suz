@@ -1,26 +1,36 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import Sidebar from '@/components/sgi/Sidebar'
-import MobileNav from '@/components/sgi/MobileNav'
+import { prisma } from '@/lib/db'
+import AppLayoutClient from '@/components/sgi/AppLayoutClient'
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await auth()
   if (!session) redirect('/login')
 
+  const userId = (session.user as any)?.id as string
+
+  const perfisReais = await prisma.usuarioPerfil.findMany({
+    where: { userId },
+    select: { perfil: true, plantaId: true, areaId: true },
+  })
+
+  // Garante que há pelo menos um perfil (caso admin não tenha perfil associado)
+  const perfisUnicos = Array.from(
+    new Map(perfisReais.map(p => [p.perfil, p])).values()
+  )
+
+  const plantaIds = Array.from(new Set(perfisReais.map(p => p.plantaId).filter(Boolean))) as string[]
+  const plantas = plantaIds.length > 0
+    ? await prisma.planta.findMany({ where: { id: { in: plantaIds } }, select: { id: true, nome: true } })
+    : []
+
   return (
-    <div className="flex min-h-screen" style={{ background: '#F0F4F8' }}>
-      {/* Desktop sidebar — hidden on mobile */}
-      <div className="hidden md:flex">
-        <Sidebar user={session.user ?? {}} />
-      </div>
-
-      {/* Main content — padding-bottom on mobile for bottom nav */}
-      <main className="flex-1 overflow-auto pb-16 md:pb-0">
-        {children}
-      </main>
-
-      {/* Mobile bottom nav — hidden on desktop */}
-      <MobileNav />
-    </div>
+    <AppLayoutClient
+      user={session.user ?? {}}
+      perfisReais={perfisUnicos}
+      plantas={plantas}
+    >
+      {children}
+    </AppLayoutClient>
   )
 }

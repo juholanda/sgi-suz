@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import { auth } from '@/lib/auth'
 import { notFound } from 'next/navigation'
 import { StatusBadge } from '@/components/sgi/StatusBadge'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
@@ -40,11 +41,15 @@ const ACAO_LABELS: Record<string, string> = {
   RASCUNHO_CRIADO: 'Rascunho criado',
   SOLICITACAO_ENVIADA: 'Solicitação enviada para aprovação',
   APROVACAO_REGISTRADA: 'Aprovação registrada',
+  PROXIMO_APROVADOR_NOTIFICADO: 'Próximo aprovador notificado',
+  APROVACAO_COMPLETA: 'Aprovação completa — execução autorizada',
   REJEICAO_REGISTRADA: 'Solicitação rejeitada',
   EXECUCAO_INICIADA: 'Execução iniciada em campo',
   DESABILITACAO_CONFIRMADA: 'Desabilitação confirmada',
   REABILITACAO_INICIADA: 'Reabilitação iniciada',
+  REABILITACAO_CONCLUIDA_EXECUTANTE: 'Reabilitação concluída pelo executante — aguardando validação',
   REABILITACAO_VALIDADA: 'Reabilitação validada — solicitação encerrada',
+  REABILITACAO_REJEITADA: 'Reabilitação devolvida para correção',
   CANCELADA: 'Solicitação cancelada',
 }
 
@@ -54,11 +59,24 @@ function fmt(d: Date | null | undefined) {
 }
 
 export default async function SolicitacaoDetailPage({ params }: { params: { id: string } }) {
-  const s = await getSolicitacao(params.id)
+  const [s, session] = await Promise.all([
+    getSolicitacao(params.id),
+    auth(),
+  ])
   if (!s) notFound()
 
+  const userId = (session?.user as any)?.id as string | undefined
+
+  // Determinar papéis do usuário logado nesta solicitação — RF-030, RF-040
+  const isSolicitante = s.solicitanteId === userId
+  const isExecutante = s.executanteId === userId
+  const hasAprovPendente = s.aprovacoes.some(a => a.aprovadorId === userId && a.status === 'PENDENTE')
+  const isAprovador = hasAprovPendente ||
+    (s.status === 'EM_VALIDACAO_DA_REABILITACAO' &&
+      s.aprovacoes.some(a => a.aprovadorId === userId && a.status === 'APROVADO'))
+
   const aprovDesab = s.aprovacoes.filter(a => a.tipo === 'DESABILITACAO')
-  const aprovReab  = s.aprovacoes.filter(a => a.tipo === 'REABILITACAO')
+  const totalNiveis = aprovDesab.length
 
   return (
     <div className="p-6 max-w-4xl">
@@ -97,7 +115,16 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
       </div>
 
       {/* Ações (client component) */}
-      <AcoesButtons solicitacaoId={s.id} status={s.status as StatusSolicitacao} />
+      <AcoesButtons
+        solicitacaoId={s.id}
+        status={s.status as StatusSolicitacao}
+        isAprovador={isAprovador}
+        isSolicitante={isSolicitante}
+        isExecutante={isExecutante}
+        tipo={s.tipo}
+        aprovacoes={aprovDesab.map(a => ({ nivel: a.nivel, status: a.status, aprovador: a.aprovador }))}
+        totalNiveis={totalNiveis}
+      />
 
       {/* Grid detalhes */}
       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -143,12 +170,17 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
         </div>
       </div>
 
-      {/* Aprovações */}
+      {/* Aprovações com progresso — RF-035 */}
       {aprovDesab.length > 0 && (
         <div className="bg-white border p-4 mb-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-          <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#6B7280' }}>
-            Aprovações — Desabilitação
-          </h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>
+              Aprovações — Desabilitação
+            </h3>
+            <span className="text-xs" style={{ color: '#475569' }}>
+              {aprovDesab.filter(a => a.status === 'APROVADO').length} de {totalNiveis} aprovadores
+            </span>
+          </div>
           <div className="flex flex-col gap-2">
             {aprovDesab.map(a => (
               <div
@@ -157,10 +189,10 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
                 style={{ background: '#F8FAFC', borderRadius: '4px' }}
               >
                 <div
-                  className="w-6 h-6 flex items-center justify-center text-xs font-bold rounded-full"
+                  className="w-6 h-6 flex items-center justify-center text-xs font-bold rounded-full shrink-0"
                   style={{
-                    background: a.status === 'APROVADO' ? '#D1FAE5' : a.status === 'REJEITADO' ? '#FEE2E2' : '#FEF3C7',
-                    color:      a.status === 'APROVADO' ? '#065F46' : a.status === 'REJEITADO' ? '#B91C1C' : '#B45309',
+                    background: a.status === 'APROVADO' ? '#D1FAE5' : a.status === 'REJEITADO' ? '#FEE2E2' : a.status === 'PENDENTE' ? '#DBEAFE' : '#F1F5F9',
+                    color:      a.status === 'APROVADO' ? '#065F46' : a.status === 'REJEITADO' ? '#B91C1C' : a.status === 'PENDENTE' ? '#1D4ED8' : '#94A3B8',
                   }}
                 >
                   {a.status === 'APROVADO' ? '✓' : a.status === 'REJEITADO' ? '✕' : a.nivel}
@@ -171,13 +203,13 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
                   {a.comentario && <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{a.comentario}</p>}
                   {a.motivoRejeicao && <p className="text-xs mt-0.5" style={{ color: '#B91C1C' }}>Motivo: {a.motivoRejeicao}</p>}
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <span className="text-xs px-2 py-0.5 font-medium" style={{
                     borderRadius: '4px',
-                    background: a.status === 'APROVADO' ? '#D1FAE5' : a.status === 'REJEITADO' ? '#FEE2E2' : '#FEF3C7',
-                    color:      a.status === 'APROVADO' ? '#065F46' : a.status === 'REJEITADO' ? '#B91C1C' : '#B45309',
+                    background: a.status === 'APROVADO' ? '#D1FAE5' : a.status === 'REJEITADO' ? '#FEE2E2' : a.status === 'PENDENTE' ? '#DBEAFE' : '#F1F5F9',
+                    color:      a.status === 'APROVADO' ? '#065F46' : a.status === 'REJEITADO' ? '#B91C1C' : a.status === 'PENDENTE' ? '#1D4ED8' : '#94A3B8',
                   }}>
-                    {a.status === 'APROVADO' ? 'Aprovado' : a.status === 'REJEITADO' ? 'Rejeitado' : 'Pendente'}
+                    {a.status === 'APROVADO' ? 'Aprovado' : a.status === 'REJEITADO' ? 'Rejeitado' : a.status === 'PENDENTE' ? 'Aguardando resposta' : 'Aguardando fila'}
                   </span>
                   {a.respondidaEm && <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>{fmt(a.respondidaEm)}</p>}
                 </div>
@@ -193,19 +225,19 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
           <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#6B7280' }}>
             Checklists de Campo
           </h3>
-          <div className="space-y-2">
-            {['DESABILITACAO', 'REABILITACAO'].map(tipo => {
+          <div className="space-y-3">
+            {(['DESABILITACAO', 'REABILITACAO'] as const).map(tipo => {
               const items = s.checklists.filter(c => c.tipo === tipo)
               if (items.length === 0) return null
               return (
                 <div key={tipo}>
-                  <p className="text-xs font-medium mb-2" style={{ color: '#475569' }}>
+                  <p className="text-xs font-semibold mb-2" style={{ color: tipo === 'DESABILITACAO' ? '#EA580C' : '#6D28D9' }}>
                     {tipo === 'DESABILITACAO' ? 'Desabilitação' : 'Reabilitação'}
                   </p>
                   {items.map(item => (
                     <div key={item.id} className="flex items-start gap-3 p-2.5 mb-1" style={{ background: '#F8FAFC', borderRadius: '4px' }}>
                       <span
-                        className="text-xs font-bold px-1.5 py-0.5"
+                        className="text-xs font-bold px-1.5 py-0.5 shrink-0"
                         style={{
                           borderRadius: '4px',
                           background: item.resposta === 'SIM' ? '#D1FAE5' : item.resposta === 'NA' ? '#F1F5F9' : '#FEF9C3',
@@ -214,8 +246,11 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
                       >
                         {item.resposta ?? '—'}
                       </span>
-                      <span className="text-sm flex-1" style={{ color: '#374151' }}>{item.descricao}</span>
-                      <span className="text-xs" style={{ color: '#94A3B8' }}>item {item.numero}</span>
+                      <div className="flex-1">
+                        <span className="text-sm" style={{ color: '#374151' }}>{item.descricao}</span>
+                        {item.observacao && <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>Obs: {item.observacao}</p>}
+                      </div>
+                      <span className="text-xs shrink-0" style={{ color: '#94A3B8' }}>item {item.numero}</span>
                     </div>
                   ))}
                 </div>
@@ -225,7 +260,7 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
         </div>
       )}
 
-      {/* Linha do tempo */}
+      {/* Linha do tempo — RF-023 */}
       <div className="bg-white border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
         <h3 className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: '#6B7280' }}>
           Linha do Tempo

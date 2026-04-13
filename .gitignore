@@ -13,7 +13,14 @@ out/
 prisma/dev.db
 prisma/dev.db-journal
 prisma/*.db
+prisma/prisma/
+
+# TypeScript build info
+tsconfig.tsbuildinfo
 
 # misc
 .DS_Store
 *.log
+
+*storybook.log
+storybook-static

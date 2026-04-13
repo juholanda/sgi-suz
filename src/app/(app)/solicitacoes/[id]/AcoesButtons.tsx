@@ -3,45 +3,148 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { StatusSolicitacao } from '@/lib/tokens'
 
+interface ChecklistItemState {
+  numero: number
+  descricao: string
+  resposta: 'SIM' | 'NA' | ''
+  observacao: string
+  hidden?: boolean // RF-054: ocultar item 3 para não-físico
+}
+
 interface Props {
   solicitacaoId: string
   status: StatusSolicitacao
+  isAprovador: boolean
+  isSolicitante: boolean
+  isExecutante: boolean
+  tipo: string | null // FISICO | LOGICO | DISPOSITIVO_SEGURANCA
+  aprovacoes: { nivel: number; status: string; aprovador: { nome: string } }[]
+  totalNiveis: number
 }
 
-export default function AcoesButtons({ solicitacaoId, status }: Props) {
+const CHECKLIST_DESABILITACAO: Omit<ChecklistItemState, 'resposta' | 'observacao'>[] = [
+  { numero: 1, descricao: 'Foram verificadas as condições operacionais e de segurança da área antes da desabilitação?' },
+  { numero: 2, descricao: 'As medidas contingenciais descritas foram implementadas e estão em vigor?' },
+  { numero: 3, descricao: 'O cartão de advertência foi afixado no local de forma visível? (apenas para intertravamentos físicos)' },
+  { numero: 4, descricao: 'Os responsáveis pela área foram informados sobre a desabilitação e o período previsto?' },
+]
+
+const CHECKLIST_REABILITACAO: Omit<ChecklistItemState, 'resposta' | 'observacao'>[] = [
+  { numero: 1, descricao: 'Todos os dispositivos de bloqueio/sinalização foram removidos?' },
+  { numero: 2, descricao: 'Foram verificadas as condições de funcionamento do intertravamento/dispositivo de segurança?' },
+]
+
+export default function AcoesButtons({
+  solicitacaoId, status, isAprovador, isSolicitante, isExecutante, tipo, aprovacoes, totalNiveis,
+}: Props) {
   const router = useRouter()
-  const [showCancelarModal, setShowCancelarModal] = useState(false)
-  const [showAprovarModal, setShowAprovarModal] = useState(false)
-  const [showRejeitarModal, setShowRejeitarModal] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [modal, setModal] = useState<string | null>(null)
   const [motivo, setMotivo] = useState('')
   const [comentario, setComentario] = useState('')
-  const [loading, setLoading] = useState(false)
 
-  async function acao(tipo: string, body?: object) {
-    setLoading(true)
-    await fetch(`/api/solicitacoes/${solicitacaoId}/acoes`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tipo, ...body }),
-    })
-    setLoading(false)
-    router.refresh()
+  // Checklist de desabilitação — RF-053, RF-054
+  const [checklistDesab, setChecklistDesab] = useState<ChecklistItemState[]>(
+    CHECKLIST_DESABILITACAO.map(item => ({
+      ...item,
+      resposta: '',
+      observacao: '',
+      hidden: item.numero === 3 && tipo !== 'FISICO', // RF-054
+    }))
+  )
+
+  // Checklist de reabilitação — RF-074, RF-075
+  const [checklistReab, setChecklistReab] = useState<ChecklistItemState[]>(
+    CHECKLIST_REABILITACAO.map(item => ({
+      ...item,
+      resposta: '',
+      observacao: '',
+    }))
+  )
+
+  function updateChecklist(
+    setter: typeof setChecklistDesab,
+    index: number,
+    field: 'resposta' | 'observacao',
+    value: string
+  ) {
+    setter(prev => prev.map((item, i) => i === index ? { ...item, [field]: value } : item))
   }
+
+  function checklistValido(items: ChecklistItemState[]) {
+    return items.every(item => item.hidden || item.resposta !== '')
+  }
+
+  async function acao(tipo_acao: string, body?: object) {
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/solicitacoes/${solicitacaoId}/acoes`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo: tipo_acao, ...body }),
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        alert(err.error || 'Erro ao executar ação')
+        return
+      }
+      setModal(null)
+      router.refresh()
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Progresso de aprovações — RF-035
+  const aprovDesab = aprovacoes.filter(a => ['PENDENTE', 'APROVADO', 'AGUARDANDO'].includes(a.status))
+  const aprovadas = aprovacoes.filter(a => a.status === 'APROVADO').length
+  const hasMinhaAprovPendente = aprovacoes.some(a => a.status === 'PENDENTE')
+
+  const canAprovar = isAprovador && status === 'EM_APROVACAO' && hasMinhaAprovPendente
+  const canValidarReab = isAprovador && status === 'EM_VALIDACAO_DA_REABILITACAO'
+  const canIniciarExec = (isSolicitante || isExecutante) && status === 'EXECUCAO_AUTORIZADA'
+  const canConfirmarDesab = (isSolicitante || isExecutante) && status === 'EM_EXECUCAO'
+  const canIniciarReab = isSolicitante && status === 'DESABILITADO'
+  const canConcluirReab = (isSolicitante || isExecutante) && status === 'EM_REABILITACAO'
+  const canCancelar = isSolicitante && ['RASCUNHO', 'EM_APROVACAO', 'EXECUCAO_AUTORIZADA'].includes(status)
+
+  const hasAcoes = canAprovar || canValidarReab || canIniciarExec || canConfirmarDesab ||
+    canIniciarReab || canConcluirReab || canCancelar
+
+  if (!hasAcoes) return null
 
   return (
     <>
+      {/* Progresso de aprovação — RF-035 */}
+      {status === 'EM_APROVACAO' && totalNiveis > 0 && (
+        <div className="flex items-center gap-2 mb-4 px-4 py-2.5 text-sm" style={{ background: '#DBEAFE', borderRadius: '4px', color: '#1D4ED8' }}>
+          <span className="font-medium">{aprovadas} de {totalNiveis} aprovadores concluíram</span>
+          <div className="flex gap-1 ml-2">
+            {Array.from({ length: totalNiveis }, (_, i) => (
+              <div
+                key={i}
+                className="w-2 h-2 rounded-full"
+                style={{ background: i < aprovadas ? '#16A34A' : '#BFDBFE' }}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-wrap gap-2 mb-6">
-        {status === 'EM_APROVACAO' && (
+
+        {/* Aprovar */}
+        {canAprovar && (
           <>
             <button
-              onClick={() => setShowAprovarModal(true)}
+              onClick={() => setModal('APROVAR')}
               className="px-4 py-2 text-sm font-medium text-white"
               style={{ background: '#16A34A', borderRadius: '4px' }}
             >
               ✓ Aprovar
             </button>
             <button
-              onClick={() => setShowRejeitarModal(true)}
+              onClick={() => setModal('REJEITAR')}
               className="px-4 py-2 text-sm font-medium text-white"
               style={{ background: '#DC2626', borderRadius: '4px' }}
             >
@@ -50,7 +153,28 @@ export default function AcoesButtons({ solicitacaoId, status }: Props) {
           </>
         )}
 
-        {status === 'EXECUCAO_AUTORIZADA' && (
+        {/* Validar reabilitação — RF-081 */}
+        {canValidarReab && (
+          <>
+            <button
+              onClick={() => setModal('VALIDAR_REABILITACAO')}
+              className="px-4 py-2 text-sm font-medium text-white"
+              style={{ background: '#10B981', borderRadius: '4px' }}
+            >
+              ✓ Validar e Encerrar
+            </button>
+            <button
+              onClick={() => setModal('REJEITAR_REABILITACAO')}
+              className="px-4 py-2 text-sm font-medium"
+              style={{ borderRadius: '4px', border: '1px solid #DC2626', color: '#DC2626' }}
+            >
+              Devolver — Corrigir
+            </button>
+          </>
+        )}
+
+        {/* Execução */}
+        {canIniciarExec && (
           <button
             onClick={() => acao('INICIAR_EXECUCAO')}
             disabled={loading}
@@ -61,10 +185,10 @@ export default function AcoesButtons({ solicitacaoId, status }: Props) {
           </button>
         )}
 
-        {status === 'EM_EXECUCAO' && (
+        {/* Confirmar desabilitação com checklist — RF-053 */}
+        {canConfirmarDesab && (
           <button
-            onClick={() => acao('CONFIRMAR_DESABILITACAO')}
-            disabled={loading}
+            onClick={() => setModal('CHECKLIST_DESAB')}
             className="px-4 py-2 text-sm font-medium text-white"
             style={{ background: '#EA580C', borderRadius: '4px' }}
           >
@@ -72,7 +196,8 @@ export default function AcoesButtons({ solicitacaoId, status }: Props) {
           </button>
         )}
 
-        {status === 'DESABILITADO' && (
+        {/* Iniciar reabilitação */}
+        {canIniciarReab && (
           <button
             onClick={() => acao('INICIAR_REABILITACAO')}
             disabled={loading}
@@ -83,10 +208,10 @@ export default function AcoesButtons({ solicitacaoId, status }: Props) {
           </button>
         )}
 
-        {status === 'EM_REABILITACAO' && (
+        {/* Concluir reabilitação com checklist — RF-074 */}
+        {canConcluirReab && (
           <button
-            onClick={() => acao('CONCLUIR_REABILITACAO')}
-            disabled={loading}
+            onClick={() => setModal('CHECKLIST_REAB')}
             className="px-4 py-2 text-sm font-medium text-white"
             style={{ background: '#6366F1', borderRadius: '4px' }}
           >
@@ -94,20 +219,10 @@ export default function AcoesButtons({ solicitacaoId, status }: Props) {
           </button>
         )}
 
-        {status === 'EM_VALIDACAO_DA_REABILITACAO' && (
+        {/* Cancelar */}
+        {canCancelar && (
           <button
-            onClick={() => acao('VALIDAR_REABILITACAO')}
-            disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-white"
-            style={{ background: '#10B981', borderRadius: '4px' }}
-          >
-            ✓ Validar Reabilitação — Encerrar
-          </button>
-        )}
-
-        {['RASCUNHO', 'EM_APROVACAO'].includes(status) && (
-          <button
-            onClick={() => setShowCancelarModal(true)}
+            onClick={() => setModal('CANCELAR')}
             className="px-4 py-2 text-sm border"
             style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#DC2626' }}
           >
@@ -116,81 +231,238 @@ export default function AcoesButtons({ solicitacaoId, status }: Props) {
         )}
       </div>
 
-      {/* Modal Cancelar */}
-      {showCancelarModal && (
-        <Modal title="Cancelar Solicitação" onClose={() => setShowCancelarModal(false)}>
-          <div
-            className="mb-4 px-3 py-2 text-sm"
-            style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}
-          >
-            Esta ação não pode ser desfeita. Os aprovadores já notificados serão avisados.
+      {/* ── Modal: Checklist Desabilitação ─── RF-053, RF-054, RF-056 */}
+      {modal === 'CHECKLIST_DESAB' && (
+        <Modal title="Checklist de Execução em Campo" onClose={() => setModal(null)} wide>
+          <div className="px-3 py-2 text-sm mb-4" style={{ background: '#FEF3C7', color: '#92400E', borderRadius: '4px', border: '1px solid #FDE68A' }}>
+            Leia atentamente cada item antes de responder. Todos os itens são obrigatórios. N.A. deve ser justificado.
           </div>
-          <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>
-            Motivo do cancelamento *
-          </label>
-          <textarea
-            rows={3}
-            value={motivo}
-            onChange={e => setMotivo(e.target.value)}
-            className="w-full px-3 py-2 border text-sm outline-none"
-            style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
-            placeholder="Descreva o motivo..."
-          />
-          <div className="flex justify-end gap-2 mt-4">
-            <button onClick={() => setShowCancelarModal(false)} className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>
-              Voltar
+          <div className="space-y-4">
+            {checklistDesab.map((item, i) => {
+              if (item.hidden) return null
+              return (
+                <div key={item.numero} className="border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+                  <div className="flex items-start gap-3 mb-3">
+                    <span
+                      className="text-xs font-bold px-1.5 py-0.5 shrink-0"
+                      style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}
+                    >
+                      {item.numero}
+                    </span>
+                    <p className="text-sm" style={{ color: '#374151' }}>{item.descricao}</p>
+                  </div>
+                  <div className="flex gap-3 ml-8">
+                    {(['SIM', 'NA'] as const).map(opt => (
+                      <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name={`desab-${item.numero}`}
+                          value={opt}
+                          checked={item.resposta === opt}
+                          onChange={() => updateChecklist(setChecklistDesab, i, 'resposta', opt)}
+                          style={{ accentColor: '#0038A8' }}
+                        />
+                        <span className="text-sm font-medium" style={{ color: opt === 'SIM' ? '#16A34A' : '#6B7280' }}>
+                          {opt === 'NA' ? 'N.A.' : 'SIM'}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                  {/* Justificativa obrigatória para N.A. */}
+                  {item.resposta === 'NA' && (
+                    <div className="ml-8 mt-2">
+                      <input
+                        className="w-full px-3 py-1.5 text-sm border outline-none"
+                        style={{ borderColor: '#EAB308', borderRadius: '4px' }}
+                        placeholder="Justificativa obrigatória para N.A. *"
+                        value={item.observacao}
+                        onChange={e => updateChecklist(setChecklistDesab, i, 'observacao', e.target.value)}
+                      />
+                    </div>
+                  )}
+                  {/* Indicador de pendente */}
+                  {item.resposta === '' && (
+                    <p className="ml-8 mt-1 text-xs" style={{ color: '#EF4444' }}>Item obrigatório — RF-055</p>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Valida N.A. sem justificativa */}
+          {checklistDesab.some(i => !i.hidden && i.resposta === 'NA' && !i.observacao.trim()) && (
+            <div className="mt-3 px-3 py-2 text-sm" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
+              Itens marcados N.A. exigem justificativa.
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 mt-5">
+            <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>
+              Cancelar
             </button>
             <button
-              disabled={!motivo.trim() || loading}
-              onClick={() => { acao('CANCELAR', { motivo }); setShowCancelarModal(false) }}
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{ background: motivo.trim() ? '#DC2626' : '#94A3B8', borderRadius: '4px' }}
+              disabled={
+                !checklistValido(checklistDesab) ||
+                checklistDesab.some(i => !i.hidden && i.resposta === 'NA' && !i.observacao.trim()) ||
+                loading
+              }
+              onClick={() => acao('CONFIRMAR_DESABILITACAO', {
+                checklistItems: checklistDesab.filter(i => !i.hidden).map(i => ({
+                  numero: i.numero,
+                  descricao: i.descricao,
+                  resposta: i.resposta,
+                  observacao: i.observacao || undefined,
+                })),
+              })}
+              className="px-5 py-2 text-sm font-medium text-white"
+              style={{
+                background: (checklistValido(checklistDesab) && !checklistDesab.some(i => !i.hidden && i.resposta === 'NA' && !i.observacao.trim()))
+                  ? '#EA580C' : '#94A3B8',
+                borderRadius: '4px',
+                cursor: checklistValido(checklistDesab) ? 'pointer' : 'not-allowed',
+              }}
             >
-              Confirmar cancelamento
+              {loading ? 'Confirmando...' : 'Confirmar Desabilitação'}
             </button>
           </div>
         </Modal>
       )}
 
-      {/* Modal Aprovar */}
-      {showAprovarModal && (
-        <Modal title="Confirmar Aprovação" onClose={() => setShowAprovarModal(false)}>
-          <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>
-            Comentário (opcional)
-          </label>
+      {/* ── Modal: Checklist Reabilitação ─── RF-074, RF-075, RF-077 */}
+      {modal === 'CHECKLIST_REAB' && (
+        <Modal title="Checklist de Reabilitação" onClose={() => setModal(null)} wide>
+          <div className="px-3 py-2 text-sm mb-4" style={{ background: '#EDE9FE', color: '#6D28D9', borderRadius: '4px' }}>
+            Confirme cada item antes de concluir a reabilitação. Todos os itens são obrigatórios.
+          </div>
+          <div className="space-y-4">
+            {checklistReab.map((item, i) => (
+              <div key={item.numero} className="border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+                <div className="flex items-start gap-3 mb-3">
+                  <span
+                    className="text-xs font-bold px-1.5 py-0.5 shrink-0"
+                    style={{ background: '#EDE9FE', color: '#6D28D9', borderRadius: '4px' }}
+                  >
+                    {item.numero}
+                  </span>
+                  <p className="text-sm" style={{ color: '#374151' }}>
+                    {item.numero === 1 && tipo === 'FISICO'
+                      ? `${item.descricao} (incluindo cartão de advertência)`  // RF-075
+                      : item.descricao}
+                  </p>
+                </div>
+                <div className="flex gap-3 ml-8">
+                  {(['SIM', 'NA'] as const).map(opt => (
+                    <label key={opt} className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        name={`reab-${item.numero}`}
+                        value={opt}
+                        checked={item.resposta === opt}
+                        onChange={() => updateChecklist(setChecklistReab, i, 'resposta', opt)}
+                        style={{ accentColor: '#6D28D9' }}
+                      />
+                      <span className="text-sm font-medium" style={{ color: opt === 'SIM' ? '#16A34A' : '#6B7280' }}>
+                        {opt === 'NA' ? 'N.A.' : 'SIM'}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+                {item.resposta === 'NA' && (
+                  <div className="ml-8 mt-2">
+                    <input
+                      className="w-full px-3 py-1.5 text-sm border outline-none"
+                      style={{ borderColor: '#EAB308', borderRadius: '4px' }}
+                      placeholder="Justificativa para N.A. *"
+                      value={item.observacao}
+                      onChange={e => updateChecklist(setChecklistReab, i, 'observacao', e.target.value)}
+                    />
+                  </div>
+                )}
+                {item.resposta === '' && (
+                  <p className="ml-8 mt-1 text-xs" style={{ color: '#EF4444' }}>Item obrigatório</p>
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-end gap-2 mt-5">
+            <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>
+              Cancelar
+            </button>
+            <button
+              disabled={!checklistValido(checklistReab) || checklistReab.some(i => i.resposta === 'NA' && !i.observacao.trim()) || loading}
+              onClick={() => acao('CONCLUIR_REABILITACAO', {
+                checklistItems: checklistReab.map(i => ({
+                  numero: i.numero,
+                  descricao: i.descricao,
+                  resposta: i.resposta,
+                  observacao: i.observacao || undefined,
+                })),
+              })}
+              className="px-5 py-2 text-sm font-medium text-white"
+              style={{
+                background: (checklistValido(checklistReab) && !checklistReab.some(i => i.resposta === 'NA' && !i.observacao.trim()))
+                  ? '#6366F1' : '#94A3B8',
+                borderRadius: '4px',
+              }}
+            >
+              {loading ? 'Confirmando...' : 'Concluir Reabilitação'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal: Validar reabilitação — RF-081 */}
+      {modal === 'VALIDAR_REABILITACAO' && (
+        <Modal title="Validar e Encerrar Solicitação" onClose={() => setModal(null)}>
+          <div className="mb-3 px-3 py-2 text-sm" style={{ background: '#D1FAE5', color: '#065F46', borderRadius: '4px' }}>
+            Ao validar, a solicitação será encerrada de forma permanente e imutável (RF-085).
+          </div>
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>Comentário (opcional)</label>
           <textarea
             rows={2}
             value={comentario}
             onChange={e => setComentario(e.target.value)}
             className="w-full px-3 py-2 border text-sm outline-none"
             style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
-            placeholder="Comentário opcional..."
           />
+          {/* Confirmação digital — RF-081 */}
+          <label className="flex items-start gap-3 mt-4 cursor-pointer">
+            <input
+              type="checkbox"
+              id="assinatura-validacao"
+              className="mt-0.5"
+              style={{ accentColor: '#10B981' }}
+              onChange={e => {
+                const btn = document.getElementById('btn-validar-reab') as HTMLButtonElement | null
+                if (btn) btn.disabled = !e.target.checked || loading
+              }}
+            />
+            <span className="text-sm" style={{ color: '#374151' }}>
+              <strong>Confirmo minha identidade e valido digitalmente</strong> a reabilitação deste intertravamento.
+            </span>
+          </label>
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={() => setShowAprovarModal(false)} className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>
-              Voltar
-            </button>
+            <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>Voltar</button>
             <button
-              disabled={loading}
-              onClick={() => { acao('APROVAR', { comentario }); setShowAprovarModal(false) }}
+              id="btn-validar-reab"
+              disabled
+              onClick={() => acao('VALIDAR_REABILITACAO', { comentario })}
               className="px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#16A34A', borderRadius: '4px' }}
+              style={{ background: '#10B981', borderRadius: '4px' }}
             >
-              Confirmar aprovação
+              {loading ? 'Validando...' : 'Validar e Encerrar'}
             </button>
           </div>
         </Modal>
       )}
 
-      {/* Modal Rejeitar */}
-      {showRejeitarModal && (
-        <Modal title="Rejeitar Solicitação" onClose={() => setShowRejeitarModal(false)}>
-          <div className="mb-3 px-3 py-2 text-sm" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
-            O solicitante será notificado. A solicitação não poderá ser reativada — será necessário criar uma nova.
+      {/* Modal: Devolver reabilitação — RF-082 */}
+      {modal === 'REJEITAR_REABILITACAO' && (
+        <Modal title="Devolver Reabilitação" onClose={() => setModal(null)}>
+          <div className="mb-3 px-3 py-2 text-sm" style={{ background: '#FEF3C7', color: '#92400E', borderRadius: '4px' }}>
+            O executante receberá o motivo e deverá corrigir e reenviar.
           </div>
-          <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>
-            Motivo da rejeição *
-          </label>
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>Motivo da devolução *</label>
           <textarea
             rows={3}
             value={motivo}
@@ -200,12 +472,94 @@ export default function AcoesButtons({ solicitacaoId, status }: Props) {
             placeholder="Justificativa obrigatória..."
           />
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={() => setShowRejeitarModal(false)} className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>
-              Voltar
-            </button>
+            <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>Voltar</button>
             <button
               disabled={!motivo.trim() || loading}
-              onClick={() => { acao('REJEITAR', { motivo }); setShowRejeitarModal(false) }}
+              onClick={() => acao('REJEITAR_REABILITACAO', { motivo })}
+              className="px-4 py-2 text-sm font-medium text-white"
+              style={{ background: motivo.trim() ? '#DC2626' : '#94A3B8', borderRadius: '4px' }}
+            >
+              Confirmar Devolução
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal: Cancelar */}
+      {modal === 'CANCELAR' && (
+        <Modal title="Cancelar Solicitação" onClose={() => setModal(null)}>
+          <div className="mb-4 px-3 py-2 text-sm" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
+            Esta ação não pode ser desfeita. Os aprovadores já notificados serão avisados.
+          </div>
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>Motivo do cancelamento *</label>
+          <textarea
+            rows={3}
+            value={motivo}
+            onChange={e => setMotivo(e.target.value)}
+            className="w-full px-3 py-2 border text-sm outline-none"
+            style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
+            placeholder="Descreva o motivo..."
+          />
+          <div className="flex justify-end gap-2 mt-4">
+            <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>Voltar</button>
+            <button
+              disabled={!motivo.trim() || loading}
+              onClick={() => acao('CANCELAR', { motivo })}
+              className="px-4 py-2 text-sm font-medium text-white"
+              style={{ background: motivo.trim() ? '#DC2626' : '#94A3B8', borderRadius: '4px' }}
+            >
+              Confirmar cancelamento
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal: Aprovar */}
+      {modal === 'APROVAR' && (
+        <Modal title="Confirmar Aprovação" onClose={() => setModal(null)}>
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>Comentário (opcional)</label>
+          <textarea
+            rows={2}
+            value={comentario}
+            onChange={e => setComentario(e.target.value)}
+            className="w-full px-3 py-2 border text-sm outline-none"
+            style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
+            placeholder="Comentário opcional..."
+          />
+          <div className="flex justify-end gap-2 mt-4">
+            <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>Voltar</button>
+            <button
+              disabled={loading}
+              onClick={() => acao('APROVAR', { comentario })}
+              className="px-4 py-2 text-sm font-medium text-white"
+              style={{ background: '#16A34A', borderRadius: '4px' }}
+            >
+              Confirmar aprovação
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* Modal: Rejeitar */}
+      {modal === 'REJEITAR' && (
+        <Modal title="Rejeitar Solicitação" onClose={() => setModal(null)}>
+          <div className="mb-3 px-3 py-2 text-sm" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
+            O solicitante será notificado. A solicitação não poderá ser reativada — será necessário criar uma nova.
+          </div>
+          <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>Motivo da rejeição *</label>
+          <textarea
+            rows={3}
+            value={motivo}
+            onChange={e => setMotivo(e.target.value)}
+            className="w-full px-3 py-2 border text-sm outline-none"
+            style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
+            placeholder="Justificativa obrigatória..."
+          />
+          <div className="flex justify-end gap-2 mt-4">
+            <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>Voltar</button>
+            <button
+              disabled={!motivo.trim() || loading}
+              onClick={() => acao('REJEITAR', { motivo })}
               className="px-4 py-2 text-sm font-medium text-white"
               style={{ background: motivo.trim() ? '#DC2626' : '#94A3B8', borderRadius: '4px' }}
             >
@@ -218,10 +572,10 @@ export default function AcoesButtons({ solicitacaoId, status }: Props) {
   )
 }
 
-function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
+function Modal({ title, children, onClose, wide }: { title: string; children: React.ReactNode; onClose: () => void; wide?: boolean }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
-      <div className="bg-white w-full max-w-md p-6" style={{ borderRadius: '4px' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.4)' }}>
+      <div className="bg-white w-full my-4 p-6" style={{ borderRadius: '4px', maxWidth: wide ? '640px' : '480px' }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold" style={{ color: '#0F172A' }}>{title}</h3>
           <button onClick={onClose} className="text-sm" style={{ color: '#94A3B8' }}>✕</button>

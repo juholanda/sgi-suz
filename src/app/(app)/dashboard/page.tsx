@@ -4,6 +4,8 @@ import { StatusBadge } from '@/components/sgi/StatusBadge'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { tokens, StatusSolicitacao, ClasseNum } from '@/lib/tokens'
 import Link from 'next/link'
+import { formatDistanceToNow } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 async function getMetrics() {
   const [
@@ -44,9 +46,67 @@ async function getRecentSolicitacoes() {
   })
 }
 
+async function getTarefasAprovador() {
+  return prisma.solicitacao.findMany({
+    where: { status: { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO'] } },
+    include: {
+      equipamento: true,
+      area: { include: { planta: true } },
+      classe: true,
+      solicitante: { select: { nome: true } },
+    },
+    orderBy: { dataEnvio: 'asc' },
+    take: 10,
+  })
+}
+
+async function getTarefasSolicitante() {
+  const now = new Date()
+  const tresDias = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
+
+  const [paraExecutar, paraReabilitar, paraProrrogar] = await Promise.all([
+    prisma.solicitacao.findMany({
+      where: { status: 'EXECUCAO_AUTORIZADA' },
+      include: { equipamento: true, area: true, classe: true },
+      orderBy: { dataAprovacaoFinal: 'asc' },
+      take: 5,
+    }),
+    prisma.solicitacao.findMany({
+      where: {
+        status: 'DESABILITADO',
+        OR: [
+          { prazoMaximoAtingido: true },
+          { prazoPrevitoAtingido: true },
+          { periodoFim: { lte: tresDias } },
+        ],
+      },
+      include: { equipamento: true, area: true, classe: true },
+      orderBy: { periodoFim: 'asc' },
+      take: 5,
+    }),
+    prisma.solicitacao.findMany({
+      where: { status: 'DESABILITADO', prazoMaximoAtingido: true },
+      include: { equipamento: true, area: true, classe: true },
+      orderBy: { periodoFim: 'asc' },
+      take: 5,
+    }),
+  ])
+
+  return { paraExecutar, paraReabilitar, paraProrrogar }
+}
+
 export default async function DashboardPage() {
   const session = await auth()
+  const userId = session?.user?.id as string
+
+  const perfis = await prisma.usuarioPerfil.findMany({ where: { userId } })
+  const isAprovador = perfis.some(p => p.perfil === 'APROVADOR')
+  const isSolicitante = perfis.some(p => p.perfil === 'SOLICITANTE' || p.perfil === 'EXECUTANTE')
+
   const [metrics, solicitacoes] = await Promise.all([getMetrics(), getRecentSolicitacoes()])
+
+  const tarefasAprovador = isAprovador ? await getTarefasAprovador() : []
+  const tarefasSolicitante = isSolicitante ? await getTarefasSolicitante() : { paraExecutar: [], paraReabilitar: [], paraProrrogar: [] }
 
   const cards = [
     { label: 'Em Aprovação', value: metrics.emAprovacao, status: 'EM_APROVACAO' as StatusSolicitacao, href: '/solicitacoes?status=EM_APROVACAO' },
@@ -56,7 +116,7 @@ export default async function DashboardPage() {
   ]
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6 max-w-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -65,17 +125,183 @@ export default async function DashboardPage() {
             Bom dia, {session?.user?.name?.split(' ')[0]}. Visão geral dos intertravamentos.
           </p>
         </div>
-        <Link
-          href="/solicitacoes/nova"
-          className="px-4 py-2 text-sm font-medium text-white flex items-center gap-2"
-          style={{ background: '#0038A8', borderRadius: '4px' }}
-        >
-          + Nova Solicitação
-        </Link>
+        {isSolicitante && (
+          <Link
+            href="/solicitacoes/nova"
+            className="px-4 py-2 text-sm font-medium text-white hidden sm:flex items-center gap-2"
+            style={{ background: '#0038A8', borderRadius: '4px' }}
+          >
+            + Nova Solicitação
+          </Link>
+        )}
       </div>
 
-      {/* Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {/* ─── TAREFAS PENDENTES ─── */}
+      {isAprovador && tarefasAprovador.length > 0 && (
+        <section className="mb-6">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>
+              Aprovações Pendentes
+              <span className="ml-2 text-sm font-normal px-2 py-0.5 rounded-full" style={{ background: '#DBEAFE', color: '#1D4ED8' }}>
+                {tarefasAprovador.length}
+              </span>
+            </h2>
+            <Link href="/aprovacoes" className="text-xs" style={{ color: '#0038A8' }}>Ver todas →</Link>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {tarefasAprovador.map(s => {
+              const statusColors = tokens.colors.status[s.status as StatusSolicitacao]
+              const tempo = s.dataEnvio
+                ? formatDistanceToNow(s.dataEnvio, { locale: ptBR, addSuffix: true })
+                : '—'
+              return (
+                <div
+                  key={s.id}
+                  className="bg-white border p-4 flex flex-col gap-3"
+                  style={{ borderColor: '#BFDBFE', borderRadius: '4px', borderLeft: '4px solid #2563EB' }}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-mono text-sm font-bold" style={{ color: '#0038A8' }}>
+                          {s.equipamento.tag}
+                        </span>
+                        {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
+                      </div>
+                      <p className="text-xs" style={{ color: '#6B7280' }}>
+                        {s.area.nome} · {s.solicitante.nome}
+                      </p>
+                      <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>Aguardando {tempo}</p>
+                    </div>
+                    <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
+                  </div>
+                  <Link
+                    href={`/solicitacoes/${s.id}`}
+                    className="w-full text-center py-2 text-sm font-medium text-white"
+                    style={{ background: '#0038A8', borderRadius: '4px' }}
+                  >
+                    Analisar
+                  </Link>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
+
+      {isSolicitante && (
+        <>
+          {/* Executar desabilitação */}
+          {tarefasSolicitante.paraExecutar.length > 0 && (
+            <section className="mb-4">
+              <h2 className="text-base font-semibold mb-3" style={{ color: '#0F172A' }}>
+                Executar Desabilitação
+                <span className="ml-2 text-sm font-normal px-2 py-0.5 rounded-full" style={{ background: '#CFFAFE', color: '#0E7490' }}>
+                  {tarefasSolicitante.paraExecutar.length}
+                </span>
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {tarefasSolicitante.paraExecutar.map(s => (
+                  <div
+                    key={s.id}
+                    className="bg-white border p-4 flex items-center justify-between gap-3"
+                    style={{ borderColor: '#A5F3FC', borderRadius: '4px', borderLeft: '4px solid #0891B2' }}
+                  >
+                    <div>
+                      <span className="font-mono text-sm font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
+                      <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{s.area.nome}</p>
+                    </div>
+                    <Link
+                      href={`/solicitacoes/${s.id}`}
+                      className="shrink-0 px-3 py-2 text-sm font-medium text-white"
+                      style={{ background: '#0891B2', borderRadius: '4px' }}
+                    >
+                      Executar
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Reabilitar */}
+          {tarefasSolicitante.paraReabilitar.length > 0 && (
+            <section className="mb-4">
+              <h2 className="text-base font-semibold mb-3" style={{ color: '#0F172A' }}>
+                Reabilitar
+                <span className="ml-2 text-sm font-normal px-2 py-0.5 rounded-full" style={{ background: '#FEE2E2', color: '#B91C1C' }}>
+                  {tarefasSolicitante.paraReabilitar.length}
+                </span>
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {tarefasSolicitante.paraReabilitar.map(s => (
+                  <div
+                    key={s.id}
+                    className="bg-white border p-4 flex items-center justify-between gap-3"
+                    style={{ borderColor: '#FECACA', borderRadius: '4px', borderLeft: '4px solid #EF4444' }}
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
+                        {s.prazoMaximoAtingido && (
+                          <span className="text-xs px-1.5 py-0.5 font-medium" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
+                            ⚠ Prazo máximo
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{s.area.nome}</p>
+                    </div>
+                    <Link
+                      href={`/solicitacoes/${s.id}`}
+                      className="shrink-0 px-3 py-2 text-sm font-medium text-white"
+                      style={{ background: '#8B5CF6', borderRadius: '4px' }}
+                    >
+                      Reabilitar
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Prorrogar prazo */}
+          {tarefasSolicitante.paraProrrogar.length > 0 && (
+            <section className="mb-4">
+              <h2 className="text-base font-semibold mb-3" style={{ color: '#0F172A' }}>
+                Prorrogar Prazo
+                <span className="ml-2 text-sm font-normal px-2 py-0.5 rounded-full" style={{ background: '#FEF3C7', color: '#B45309' }}>
+                  {tarefasSolicitante.paraProrrogar.length}
+                </span>
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {tarefasSolicitante.paraProrrogar.map(s => (
+                  <div
+                    key={s.id}
+                    className="bg-white border p-4 flex items-center justify-between gap-3"
+                    style={{ borderColor: '#FDE68A', borderRadius: '4px', borderLeft: '4px solid #F59E0B' }}
+                  >
+                    <div>
+                      <span className="font-mono text-sm font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
+                      <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{s.area.nome}</p>
+                    </div>
+                    <Link
+                      href={`/solicitacoes/${s.id}`}
+                      className="shrink-0 px-3 py-2 text-sm font-medium"
+                      style={{ background: '#FEF3C7', color: '#B45309', borderRadius: '4px' }}
+                    >
+                      Prorrogar
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+        </>
+      )}
+
+      {/* ─── MÉTRICAS ─── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         {cards.map(card => {
           const colors = tokens.colors.status[card.status]
           return (
@@ -99,7 +325,7 @@ export default async function DashboardPage() {
       </div>
 
       {/* Alert Cards */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
+      <div className="grid grid-cols-2 gap-3 mb-6">
         <div className="bg-white p-4 border" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
           <p className="text-xs font-medium mb-1" style={{ color: '#475569' }}>Encerradas este mês</p>
           <p className="text-2xl font-bold" style={{ color: '#10B981' }}>{metrics.encerradasMes}</p>
@@ -127,7 +353,9 @@ export default async function DashboardPage() {
           <h2 className="text-sm font-semibold" style={{ color: '#0F172A' }}>Solicitações Ativas</h2>
           <Link href="/solicitacoes" className="text-xs" style={{ color: '#0038A8' }}>Ver todas →</Link>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Desktop table */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full">
             <thead>
               <tr style={{ background: '#F8FAFC' }}>
@@ -174,7 +402,39 @@ export default async function DashboardPage() {
             </tbody>
           </table>
         </div>
+
+        {/* Mobile cards */}
+        <div className="md:hidden divide-y" style={{ borderColor: '#F1F5F9' }}>
+          {solicitacoes.length === 0 ? (
+            <p className="text-center py-8 text-sm" style={{ color: '#94A3B8' }}>Nenhuma solicitação ativa</p>
+          ) : (
+            solicitacoes.map(s => (
+              <Link key={s.id} href={`/solicitacoes/${s.id}`} className="block p-4 hover:bg-gray-50">
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono text-sm font-semibold" style={{ color: '#0038A8' }}>{s.equipamento.tag}</span>
+                    {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
+                  </div>
+                  <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
+                </div>
+                <p className="text-xs" style={{ color: '#6B7280' }}>{s.protocolo} · {s.area.nome}</p>
+                <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>{s.solicitante.nome}</p>
+              </Link>
+            ))
+          )}
+        </div>
       </div>
+
+      {/* Mobile FAB for new solicitacao */}
+      {isSolicitante && (
+        <Link
+          href="/solicitacoes/nova"
+          className="sm:hidden fixed bottom-20 right-4 w-12 h-12 flex items-center justify-center text-white text-xl shadow-lg"
+          style={{ background: '#0038A8', borderRadius: '50%', zIndex: 40 }}
+        >
+          +
+        </Link>
+      )}
     </div>
   )
 }

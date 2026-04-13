@@ -9,6 +9,13 @@ datasource db {
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
 
+model Cargo {
+  id    String @id @default(cuid())
+  nome  String @unique
+
+  usuarios User[]
+}
+
 model User {
   id            String   @id @default(cuid())
   matricula     String   @unique
@@ -16,9 +23,11 @@ model User {
   email         String   @unique
   passwordHash  String
   ativo         Boolean  @default(true)
+  cargoId       String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
+  cargo         Cargo?    @relation(fields: [cargoId], references: [id])
   perfis        UsuarioPerfil[]
   solicitacoesCriadas    Solicitacao[] @relation("Solicitante")
   solicitacoesExecutadas Solicitacao[] @relation("Executante")

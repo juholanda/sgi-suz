@@ -2,16 +2,35 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
-const mobileNavItems = [
-  { href: '/dashboard',    label: 'Início',       icon: '⊞' },
-  { href: '/solicitacoes', label: 'Solicitações',  icon: '📋' },
-  { href: '/aprovacoes',   label: 'Aprovações',    icon: '✓' },
-  { href: '/execucao',     label: 'Execução',      icon: '⚙' },
-  { href: '/relatorios',   label: 'Relatórios',    icon: '📊' },
-]
+interface NavItem {
+  href: string
+  label: string
+  icon: string
+}
 
-export default function MobileNav() {
+interface Props {
+  isAprovador?: boolean
+  isSolicitante?: boolean
+}
+
+function Icon({ name }: { name: string }) {
+  return (
+    <span className="material-symbols-outlined" style={{ fontSize: 22, lineHeight: 1 }} aria-hidden="true">
+      {name}
+    </span>
+  )
+}
+
+export default function MobileNav({ isAprovador = false, isSolicitante = false }: Props) {
   const pathname = usePathname()
+
+  const items: NavItem[] = [
+    { href: '/dashboard',    label: 'Início',       icon: 'home' },
+    { href: '/solicitacoes', label: 'Solicitações', icon: 'description' },
+    ...(isAprovador   ? [{ href: '/aprovacoes', label: 'Aprovações', icon: 'task_alt' }] : []),
+    ...(isSolicitante ? [{ href: '/execucao',   label: 'Execução',   icon: 'engineering' }] : []),
+    { href: '/perfil',       label: 'Perfil',       icon: 'manage_accounts' },
+  ]
 
   return (
     <nav
@@ -23,19 +42,21 @@ export default function MobileNav() {
         paddingBottom: 'env(safe-area-inset-bottom)',
       }}
     >
-      {mobileNavItems.map(item => {
-        const active = pathname.startsWith(item.href)
+      {items.map(item => {
+        const active = pathname === item.href || pathname.startsWith(item.href + '/')
         return (
           <Link
             key={item.href}
             href={item.href}
-            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1"
-            style={{ color: active ? '#0038A8' : '#94A3B8' }}
+            className={`mobile-nav-item${active ? ' active' : ''}`}
           >
-            <span className="text-lg leading-none">{item.icon}</span>
+            <Icon name={item.icon} />
             <span className="text-[10px] font-medium leading-none">{item.label}</span>
             {active && (
-              <span className="absolute bottom-0 w-6 h-0.5" style={{ background: '#0038A8', borderRadius: '4px 4px 0 0' }} />
+              <span
+                className="absolute bottom-0 w-6 h-0.5"
+                style={{ background: '#0038A8', borderRadius: '4px 4px 0 0' }}
+              />
             )}
           </Link>
         )

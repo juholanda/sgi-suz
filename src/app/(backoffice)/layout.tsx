@@ -10,7 +10,7 @@ export default async function BackofficeLayout({ children }: { children: React.R
   return (
     <div className="flex min-h-screen" style={{ background: '#F0F4F8' }}>
       <BackofficeSidebar user={session.user ?? {}} />
-      <main className="flex-1 overflow-auto">
+      <main className="flex-1 overflow-auto pb-6">
         {children}
       </main>
     </div>
