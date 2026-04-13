@@ -191,11 +191,11 @@ export const TodosOsEstados: StoryObj = {
           <Input label="Tamanho pequeno" placeholder="Small" size="sm" />
         </div>
         <div>
-          <StateLabel label="md — 36px (padrão)" />
+          <StateLabel label="md — 40px (padrão)" />
           <Input label="Tamanho médio" placeholder="Medium (default)" size="md" />
         </div>
         <div>
-          <StateLabel label="lg — 40px" />
+          <StateLabel label="lg — 44px" />
           <Input label="Tamanho grande" placeholder="Large" size="lg" />
         </div>
       </Grid>
@@ -433,7 +433,7 @@ export const FormularioCompleto: StoryObj = {
           <button
             style={{
               flex: 1,
-              height: 36,
+              height: 40,
               background: '#0038A8',
               color: 'white',
               border: 'none',
@@ -449,7 +449,7 @@ export const FormularioCompleto: StoryObj = {
           <button
             style={{
               flex: 1,
-              height: 36,
+              height: 40,
               background: 'white',
               color: '#475569',
               border: '1.5px solid #E2E8F0',
@@ -481,7 +481,7 @@ export const TokensDeReferencia: StoryObj = {
       { classe: '.field-input--error:focus', desc: 'Ring: rgba(220,38,38,.12)' },
       { classe: '.field-input--success', desc: 'Border: #16A34A' },
       { classe: '.field-input:disabled', desc: 'bg: #F8FAFC, color: #94A3B8' },
-      { classe: 'select.field-input', desc: 'padding-right: 36px — espaço para o chevron' },
+      { classe: 'select.field-input', desc: 'padding-right: 36px — espaço para o chevron; height: 40px (herda do base)' },
       { classe: '.field-label', desc: 'Label do campo — 13px, medium, #374151' },
       { classe: '.field-required', desc: 'Asterisco obrigatório — vermelho #DC2626' },
       { classe: '.field-hint', desc: 'Texto de ajuda — 12px, #94A3B8' },

@@ -53,8 +53,8 @@ function MaterialIcon({ name, size = 16 }: { name: string; size?: number }) {
 
 const SIZE_HEIGHT: Record<InputSize, string> = {
   sm: '32px',
-  md: '36px',
-  lg: '40px',
+  md: '40px',
+  lg: '44px',
 }
 const SIZE_FONT: Record<InputSize, string> = {
   sm: '13px',
