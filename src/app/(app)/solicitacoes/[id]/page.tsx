@@ -80,8 +80,8 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
   const totalNiveis = aprovDesab.length
 
   return (
-    <>
-    <div className="p-4 md:p-6 max-w-4xl mx-auto">
+    <div className="flex flex-col" style={{ minHeight: '100%' }}>
+    <div className="flex-1 p-4 md:p-6 max-w-4xl mx-auto w-full">
       {/* Back nav / breadcrumb */}
       <div className="flex items-center gap-2 mb-5">
         {/* Mobile: back icon */}
@@ -318,7 +318,7 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
       aprovacoes={aprovDesab.map(a => ({ nivel: a.nivel, status: a.status, aprovador: a.aprovador }))}
       totalNiveis={totalNiveis}
     />
-    </>
+    </div>
   )
 }
 
