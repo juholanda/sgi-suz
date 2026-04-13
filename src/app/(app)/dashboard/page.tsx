@@ -160,7 +160,7 @@ export default async function DashboardPage() {
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <span
-                    className="material-symbols-outlined shrink-0 flex items-center justify-center"
+                    className="material-symbols-outlined shrink-0"
                     style={{
                       fontSize: 15,
                       color: colors.text,
@@ -169,6 +169,9 @@ export default async function DashboardPage() {
                       borderRadius: '6px',
                       width: 28,
                       height: 28,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
                     }}
                     aria-hidden="true"
                   >
@@ -185,7 +188,7 @@ export default async function DashboardPage() {
         <Link href="/solicitacoes?status=ENCERRADA" className="h-full">
           <div className="bg-white border cursor-pointer transition-shadow hover:shadow-sm h-full flex items-center justify-between px-3 py-2.5 gap-2" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
             <div className="flex items-center gap-2 min-w-0">
-              <span className="material-symbols-outlined shrink-0 flex items-center justify-center" style={{ fontSize: 15, color: '#10B981', lineHeight: 1, background: '#10B98114', borderRadius: '6px', width: 28, height: 28 }} aria-hidden="true">check_circle</span>
+              <span className="material-symbols-outlined shrink-0" style={{ fontSize: 15, color: '#10B981', lineHeight: 1, background: '#10B98114', borderRadius: '6px', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true">check_circle</span>
               <div className="text-xs leading-tight" style={{ color: '#64748B' }}>Encerradas/mês</div>
             </div>
             <div className="text-xl font-bold shrink-0" style={{ color: '#10B981' }}>{metrics.encerradasMes}</div>
@@ -201,7 +204,7 @@ export default async function DashboardPage() {
           }}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <span className="material-symbols-outlined shrink-0 flex items-center justify-center" style={{ fontSize: 15, color: metrics.violacoesSla > 0 ? '#DC2626' : '#10B981', lineHeight: 1, background: metrics.violacoesSla > 0 ? '#DC262614' : '#10B98114', borderRadius: '6px', width: 28, height: 28 }} aria-hidden="true">warning</span>
+            <span className="material-symbols-outlined shrink-0" style={{ fontSize: 15, color: metrics.violacoesSla > 0 ? '#DC2626' : '#10B981', lineHeight: 1, background: metrics.violacoesSla > 0 ? '#DC262614' : '#10B98114', borderRadius: '6px', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true">warning</span>
             <div className="text-xs leading-tight" style={{ color: metrics.violacoesSla > 0 ? '#DC2626' : '#64748B' }}>Violações SLA</div>
           </div>
           <div className="text-xl font-bold shrink-0" style={{ color: metrics.violacoesSla > 0 ? '#DC2626' : '#10B981' }}>{metrics.violacoesSla}</div>

@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { ClasseNum } from '@/lib/tokens'
+import { Input, Select, Textarea } from '@/components/design-system/Input'
+import { Button } from '@/components/design-system/Button'
 
 type Etapa = 1 | 2 | 3
 
@@ -349,32 +351,38 @@ export default function NovaSolicitacaoPage() {
 
         {/* Actions */}
         <div className="flex flex-col sm:flex-row gap-3">
-          <button
+          <Button
+            variant="primary"
+            size="md"
+            fullWidth
+            leadingIcon="description"
             onClick={() => router.push(`/solicitacoes/${submitted.id}`)}
-            className="btn btn-primary btn-md flex-1 justify-center"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>description</span>
             Ver solicitação
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            fullWidth
+            leadingIcon="add"
             onClick={() => {
               setSubmitted(null)
               setEtapa(1)
               setForm({ areaId: '', equipamentoId: '', executanteId: '', tipo: '', classeNumero: '', funcaoIntertravamento: '', motivoDesabilitacao: '', periodoInicio: '', periodoFim: '', medidasContingenciais: '', cienteRiscos: false })
               setAnexos([])
             }}
-            className="btn btn-secondary btn-md flex-1 justify-center"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
             Nova solicitação
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
+            size="md"
+            fullWidth
+            leadingIcon="list"
             onClick={() => router.push('/solicitacoes')}
-            className="btn btn-outline btn-md flex-1 justify-center"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>list</span>
             Minhas solicitações
-          </button>
+          </Button>
         </div>
       </div>
     )
@@ -420,33 +428,33 @@ export default function NovaSolicitacaoPage() {
             <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 1 — Identificação</h2>
 
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Área *" error={errors.areaId}>
-                <select
-                  className={`field-input ${errors.areaId ? 'field-input--error' : ''}`}
-                  value={form.areaId}
-                  onChange={e => set('areaId', e.target.value)}
-                  disabled={loadingAreas}
-                >
-                  <option value="">{loadingAreas ? 'Carregando...' : 'Selecione a área'}</option>
-                  {areas.map(a => (
-                    <option key={a.id} value={a.id}>{a.planta.nome} › {a.nome}</option>
-                  ))}
-                </select>
-              </Field>
+              <Select
+                label="Área *"
+                value={form.areaId}
+                onChange={e => set('areaId', e.target.value)}
+                disabled={loadingAreas}
+                variant={errors.areaId ? 'error' : 'default'}
+                errorMessage={errors.areaId}
+              >
+                <option value="">{loadingAreas ? 'Carregando...' : 'Selecione a área'}</option>
+                {areas.map(a => (
+                  <option key={a.id} value={a.id}>{a.planta.nome} › {a.nome}</option>
+                ))}
+              </Select>
 
-              <Field label="TAG do intertravamento *" error={errors.equipamentoId}>
-                <select
-                  className={`field-input ${errors.equipamentoId ? 'field-input--error' : ''}`}
-                  value={form.equipamentoId}
-                  onChange={e => set('equipamentoId', e.target.value)}
-                  disabled={!form.areaId}
-                >
-                  <option value="">{!form.areaId ? 'Selecione a área primeiro' : 'Selecione o equipamento'}</option>
-                  {equipamentos.map(eq => (
-                    <option key={eq.id} value={eq.id}>{eq.tag}</option>
-                  ))}
-                </select>
-              </Field>
+              <Select
+                label="TAG do intertravamento *"
+                value={form.equipamentoId}
+                onChange={e => set('equipamentoId', e.target.value)}
+                disabled={!form.areaId}
+                variant={errors.equipamentoId ? 'error' : 'default'}
+                errorMessage={errors.equipamentoId}
+              >
+                <option value="">{!form.areaId ? 'Selecione a área primeiro' : 'Selecione o equipamento'}</option>
+                {equipamentos.map(eq => (
+                  <option key={eq.id} value={eq.id}>{eq.tag}</option>
+                ))}
+              </Select>
             </div>
 
             {/* Info block da TAG — logo abaixo da seleção */}
@@ -474,47 +482,47 @@ export default function NovaSolicitacaoPage() {
 
             {/* Função + Tipo */}
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Função do intertravamento *" error={errors.funcaoIntertravamento}>
-                <select
-                  className={`field-input ${errors.funcaoIntertravamento ? 'field-input--error' : ''}`}
-                  value={form.funcaoIntertravamento}
-                  onChange={e => set('funcaoIntertravamento', e.target.value)}
-                >
-                  <option value="">Selecione a função</option>
-                  {FUNCOES_INTERTRAVAMENTO.map(f => (
-                    <option key={f} value={f}>{f}</option>
-                  ))}
-                </select>
-              </Field>
+              <Select
+                label="Função do intertravamento *"
+                value={form.funcaoIntertravamento}
+                onChange={e => set('funcaoIntertravamento', e.target.value)}
+                variant={errors.funcaoIntertravamento ? 'error' : 'default'}
+                errorMessage={errors.funcaoIntertravamento}
+              >
+                <option value="">Selecione a função</option>
+                {FUNCOES_INTERTRAVAMENTO.map(f => (
+                  <option key={f} value={f}>{f}</option>
+                ))}
+              </Select>
 
-              <Field label="Tipo de intertravamento *" error={errors.tipo}>
-                <select
-                  className={`field-input ${errors.tipo ? 'field-input--error' : ''}`}
-                  value={form.tipo}
-                  onChange={e => set('tipo', e.target.value)}
-                >
-                  <option value="">Selecione o tipo</option>
-                  <option value="FISICO">Físico</option>
-                  <option value="LOGICO">Lógico</option>
-                  <option value="DISPOSITIVO_SEGURANCA">Dispositivo de segurança</option>
-                </select>
-              </Field>
+              <Select
+                label="Tipo de intertravamento *"
+                value={form.tipo}
+                onChange={e => set('tipo', e.target.value)}
+                variant={errors.tipo ? 'error' : 'default'}
+                errorMessage={errors.tipo}
+              >
+                <option value="">Selecione o tipo</option>
+                <option value="FISICO">Físico</option>
+                <option value="LOGICO">Lógico</option>
+                <option value="DISPOSITIVO_SEGURANCA">Dispositivo de segurança</option>
+              </Select>
             </div>
 
-            <Field label="Executante *" error={errors.executanteId}>
-              <select
-                className={`field-input ${errors.executanteId ? 'field-input--error' : ''}`}
-                value={form.executanteId}
-                onChange={e => set('executanteId', e.target.value)}
-              >
-                <option value="">Selecione o executante</option>
-                {executantes.map(u => (
-                  <option key={u.id} value={u.id}>
-                    {u.nome} ({u.matricula}){u.cargo ? ` — ${u.cargo.nome}` : ''}
-                  </option>
-                ))}
-              </select>
-            </Field>
+            <Select
+              label="Executante *"
+              value={form.executanteId}
+              onChange={e => set('executanteId', e.target.value)}
+              variant={errors.executanteId ? 'error' : 'default'}
+              errorMessage={errors.executanteId}
+            >
+              <option value="">Selecione o executante</option>
+              {executantes.map(u => (
+                <option key={u.id} value={u.id}>
+                  {u.nome} ({u.matricula}){u.cargo ? ` — ${u.cargo.nome}` : ''}
+                </option>
+              ))}
+            </Select>
 
             {/* Seletor de Classe — RF-012: Classe 5 desabilitada */}
             <Field label="Classe *" error={errors.classeNumero}>
@@ -569,33 +577,33 @@ export default function NovaSolicitacaoPage() {
               )}
             </Field>
 
-            <Field label="Motivo da desabilitação *" error={errors.motivoDesabilitacao}>
-              <textarea
-                className={`field-input ${errors.motivoDesabilitacao ? 'field-input--error' : ''}`}
-                rows={3}
-                placeholder="Descreva o motivo técnico da desabilitação..."
-                value={form.motivoDesabilitacao}
-                onChange={e => set('motivoDesabilitacao', e.target.value)}
-              />
-            </Field>
+            <Textarea
+              label="Motivo da desabilitação *"
+              rows={3}
+              placeholder="Descreva o motivo técnico da desabilitação..."
+              value={form.motivoDesabilitacao}
+              onChange={e => set('motivoDesabilitacao', e.target.value)}
+              variant={errors.motivoDesabilitacao ? 'error' : 'default'}
+              errorMessage={errors.motivoDesabilitacao}
+            />
 
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Período início *" error={errors.periodoInicio}>
-                <input
-                  type="datetime-local"
-                  className={`field-input ${errors.periodoInicio ? 'field-input--error' : ''}`}
-                  value={form.periodoInicio}
-                  onChange={e => set('periodoInicio', e.target.value)}
-                />
-              </Field>
-              <Field label="Período fim *" error={errors.periodoFim}>
-                <input
-                  type="datetime-local"
-                  className={`field-input ${errors.periodoFim ? 'field-input--error' : ''}`}
-                  value={form.periodoFim}
-                  onChange={e => set('periodoFim', e.target.value)}
-                />
-              </Field>
+              <Input
+                label="Período início *"
+                type="datetime-local"
+                value={form.periodoInicio}
+                onChange={e => set('periodoInicio', e.target.value)}
+                variant={errors.periodoInicio ? 'error' : 'default'}
+                errorMessage={errors.periodoInicio}
+              />
+              <Input
+                label="Período fim *"
+                type="datetime-local"
+                value={form.periodoFim}
+                onChange={e => set('periodoFim', e.target.value)}
+                variant={errors.periodoFim ? 'error' : 'default'}
+                errorMessage={errors.periodoFim}
+              />
             </div>
 
             {form.periodoInicio && form.periodoFim && new Date(form.periodoFim) > new Date(form.periodoInicio) && (
@@ -617,19 +625,17 @@ export default function NovaSolicitacaoPage() {
               <span><strong>Atenção:</strong> Descreva as medidas que garantirão a segurança durante o período de desabilitação.</span>
             </div>
 
-            <Field label="Medidas Preventivas / Contingenciais *" error={errors.medidasContingenciais}>
-              <textarea
-                className={`field-input ${errors.medidasContingenciais ? 'field-input--error' : ''}`}
-                rows={6}
-                placeholder="Exemplos:&#10;• Monitoramento manual periódico&#10;• Isolamento de área&#10;• Sinalização adicional&#10;• Procedimentos operacionais alternativos"
-                value={form.medidasContingenciais}
-                onChange={e => set('medidasContingenciais', e.target.value)}
-                maxLength={1000}
-              />
-              <div className="text-right text-xs mt-1" style={{ color: '#94A3B8' }}>
-                {form.medidasContingenciais.length}/1000 caracteres
-              </div>
-            </Field>
+            <Textarea
+              label="Medidas Preventivas / Contingenciais *"
+              rows={6}
+              placeholder={'Exemplos:\n• Monitoramento manual periódico\n• Isolamento de área\n• Sinalização adicional\n• Procedimentos operacionais alternativos'}
+              value={form.medidasContingenciais}
+              onChange={e => set('medidasContingenciais', e.target.value)}
+              maxLength={1000}
+              variant={errors.medidasContingenciais ? 'error' : 'default'}
+              errorMessage={errors.medidasContingenciais}
+              hint={`${form.medidasContingenciais.length}/1000 caracteres`}
+            />
 
             {/* Upload de anexos — RF-016 */}
             <div>
@@ -746,49 +752,49 @@ export default function NovaSolicitacaoPage() {
         <div className="flex items-center justify-between mt-6 pt-5 border-t" style={{ borderColor: '#E2E8F0' }}>
           <div className="flex gap-2">
             {etapa > 1 && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="md"
                 onClick={() => setEtapa(e => (e - 1) as Etapa)}
-                className="flex items-center gap-1.5 px-4 py-2 text-sm border"
-                style={{ borderColor: '#E2E8F0', borderRadius: '6px', color: '#475569' }}
+                leadingIcon="arrow_back"
               >
-                <Icon name="arrow_back" size={16} /> Anterior
-              </button>
+                Anterior
+              </Button>
             )}
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="md"
               onClick={handleSalvarRascunho}
               disabled={loading}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm border"
-              style={{ borderColor: '#E2E8F0', borderRadius: '6px', color: '#475569' }}
+              leadingIcon="save"
             >
-              <Icon name="save" size={16} /> Salvar rascunho
-            </button>
+              Salvar rascunho
+            </Button>
           </div>
           {etapa < 3 ? (
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="md"
               onClick={avancar}
-              className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#0038A8', borderRadius: '6px' }}
+              trailingIcon="arrow_forward"
             >
-              Próximo: {ETAPAS[etapa].label} <Icon name="arrow_forward" size={16} />
-            </button>
+              Próximo: {ETAPAS[etapa].label}
+            </Button>
           ) : (
-            <button
+            <Button
               type="button"
+              variant="primary"
+              size="md"
               onClick={handleEnviar}
-              disabled={!form.cienteRiscos || loading}
-              className="flex items-center gap-1.5 px-5 py-2 text-sm font-medium text-white"
-              style={{
-                background: form.cienteRiscos ? '#0038A8' : '#94A3B8',
-                borderRadius: '6px',
-                cursor: form.cienteRiscos ? 'pointer' : 'not-allowed',
-              }}
+              disabled={!form.cienteRiscos}
+              loading={loading}
+              leadingIcon={loading ? undefined : 'send'}
             >
-              <Icon name="send" size={16} />
               {loading ? 'Enviando...' : 'Enviar Solicitação'}
-            </button>
+            </Button>
           )}
         </div>
       </div>

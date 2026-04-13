@@ -2,6 +2,8 @@
 import { useState } from 'react'
 import { signIn } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { Input } from '@/components/design-system/Input'
+import { Button } from '@/components/design-system/Button'
 
 function Icon({ name, size = 20 }: { name: string; size?: number }) {
   return (
@@ -74,64 +76,53 @@ export default function LoginPage() {
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label htmlFor="matricula" className="field-label">Matrícula</label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#94A3B8', display: 'flex', alignItems: 'center' }}>
-              <Icon name="badge" size={17} />
-            </span>
-            <input
-              id="matricula" type="text" value={matricula}
-              onChange={e => { setMatricula(e.target.value); setErrorMatricula('') }}
-              placeholder="Ex.: 000001" required autoComplete="username"
-              className={`field-input w-full${errorMatricula ? ' field-input--error' : ''}`}
-              style={{ paddingLeft: '38px' }}
-            />
-          </div>
-          {errorMatricula && (
-            <p className="field-error-msg">
-              <span className="material-symbols-outlined select-none" style={{ fontSize: 13, lineHeight: 1 }} aria-hidden="true">error</span>
-              {errorMatricula}
-            </p>
-          )}
-        </div>
+        <Input
+          id="matricula"
+          label="Matrícula"
+          type="text"
+          value={matricula}
+          onChange={e => { setMatricula(e.target.value); setErrorMatricula('') }}
+          placeholder="Ex.: 000001"
+          required
+          autoComplete="username"
+          leadingIcon="badge"
+          variant={errorMatricula ? 'error' : 'default'}
+          errorMessage={errorMatricula}
+        />
 
-        <div>
-          <label htmlFor="senha" className="field-label">Senha</label>
-          <div className="relative">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: '#94A3B8', display: 'flex', alignItems: 'center' }}>
-              <Icon name="lock" size={17} />
-            </span>
-            <input
-              id="senha" type={showSenha ? 'text' : 'password'} value={senha}
-              onChange={e => { setSenha(e.target.value); setErrorSenha('') }}
-              placeholder="Digite sua senha" required autoComplete="current-password"
-              className={`field-input w-full${errorSenha ? ' field-input--error' : ''}`}
-              style={{ paddingLeft: '38px', paddingRight: '40px' }}
-            />
-            <button type="button" onClick={() => setShowSenha(v => !v)}
-              className="absolute right-3 top-1/2 -translate-y-1/2"
+        <Input
+          id="senha"
+          label="Senha"
+          type={showSenha ? 'text' : 'password'}
+          value={senha}
+          onChange={e => { setSenha(e.target.value); setErrorSenha('') }}
+          placeholder="Digite sua senha"
+          required
+          autoComplete="current-password"
+          leadingIcon="lock"
+          variant={errorSenha ? 'error' : 'default'}
+          errorMessage={errorSenha}
+          trailingElement={
+            <button
+              type="button"
+              onClick={() => setShowSenha(v => !v)}
+              tabIndex={-1}
+              aria-label={showSenha ? 'Ocultar senha' : 'Mostrar senha'}
               style={{ color: '#94A3B8', display: 'flex', alignItems: 'center', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-              tabIndex={-1} aria-label={showSenha ? 'Ocultar senha' : 'Mostrar senha'}>
+            >
               <Icon name={showSenha ? 'visibility_off' : 'visibility'} size={17} />
             </button>
-          </div>
-          {errorSenha && (
-            <p className="field-error-msg">
-              <span className="material-symbols-outlined select-none" style={{ fontSize: 13, lineHeight: 1 }} aria-hidden="true">error</span>
-              {errorSenha}
-            </p>
-          )}
-        </div>
+          }
+        />
 
         <div className="flex items-center justify-between">
           <label className="flex items-center gap-2 cursor-pointer select-none">
             <input type="checkbox" checked={lembrar} onChange={e => setLembrar(e.target.checked)} className="w-4 h-4 rounded cursor-pointer" style={{ accentColor: '#0038A8' }} />
             <span className="text-sm" style={{ color: '#374151' }}>Lembrar-me</span>
           </label>
-          <button type="button" onClick={() => setForgotMsg(v => !v)} className="text-sm" style={{ color: '#0038A8', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          <Button type="button" variant="link" size="sm" onClick={() => setForgotMsg(v => !v)}>
             Esqueci a senha
-          </button>
+          </Button>
         </div>
 
         {forgotMsg && (
@@ -141,17 +132,17 @@ export default function LoginPage() {
           </div>
         )}
 
-        <button type="submit" disabled={loading}
-          className="w-full flex items-center justify-center gap-2 py-2.5 text-sm text-white transition-all mt-2"
-          style={{ background: loading ? '#94A3B8' : '#0038A8', borderRadius: '8px', cursor: loading ? 'not-allowed' : 'pointer', border: 'none', fontWeight: 500 }}
-          onMouseEnter={e => !loading && ((e.currentTarget as HTMLButtonElement).style.background = '#002D8A')}
-          onMouseLeave={e => !loading && ((e.currentTarget as HTMLButtonElement).style.background = '#0038A8')}>
-          {loading ? (
-            <><span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />Entrando...</>
-          ) : (
-            <><Icon name="login" size={17} />Entrar</>
-          )}
-        </button>
+        <Button
+          type="submit"
+          variant="primary"
+          size="md"
+          fullWidth
+          loading={loading}
+          leadingIcon={loading ? undefined : 'login'}
+          className="mt-2"
+        >
+          {loading ? 'Entrando...' : 'Entrar'}
+        </Button>
       </form>
 
       <p className="text-xs text-center mt-8" style={{ color: '#94A3B8' }}>

@@ -16,6 +16,8 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
   trailingIcon?: string
   /** Show character counter */
   maxLength?: number
+  /** Custom trailing element (e.g. show/hide password button) */
+  trailingElement?: React.ReactNode
 }
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -130,6 +132,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     leadingIcon,
     trailingIcon,
     maxLength,
+    trailingElement,
     className = '',
     id: idProp,
     value,
@@ -145,12 +148,12 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
     variant === 'error' ? ' field-input--error' :
     variant === 'success' ? ' field-input--success' : ''
 
-  const hasIcon = leadingIcon || trailingIcon
+  const hasIcon = leadingIcon || trailingIcon || trailingElement
   const inputStyle: React.CSSProperties = {
     height: SIZE_HEIGHT[size],
     fontSize: SIZE_FONT[size],
     padding: hasIcon
-      ? `0 ${trailingIcon ? '36px' : '12px'} 0 ${leadingIcon ? '36px' : '12px'}`
+      ? `0 ${(trailingIcon || trailingElement) ? '40px' : '12px'} 0 ${leadingIcon ? '36px' : '12px'}`
       : SIZE_PADDING[size],
   }
 
@@ -238,6 +241,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
             }}
           >
             <MaterialIcon name={trailingIcon} size={16} />
+          </span>
+        )}
+        {trailingElement && (
+          <span
+            style={{
+              position: 'absolute',
+              right: 10,
+              top: '50%',
+              transform: 'translateY(-50%)',
+              display: 'flex',
+              alignItems: 'center',
+            }}
+          >
+            {trailingElement}
           </span>
         )}
       </div>

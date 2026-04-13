@@ -127,6 +127,13 @@ async function main() {
   await prisma.usuarioPerfil.create({
     data: { userId: solicitante.id, perfil: 'EXECUTANTE', plantaId: planta.id, areaId: areaFibras.id },
   }).catch(() => {})
+  // Demo: João também acessa Limeira (segunda planta) como Solicitante e Executante
+  await prisma.usuarioPerfil.create({
+    data: { userId: solicitante.id, perfil: 'SOLICITANTE', plantaId: plantaLimeira.id, areaId: areaLimeira.id },
+  }).catch(() => {})
+  await prisma.usuarioPerfil.create({
+    data: { userId: solicitante.id, perfil: 'EXECUTANTE', plantaId: plantaLimeira.id, areaId: areaLimeira.id },
+  }).catch(() => {})
 
   // Executante
   const executante = await prisma.user.upsert({
