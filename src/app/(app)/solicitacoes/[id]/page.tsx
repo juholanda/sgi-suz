@@ -19,7 +19,19 @@ async function getSolicitacao(id: string) {
       solicitante: { select: { nome: true, matricula: true, email: true } },
       executante:  { select: { nome: true, matricula: true } },
       aprovacoes: {
-        include: { aprovador: { select: { nome: true, matricula: true } } },
+        include: {
+          aprovador: {
+            select: {
+              nome: true,
+              matricula: true,
+              perfis: {
+                where: { perfil: { in: ['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'] } },
+                select: { perfil: true },
+                take: 1,
+              },
+            },
+          },
+        },
         orderBy: { nivel: 'asc' },
       },
       checklists: { orderBy: { numero: 'asc' } },
@@ -135,6 +147,73 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
         )}
       </div>
 
+      {/* ── Aprovadores — sempre visível para todos ── */}
+      <div className="bg-white border mb-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+        <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: '#E2E8F0' }}>
+          <h3 className="text-xs font-semibold uppercase tracking-wide flex items-center gap-2" style={{ color: '#6B7280' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 14, lineHeight: 1 }}>task_alt</span>
+            Aprovadores — Desabilitação
+          </h3>
+          {aprovDesab.length > 0 && (
+            <span className="text-xs font-medium" style={{ color: '#475569' }}>
+              {aprovDesab.filter(a => a.status === 'APROVADO').length} / {totalNiveis} aprovaram
+            </span>
+          )}
+        </div>
+
+        {aprovDesab.length === 0 ? (
+          <div className="px-4 py-3 flex items-center gap-2 text-sm" style={{ color: '#94A3B8' }}>
+            <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>info</span>
+            Nenhum aprovador configurado para esta classe/planta.
+          </div>
+        ) : (
+          <div className="divide-y" style={{ borderColor: '#F1F5F9' }}>
+            {aprovDesab.map(a => {
+              const perfil = (a.aprovador as any).perfis?.[0]?.perfil
+              const PERFIL_LABELS: Record<string, string> = { APROVADOR: 'Aprovador', GESTOR_SMS: 'Gestor SMS', ADMINISTRADOR: 'Administrador' }
+              const statusIcon = a.status === 'APROVADO' ? 'check_circle' : a.status === 'REJEITADO' ? 'cancel' : a.status === 'PENDENTE' ? 'pending' : 'schedule'
+              const statusColor = a.status === 'APROVADO' ? '#16A34A' : a.status === 'REJEITADO' ? '#DC2626' : a.status === 'PENDENTE' ? '#2563EB' : '#94A3B8'
+              const statusLabel = a.status === 'APROVADO' ? 'Aprovado' : a.status === 'REJEITADO' ? 'Rejeitado' : a.status === 'PENDENTE' ? 'Aguardando resposta' : 'Aguardando fila'
+              return (
+                <div key={a.id} className="flex items-center gap-3 px-4 py-3">
+                  {/* Nível badge */}
+                  <div
+                    className="w-7 h-7 flex items-center justify-center text-xs font-bold rounded-full shrink-0"
+                    style={{ background: a.status === 'APROVADO' ? '#D1FAE5' : a.status === 'PENDENTE' ? '#DBEAFE' : '#F1F5F9', color: statusColor }}
+                  >
+                    {a.nivel}
+                  </div>
+                  {/* Identity */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium" style={{ color: '#0F172A' }}>{a.aprovador.nome}</span>
+                      <span className="font-mono text-xs" style={{ color: '#94A3B8' }}>{a.aprovador.matricula}</span>
+                      {perfil && (
+                        <span className="text-xs px-1.5 py-0.5 font-medium" style={{ background: '#F1F5F9', color: '#374151', borderRadius: '4px' }}>
+                          {PERFIL_LABELS[perfil] ?? perfil}
+                        </span>
+                      )}
+                    </div>
+                    {a.comentario && <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{a.comentario}</p>}
+                    {a.motivoRejeicao && <p className="text-xs mt-0.5" style={{ color: '#B91C1C' }}>Motivo: {a.motivoRejeicao}</p>}
+                  </div>
+                  {/* Status */}
+                  <div className="shrink-0 flex flex-col items-end gap-1">
+                    <span className="flex items-center gap-1 text-xs font-medium" style={{ color: statusColor }}>
+                      <span className="material-symbols-outlined" style={{ fontSize: 14, lineHeight: 1 }}>{statusIcon}</span>
+                      {statusLabel}
+                    </span>
+                    {a.respondidaEm && (
+                      <span className="text-xs" style={{ color: '#94A3B8' }}>{fmt(a.respondidaEm)}</span>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+
       {/* Grid detalhes */}
       <div className="grid grid-cols-2 gap-4 mb-4">
         {/* Dados do intertravamento */}
@@ -179,54 +258,6 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
         </div>
       </div>
 
-      {/* Aprovações com progresso — RF-035 */}
-      {aprovDesab.length > 0 && (
-        <div className="bg-white border p-4 mb-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>
-              Aprovações — Desabilitação
-            </h3>
-            <span className="text-xs" style={{ color: '#475569' }}>
-              {aprovDesab.filter(a => a.status === 'APROVADO').length} de {totalNiveis} aprovadores
-            </span>
-          </div>
-          <div className="flex flex-col gap-2">
-            {aprovDesab.map(a => (
-              <div
-                key={a.id}
-                className="flex items-center gap-3 p-3"
-                style={{ background: '#F8FAFC', borderRadius: '4px' }}
-              >
-                <div
-                  className="w-6 h-6 flex items-center justify-center text-xs font-bold rounded-full shrink-0"
-                  style={{
-                    background: a.status === 'APROVADO' ? '#D1FAE5' : a.status === 'REJEITADO' ? '#FEE2E2' : a.status === 'PENDENTE' ? '#DBEAFE' : '#F1F5F9',
-                    color:      a.status === 'APROVADO' ? '#065F46' : a.status === 'REJEITADO' ? '#B91C1C' : a.status === 'PENDENTE' ? '#1D4ED8' : '#94A3B8',
-                  }}
-                >
-                  {a.status === 'APROVADO' ? '✓' : a.status === 'REJEITADO' ? '✕' : a.nivel}
-                </div>
-                <div className="flex-1">
-                  <span className="text-sm font-medium" style={{ color: '#0F172A' }}>{a.aprovador.nome}</span>
-                  <span className="text-xs ml-2 font-mono" style={{ color: '#94A3B8' }}>{a.aprovador.matricula}</span>
-                  {a.comentario && <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>{a.comentario}</p>}
-                  {a.motivoRejeicao && <p className="text-xs mt-0.5" style={{ color: '#B91C1C' }}>Motivo: {a.motivoRejeicao}</p>}
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-xs px-2 py-0.5 font-medium" style={{
-                    borderRadius: '4px',
-                    background: a.status === 'APROVADO' ? '#D1FAE5' : a.status === 'REJEITADO' ? '#FEE2E2' : a.status === 'PENDENTE' ? '#DBEAFE' : '#F1F5F9',
-                    color:      a.status === 'APROVADO' ? '#065F46' : a.status === 'REJEITADO' ? '#B91C1C' : a.status === 'PENDENTE' ? '#1D4ED8' : '#94A3B8',
-                  }}>
-                    {a.status === 'APROVADO' ? 'Aprovado' : a.status === 'REJEITADO' ? 'Rejeitado' : a.status === 'PENDENTE' ? 'Aguardando resposta' : 'Aguardando fila'}
-                  </span>
-                  {a.respondidaEm && <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>{fmt(a.respondidaEm)}</p>}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Checklists */}
       {s.checklists.length > 0 && (
