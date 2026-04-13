@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { StatusSolicitacao } from '@/lib/tokens'
+import { ActionFooter } from '@/components/design-system/ActionFooter'
 
 interface ChecklistItemState {
   numero: number
@@ -117,21 +118,23 @@ export default function AcoesButtons({
     <>
       {/* Progresso de aprovação — RF-035 */}
       {status === 'EM_APROVACAO' && totalNiveis > 0 && (
-        <div className="flex items-center gap-2 mb-4 px-4 py-2.5 text-sm" style={{ background: '#DBEAFE', borderRadius: '4px', color: '#1D4ED8' }}>
-          <span className="font-medium">{aprovadas} de {totalNiveis} aprovadores concluíram</span>
-          <div className="flex gap-1 ml-2">
-            {Array.from({ length: totalNiveis }, (_, i) => (
-              <div
-                key={i}
-                className="w-2 h-2 rounded-full"
-                style={{ background: i < aprovadas ? '#16A34A' : '#BFDBFE' }}
-              />
-            ))}
+        <div className="px-4 md:px-6 pb-2 max-w-4xl mx-auto w-full">
+          <div className="flex items-center gap-2 px-4 py-2.5 text-sm" style={{ background: '#DBEAFE', borderRadius: '4px', color: '#1D4ED8' }}>
+            <span className="font-medium">{aprovadas} de {totalNiveis} aprovadores concluíram</span>
+            <div className="flex gap-1 ml-2">
+              {Array.from({ length: totalNiveis }, (_, i) => (
+                <div
+                  key={i}
+                  className="w-2 h-2 rounded-full"
+                  style={{ background: i < aprovadas ? '#16A34A' : '#BFDBFE' }}
+                />
+              ))}
+            </div>
           </div>
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 mb-6">
+      <ActionFooter>
 
         {/* Aprovar */}
         {canAprovar && (
@@ -229,7 +232,7 @@ export default function AcoesButtons({
             Cancelar solicitação
           </button>
         )}
-      </div>
+      </ActionFooter>
 
       {/* ── Modal: Checklist Desabilitação ─── RF-053, RF-054, RF-056 */}
       {modal === 'CHECKLIST_DESAB' && (

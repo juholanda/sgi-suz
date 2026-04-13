@@ -7,6 +7,7 @@ import { StatusSolicitacao, ClasseNum, STATUS_LABELS } from '@/lib/tokens'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import AcoesButtons from './AcoesButtons'
+import Link from 'next/link'
 
 async function getSolicitacao(id: string) {
   return prisma.solicitacao.findUnique({
@@ -79,16 +80,36 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
   const totalNiveis = aprovDesab.length
 
   return (
-    <div className="p-6 max-w-4xl">
+    <>
+    <div className="p-4 md:p-6 max-w-4xl mx-auto">
+      {/* Back nav / breadcrumb */}
+      <div className="flex items-center gap-2 mb-5">
+        {/* Mobile: back icon */}
+        <Link
+          href="/solicitacoes"
+          className="md:hidden flex items-center justify-center w-9 h-9 shrink-0"
+          style={{ background: '#F1F5F9', borderRadius: '8px', color: '#475569' }}
+          aria-label="Voltar"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 20, lineHeight: 1 }}>arrow_back</span>
+        </Link>
+        {/* Desktop: breadcrumb */}
+        <nav className="hidden md:flex items-center gap-1 text-sm" aria-label="Breadcrumb">
+          <Link href="/solicitacoes" style={{ color: '#0038A8' }}>Solicitações</Link>
+          <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1, color: '#94A3B8' }}>chevron_right</span>
+          <span className="font-mono font-medium" style={{ color: '#0F172A' }}>{s.protocolo}</span>
+        </nav>
+      </div>
+
       {/* Header */}
       <div className="flex items-start gap-4 mb-6">
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-1">
+          <div className="flex flex-wrap items-center gap-3 mb-1">
             <h1 className="text-xl font-bold font-mono" style={{ color: '#0F172A' }}>{s.protocolo}</h1>
             <StatusBadge status={s.status as StatusSolicitacao} />
             {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} showPrazo />}
           </div>
-          <div className="flex items-center gap-3 text-sm" style={{ color: '#475569' }}>
+          <div className="flex flex-wrap items-center gap-3 text-sm" style={{ color: '#475569' }}>
             <span>{s.area.planta.nome} › {s.area.nome}</span>
             <span>·</span>
             <span className="font-mono font-medium" style={{ color: '#0038A8' }}>{s.equipamento.tag}</span>
@@ -99,7 +120,7 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
 
         {/* SLA flags */}
         {(s.prazoPrevitoAtingido || s.prazoMaximoAtingido) && (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1 shrink-0">
             {s.prazoMaximoAtingido && (
               <span className="text-xs px-2 py-1 font-medium" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
                 ⚠ Prazo máximo atingido
@@ -113,18 +134,6 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
           </div>
         )}
       </div>
-
-      {/* Ações (client component) */}
-      <AcoesButtons
-        solicitacaoId={s.id}
-        status={s.status as StatusSolicitacao}
-        isAprovador={isAprovador}
-        isSolicitante={isSolicitante}
-        isExecutante={isExecutante}
-        tipo={s.tipo}
-        aprovacoes={aprovDesab.map(a => ({ nivel: a.nivel, status: a.status, aprovador: a.aprovador }))}
-        totalNiveis={totalNiveis}
-      />
 
       {/* Grid detalhes */}
       <div className="grid grid-cols-2 gap-4 mb-4">
@@ -297,6 +306,19 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
         )}
       </div>
     </div>
+
+    {/* Ações — sticky footer (client component) */}
+    <AcoesButtons
+      solicitacaoId={s.id}
+      status={s.status as StatusSolicitacao}
+      isAprovador={isAprovador}
+      isSolicitante={isSolicitante}
+      isExecutante={isExecutante}
+      tipo={s.tipo}
+      aprovacoes={aprovDesab.map(a => ({ nivel: a.nivel, status: a.status, aprovador: a.aprovador }))}
+      totalNiveis={totalNiveis}
+    />
+    </>
   )
 }
 
