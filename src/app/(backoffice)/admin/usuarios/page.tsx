@@ -227,21 +227,21 @@ export default function UsuariosPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Matrícula *</label>
+                <label className="field-label">Matrícula <span className="field-required">*</span></label>
                 <input
                   value={form.matricula}
                   onChange={e => setForm(f => ({ ...f, matricula: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  className="field-input"
                   placeholder="Ex: 12345"
                   autoFocus
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Cargo</label>
+                <label className="field-label">Cargo</label>
                 <select
                   value={form.cargoId}
                   onChange={e => setForm(f => ({ ...f, cargoId: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white' }}
+                  className="field-input"
                 >
                   <option value="">Sem cargo</option>
                   {cargos.map(c => (
@@ -252,46 +252,46 @@ export default function UsuariosPage() {
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Nome completo *</label>
+              <label className="field-label">Nome completo <span className="field-required">*</span></label>
               <input
                 value={form.nome}
                 onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                className="field-input"
                 placeholder="Ex: João da Silva"
               />
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>E-mail *</label>
+              <label className="field-label">E-mail <span className="field-required">*</span></label>
               <input
                 type="email"
                 value={form.email}
                 onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                className="field-input"
                 placeholder="Ex: joao.silva@empresa.com"
               />
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>
-                Senha {modal.editing ? '(deixe em branco para não alterar)' : '*'}
+              <label className="field-label">
+                Senha {modal.editing ? <span className="field-hint" style={{ display: 'inline' }}>(deixe em branco para não alterar)</span> : <span className="field-required">*</span>}
               </label>
               <input
                 type="password"
                 value={form.senha}
                 onChange={e => setForm(f => ({ ...f, senha: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                className="field-input"
                 placeholder={modal.editing ? 'Nova senha (opcional)' : 'Senha inicial'}
               />
             </div>
 
             {!modal.editing && (
               <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Perfil inicial</label>
+                <label className="field-label">Perfil inicial</label>
                 <select
                   value={form.perfil}
                   onChange={e => setForm(f => ({ ...f, perfil: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white' }}
+                  className="field-input"
                 >
                   <option value="">Sem perfil</option>
                   {PERFIS.map(p => (

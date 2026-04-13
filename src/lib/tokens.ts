@@ -1,3 +1,22 @@
+/**
+ * tokens.ts — fonte de verdade das cores de badge/status/classe
+ *
+ * Lógica de cores por status (semântica operacional):
+ *  · Neutro (inativo):     cinza   → RASCUNHO, CANCELADA
+ *  · Atenção (aguarda):    âmbar   → EM_APROVACAO, EXTENSAO_EM_ANALISE
+ *  · Em andamento:         azul    → EXECUCAO_AUTORIZADA, EM_EXECUCAO
+ *  · Alerta (IT desabilitado): laranja → DESABILITADO
+ *  · Retorno à segurança:  teal    → EM_REABILITACAO, EM_VALIDACAO_DA_REABILITACAO
+ *  · Concluído com sucesso: verde  → ENCERRADA
+ *  · Terminal negativo:    vermelho → REJEITADA
+ *
+ * Lógica de cores por classe de severidade (escala cromática):
+ *  · Classe 1 — Baixo risco:     azul  (informacional, seguro)
+ *  · Classe 2 — Risco moderado:  teal  (atenção, mas gerenciável)
+ *  · Classe 3 — Alto risco:      laranja (perigo crescente)
+ *  · Classe 4 — Risco crítico:   vermelho (perigo alto)
+ *  · Classe 5 — Não forçável:    marrom escuro (extremo, proibido)
+ */
 export const tokens = {
   colors: {
     primary: '#0038A8',
@@ -11,25 +30,43 @@ export const tokens = {
       secondary: '#475569',
       muted: '#94A3B8',
     },
+
+    // ── Classes de severidade ─────────────────────────────────────────────
     classe: {
-      1: { bg: '#DCFCE7', text: '#15803D', border: '#BBF7D0', badge: '#16A34A' },
-      2: { bg: '#FEF9C3', text: '#A16207', border: '#FDE68A', badge: '#EAB308' },
-      3: { bg: '#FFEDD5', text: '#C2410C', border: '#FED7AA', badge: '#EA580C' },
-      4: { bg: '#FEE2E2', text: '#B91C1C', border: '#FECACA', badge: '#DC2626' },
-      5: { bg: '#3F0000', text: '#FFFFFF', border: '#7F1D1D', badge: '#7F1D1D' },
+      1: { bg: '#DBEAFE', text: '#1E3A8A', border: '#93C5FD', badge: '#1D4ED8' }, // azul
+      2: { bg: '#CCFBF1', text: '#0F766E', border: '#5EEAD4', badge: '#0D9488' }, // teal
+      3: { bg: '#FFEDD5', text: '#7C2D12', border: '#FDBA74', badge: '#EA580C' }, // laranja
+      4: { bg: '#FEE2E2', text: '#7F1D1D', border: '#FCA5A5', badge: '#DC2626' }, // vermelho
+      5: { bg: '#1C0505', text: '#FCA5A5', border: '#7F1D1D', badge: '#7F1D1D' }, // marrom extremo
     },
+
+    // ── Status de solicitação ─────────────────────────────────────────────
     status: {
-      RASCUNHO:                       { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1', dot: '#6B7280' },
-      EM_APROVACAO:                   { bg: '#DBEAFE', text: '#1D4ED8', border: '#BFDBFE', dot: '#2563EB' },
-      EXECUCAO_AUTORIZADA:            { bg: '#CFFAFE', text: '#0E7490', border: '#A5F3FC', dot: '#0891B2' },
-      EM_EXECUCAO:                    { bg: '#FEF3C7', text: '#B45309', border: '#FDE68A', dot: '#F59E0B' },
-      DESABILITADO:                   { bg: '#FEE2E2', text: '#B91C1C', border: '#FECACA', dot: '#EF4444' },
-      EM_REABILITACAO:                { bg: '#EDE9FE', text: '#6D28D9', border: '#DDD6FE', dot: '#8B5CF6' },
-      EM_VALIDACAO_DA_REABILITACAO:   { bg: '#E0E7FF', text: '#4338CA', border: '#C7D2FE', dot: '#6366F1' },
-      ENCERRADA:                      { bg: '#D1FAE5', text: '#065F46', border: '#A7F3D0', dot: '#10B981' },
-      REJEITADA:                      { bg: '#FEE2E2', text: '#991B1B', border: '#FECACA', dot: '#B91C1C' },
-      CANCELADA:                      { bg: '#F8FAFC', text: '#64748B', border: '#E2E8F0', dot: '#9CA3AF' },
-      EXTENSAO_EM_ANALISE:            { bg: '#FEF3C7', text: '#92400E', border: '#FDE68A', dot: '#D97706' },
+      // Neutro — rascunho / cancelado (cinza; sem urgência, sem ação necessária)
+      RASCUNHO:     { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1', dot: '#94A3B8' },
+      CANCELADA:    { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1', dot: '#94A3B8' },
+
+      // Atenção — aguarda ação humana (âmbar/laranja)
+      EM_APROVACAO:        { bg: '#FFFBEB', text: '#92400E', border: '#FCD34D', dot: '#D97706' },
+      EXTENSAO_EM_ANALISE: { bg: '#FFF7ED', text: '#7C2D12', border: '#FDBA74', dot: '#EA580C' },
+
+      // Em andamento — trabalho ativo (azul)
+      EXECUCAO_AUTORIZADA: { bg: '#EFF6FF', text: '#1E40AF', border: '#93C5FD', dot: '#2563EB' },
+      EM_EXECUCAO:         { bg: '#EBF0FB', text: '#002D8A', border: '#93C5FD', dot: '#0038A8' },
+
+      // Alerta operacional — ⚠ intertravamento DESABILITADO (laranja forte)
+      // Este é o estado mais crítico do ponto de vista de segurança
+      DESABILITADO: { bg: '#FFF7ED', text: '#7C2D12', border: '#FB923C', dot: '#EA580C' },
+
+      // Retorno à segurança — reabilitação em curso (teal)
+      EM_REABILITACAO:               { bg: '#F0FDFA', text: '#0F766E', border: '#5EEAD4', dot: '#0D9488' },
+      EM_VALIDACAO_DA_REABILITACAO:  { bg: '#CCFBF1', text: '#0F766E', border: '#2DD4BF', dot: '#0F766E' },
+
+      // Terminal positivo — encerrado com sucesso (verde)
+      ENCERRADA: { bg: '#F0FDF4', text: '#14532D', border: '#86EFAC', dot: '#16A34A' },
+
+      // Terminal negativo — rejeitado (vermelho)
+      REJEITADA: { bg: '#FEF2F2', text: '#7F1D1D', border: '#FCA5A5', dot: '#DC2626' },
     },
   },
   borderRadius: '4px',
@@ -51,17 +88,17 @@ export type StatusSolicitacao =
   | 'EXTENSAO_EM_ANALISE'
 
 export const STATUS_LABELS: Record<StatusSolicitacao, string> = {
-  RASCUNHO: 'Rascunho',
-  EM_APROVACAO: 'Em Aprovação',
-  EXECUCAO_AUTORIZADA: 'Execução Autorizada',
-  EM_EXECUCAO: 'Em Execução (Campo)',
-  DESABILITADO: 'Desabilitado',
-  EM_REABILITACAO: 'Em Reabilitação',
-  EM_VALIDACAO_DA_REABILITACAO: 'Em Validação da Reabilitação',
-  ENCERRADA: 'Encerrada',
-  REJEITADA: 'Rejeitada',
-  CANCELADA: 'Cancelada',
-  EXTENSAO_EM_ANALISE: 'Extensão em Análise',
+  RASCUNHO:                     'Rascunho',
+  EM_APROVACAO:                 'Em aprovação',
+  EXECUCAO_AUTORIZADA:          'Execução autorizada',
+  EM_EXECUCAO:                  'Em execução',
+  DESABILITADO:                 'Desabilitado',
+  EM_REABILITACAO:              'Em reabilitação',
+  EM_VALIDACAO_DA_REABILITACAO: 'Em validação da reabilitação',
+  ENCERRADA:                    'Encerrada',
+  REJEITADA:                    'Rejeitada',
+  CANCELADA:                    'Cancelada',
+  EXTENSAO_EM_ANALISE:          'Extensão em análise',
 }
 
 export const CLASSE_LABELS: Record<ClasseNum, string> = {

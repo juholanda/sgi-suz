@@ -196,11 +196,11 @@ export default function AlcadasPage() {
             )}
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Planta *</label>
+              <label className="field-label">Planta <span className="field-required">*</span></label>
               <select
                 value={form.plantaId}
                 onChange={e => setForm(f => ({ ...f, plantaId: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white' }}
+                className="field-input"
               >
                 <option value="">Selecione uma planta...</option>
                 {plantas.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
@@ -209,22 +209,22 @@ export default function AlcadasPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Classe *</label>
+                <label className="field-label">Classe <span className="field-required">*</span></label>
                 <select
                   value={form.classeId}
                   onChange={e => setForm(f => ({ ...f, classeId: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white' }}
+                  className="field-input"
                 >
                   <option value="">Classe...</option>
                   {classes.map(c => <option key={c.id} value={c.id}>Classe {c.numero} — {c.descricao}</option>)}
                 </select>
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Nível *</label>
+                <label className="field-label">Nível <span className="field-required">*</span></label>
                 <select
                   value={form.nivel}
                   onChange={e => setForm(f => ({ ...f, nivel: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white' }}
+                  className="field-input"
                 >
                   {[1, 2, 3, 4, 5].map(n => <option key={n} value={n}>Nível {n}</option>)}
                 </select>
@@ -232,11 +232,11 @@ export default function AlcadasPage() {
             </div>
 
             <div style={{ marginBottom: '20px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Aprovador *</label>
+              <label className="field-label">Aprovador <span className="field-required">*</span></label>
               <select
                 value={form.userId}
                 onChange={e => setForm(f => ({ ...f, userId: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white' }}
+                className="field-input"
               >
                 <option value="">Selecione um usuário...</option>
                 {usuarios.map(u => (

@@ -2,9 +2,8 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { Perfil, Planta } from './AppLayoutClient'
-import type { NotifItem } from '@/app/api/notificacoes/route'
 
 interface NavItem {
   href: string
@@ -16,34 +15,31 @@ const commonItems: NavItem[] = [
   { href: '/dashboard',    label: 'Início',       icon: 'home' },
   { href: '/solicitacoes', label: 'Solicitações', icon: 'description' },
 ]
-
 const aprovadorItems: NavItem[] = [
   { href: '/aprovacoes',   label: 'Aprovações',   icon: 'task_alt' },
 ]
-
 const solicitanteItems: NavItem[] = [
   { href: '/execucao',     label: 'Execução',     icon: 'engineering' },
 ]
-
 const bottomItems: NavItem[] = [
   { href: '/relatorios',   label: 'Relatórios',   icon: 'bar_chart' },
   { href: '/perfil',       label: 'Perfil',       icon: 'manage_accounts' },
 ]
 
 const PERFIL_LABELS: Record<string, string> = {
-  SOLICITANTE:  'Solicitante',
-  EXECUTANTE:   'Executante',
-  APROVADOR:    'Aprovador',
-  GESTOR_SMS:   'Gestor SMS',
-  ADMINISTRADOR:'Administrador',
+  SOLICITANTE:   'Solicitante',
+  EXECUTANTE:    'Executante',
+  APROVADOR:     'Aprovador',
+  GESTOR_SMS:    'Gestor SMS',
+  ADMINISTRADOR: 'Administrador',
 }
 
 const PERFIL_ICONS: Record<string, string> = {
-  SOLICITANTE:  'person',
-  EXECUTANTE:   'engineering',
-  APROVADOR:    'task_alt',
-  GESTOR_SMS:   'security',
-  ADMINISTRADOR:'admin_panel_settings',
+  SOLICITANTE:   'person',
+  EXECUTANTE:    'engineering',
+  APROVADOR:     'task_alt',
+  GESTOR_SMS:    'security',
+  ADMINISTRADOR: 'admin_panel_settings',
 }
 
 interface Props {
@@ -55,8 +51,6 @@ interface Props {
   isAprovador?: boolean
   isSolicitante?: boolean
   notifCount: number
-  notifItems: NotifItem[]
-  showNotif: boolean
   onToggleNotif: () => void
   onSwitchPerfil: (perfil: string) => void
   onSwitchPlanta: (plantaId: string) => void
@@ -66,7 +60,7 @@ function Icon({ name, size = 20 }: { name: string; size?: number }) {
   return (
     <span
       className="material-symbols-outlined select-none"
-      style={{ fontSize: size, lineHeight: 1, width: size, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
+      style={{ fontSize: size, lineHeight: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}
       aria-hidden="true"
     >
       {name}
@@ -83,19 +77,33 @@ export default function Sidebar({
   isAprovador = false,
   isSolicitante = false,
   notifCount,
-  notifItems,
-  showNotif,
   onToggleNotif,
   onSwitchPerfil,
   onSwitchPlanta,
 }: Props) {
   const pathname = usePathname()
+  const [collapsed, setCollapsed] = useState(false)
   const [showPerfilDropdown, setShowPerfilDropdown] = useState(false)
   const [showPlantaDropdown, setShowPlantaDropdown] = useState(false)
 
+  // Persist collapse state
+  useEffect(() => {
+    const stored = localStorage.getItem('sgi_sidebar_collapsed')
+    if (stored === 'true') setCollapsed(true)
+  }, [])
+
+  function toggleCollapse() {
+    const next = !collapsed
+    setCollapsed(next)
+    localStorage.setItem('sgi_sidebar_collapsed', String(next))
+    // Close any open dropdowns
+    setShowPerfilDropdown(false)
+    setShowPlantaDropdown(false)
+  }
+
   const navItems: NavItem[] = [
     ...commonItems,
-    ...(isAprovador ? aprovadorItems : []),
+    ...(isAprovador   ? aprovadorItems   : []),
     ...(isSolicitante ? solicitanteItems : []),
     ...bottomItems,
   ]
@@ -104,228 +112,106 @@ export default function Sidebar({
   const hasMultiplePerfis = perfisReais.length > 1
   const hasMultiplePlantas = plantas.length > 1
 
-  function handleSwitchPerfil(p: string) {
-    setShowPerfilDropdown(false)
-    onSwitchPerfil(p)
-  }
-
-  function handleSwitchPlanta(id: string) {
-    setShowPlantaDropdown(false)
-    onSwitchPlanta(id)
-  }
+  const W = collapsed ? '68px' : '240px'
 
   return (
     <aside
-      className="w-60 flex flex-col shrink-0 h-full relative"
-      style={{ background: '#FFFFFF', borderRight: '1px solid #E2E8F0' }}
+      className="flex flex-col shrink-0 h-full relative"
+      style={{
+        width: W,
+        minWidth: W,
+        background: '#FFFFFF',
+        borderRight: '1px solid #E2E8F0',
+        transition: 'width 200ms ease, min-width 200ms ease',
+        overflow: 'hidden',
+      }}
     >
-      {/* 1. Logo section + notification bell */}
-      <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: '#E2E8F0' }}>
-        <div className="flex items-center gap-3">
+      {/* ── TOP: Logo + collapse button ─────────────────────────── */}
+      {collapsed ? (
+        /* Collapsed: logo and toggle stacked vertically, centered */
+        <div className="flex flex-col items-center border-b shrink-0 py-3 gap-2" style={{ borderColor: '#E2E8F0' }}>
           <div
-            className="w-8 h-8 flex items-center justify-center text-sm font-bold text-white shrink-0"
+            className="w-7 h-7 flex items-center justify-center text-xs font-bold text-white"
             style={{ background: '#0038A8', borderRadius: '6px' }}
           >
             S
           </div>
-          <div>
-            <div className="text-sm font-bold leading-tight" style={{ color: '#0F172A' }}>SGI</div>
-            <div className="text-xs leading-tight" style={{ color: '#64748B' }}>Suzano</div>
-          </div>
-        </div>
-
-        {/* Notification bell */}
-        <div className="relative">
           <button
-            onClick={onToggleNotif}
-            className="relative w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
-            style={{ color: notifCount > 0 ? '#0038A8' : '#64748B' }}
-            aria-label="Notificações"
+            onClick={toggleCollapse}
+            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors"
+            style={{ color: '#94A3B8' }}
+            title="Expandir menu"
+            aria-label="Expandir menu"
           >
-            <Icon name="notifications" size={20} />
-            {notifCount > 0 && (
-              <span
-                className="absolute -top-0.5 -right-0.5 flex items-center justify-center text-white font-bold"
-                style={{
-                  background: '#EF4444',
-                  borderRadius: '999px',
-                  minWidth: '16px',
-                  height: '16px',
-                  fontSize: '10px',
-                  lineHeight: 1,
-                  padding: '0 3px',
-                }}
-              >
-                {notifCount > 99 ? '99+' : notifCount}
-              </span>
-            )}
+            <Icon name="chevron_right" size={18} />
           </button>
-
-          {/* Notification dropdown panel */}
-          {showNotif && (
+        </div>
+      ) : (
+        /* Expanded: logo + text on left, toggle on right — single row */
+        <div
+          className="flex items-center justify-between border-b shrink-0"
+          style={{ borderColor: '#E2E8F0', padding: '10px 12px', minHeight: '52px' }}
+        >
+          <div className="flex items-center gap-2.5 min-w-0 overflow-hidden">
             <div
-              className="absolute left-0 top-10 z-50 w-80 shadow-xl overflow-hidden"
-              style={{
-                background: 'white',
-                border: '1px solid #E2E8F0',
-                borderRadius: '10px',
-                maxHeight: '400px',
-                overflowY: 'auto',
-                left: 'auto',
-                right: 0,
-              }}
+              className="w-7 h-7 flex items-center justify-center text-xs font-bold text-white shrink-0"
+              style={{ background: '#0038A8', borderRadius: '6px' }}
             >
-              <div
-                className="px-4 py-3 border-b flex items-center justify-between"
-                style={{ borderColor: '#E2E8F0' }}
-              >
-                <span className="text-sm font-semibold" style={{ color: '#0F172A' }}>
-                  Notificações
-                </span>
-                {notifCount > 0 && (
-                  <span
-                    className="text-xs font-medium px-1.5 py-0.5"
-                    style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}
-                  >
-                    {notifCount}
-                  </span>
-                )}
-              </div>
-
-              {notifItems.length === 0 ? (
-                <div className="px-4 py-6 text-center">
-                  <Icon name="notifications_off" size={24} />
-                  <p className="mt-2 text-sm" style={{ color: '#64748B' }}>Nenhuma notificação</p>
-                </div>
-              ) : (
-                notifItems.map(item => (
-                  <Link
-                    key={item.id}
-                    href={item.href}
-                    onClick={onToggleNotif}
-                    className="block px-4 py-3 border-b transition-colors hover:bg-gray-50"
-                    style={{ borderColor: '#E2E8F0' }}
-                  >
-                    <div className="flex items-start gap-2">
-                      {item.urgente && (
-                        <span className="shrink-0 mt-0.5">
-                          <Icon name="priority_high" size={16} />
-                        </span>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p
-                          className="text-xs font-semibold truncate"
-                          style={{ color: item.urgente ? '#DC2626' : '#0F172A' }}
-                        >
-                          {item.titulo}
-                        </p>
-                        <p className="text-xs mt-0.5 truncate" style={{ color: '#64748B' }}>
-                          {item.descricao}
-                        </p>
-                      </div>
-                    </div>
-                  </Link>
-                ))
-              )}
+              S
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* 2. User card */}
-      <div className="px-4 py-3 border-b" style={{ borderColor: '#E2E8F0' }}>
-        {/* Avatar + name + perfil badge */}
-        <div className="flex items-center gap-2.5 mb-2">
-          <div
-            className="w-8 h-8 flex items-center justify-center text-xs font-semibold shrink-0"
-            style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '50%' }}
+            <span className="text-sm font-bold whitespace-nowrap" style={{ color: '#0F172A' }}>
+              SGI Suzano
+            </span>
+          </div>
+          <button
+            onClick={toggleCollapse}
+            className="w-7 h-7 flex items-center justify-center rounded-lg transition-colors shrink-0 ml-1"
+            style={{ color: '#94A3B8' }}
+            title="Recolher menu"
+            aria-label="Recolher menu"
           >
-            {user.name?.[0]?.toUpperCase() ?? 'U'}
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>
-              {user.name}
-            </div>
-            {/* Perfil badge / switcher */}
-            {hasMultiplePerfis ? (
-              <button
-                onClick={() => { setShowPerfilDropdown(s => !s); setShowPlantaDropdown(false) }}
-                className="flex items-center gap-1 mt-0.5"
-                style={{ color: '#0038A8' }}
-              >
-                <span
-                  className="text-xs font-medium px-1.5 py-0.5"
-                  style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}
-                >
-                  {PERFIL_LABELS[perfil] ?? perfil}
-                </span>
-                <Icon name={showPerfilDropdown ? 'expand_less' : 'expand_more'} size={14} />
-              </button>
-            ) : (
-              <span
-                className="inline-block text-xs font-medium mt-0.5 px-1.5 py-0.5"
-                style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}
-              >
-                {PERFIL_LABELS[perfil] ?? perfil}
-              </span>
-            )}
-          </div>
+            <Icon name="chevron_left" size={18} />
+          </button>
         </div>
+      )}
 
-        {/* Perfil dropdown */}
-        {showPerfilDropdown && hasMultiplePerfis && (
-          <div
-            className="mb-2 overflow-hidden"
-            style={{ border: '1px solid #E2E8F0', borderRadius: '8px' }}
-          >
-            {perfisReais.map(p => (
-              <button
-                key={p.perfil}
-                onClick={() => handleSwitchPerfil(p.perfil)}
-                className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors"
-                style={{
-                  background: perfil === p.perfil ? '#EBF0FB' : 'white',
-                  color: perfil === p.perfil ? '#0038A8' : '#374151',
-                  fontWeight: perfil === p.perfil ? 600 : 400,
-                  borderBottom: '1px solid #F1F5F9',
-                }}
-              >
-                <Icon name={PERFIL_ICONS[p.perfil] ?? 'person'} size={16} />
-                <span className="flex-1 truncate">{PERFIL_LABELS[p.perfil] ?? p.perfil}</span>
-                {perfil === p.perfil && <Icon name="check" size={14} />}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Plant selector — show only if more than 1 plant */}
-        {hasMultiplePlantas ? (
-          <div>
+      {/* ── SWITCHERS: Plant + Profile (hidden when collapsed) ─── */}
+      {!collapsed && (
+        <div className="px-3 py-2.5 border-b shrink-0" style={{ borderColor: '#E2E8F0' }}>
+          {/* Plant selector */}
+          <div className="mb-1.5 relative">
             <button
               onClick={() => { setShowPlantaDropdown(s => !s); setShowPerfilDropdown(false) }}
-              className="flex items-center gap-1.5 text-xs"
-              style={{ color: '#64748B' }}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg transition-colors text-left"
+              style={{
+                background: showPlantaDropdown ? '#EBF0FB' : '#F1F5F9',
+                color: showPlantaDropdown ? '#0038A8' : '#374151',
+                border: '1px solid',
+                borderColor: showPlantaDropdown ? '#0038A8' : '#E2E8F0',
+              }}
             >
               <Icon name="factory" size={14} />
-              <span className="font-medium truncate max-w-[140px]">{plantaAtual?.nome ?? 'Selecionar planta'}</span>
-              <Icon name={showPlantaDropdown ? 'expand_less' : 'expand_more'} size={13} />
+              <span className="flex-1 truncate font-medium">
+                {plantaAtual?.nome ?? 'Selecionar planta'}
+              </span>
+              {hasMultiplePlantas && <Icon name={showPlantaDropdown ? 'expand_less' : 'unfold_more'} size={16} />}
             </button>
 
-            {showPlantaDropdown && (
+            {showPlantaDropdown && hasMultiplePlantas && (
               <div
-                className="mt-1.5 overflow-hidden"
-                style={{ border: '1px solid #E2E8F0', borderRadius: '8px' }}
+                className="absolute top-full left-0 right-0 z-50 mt-1 shadow-lg overflow-hidden"
+                style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
               >
                 {plantas.map(p => (
                   <button
                     key={p.id}
-                    onClick={() => handleSwitchPlanta(p.id)}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left transition-colors"
+                    onClick={() => { setShowPlantaDropdown(false); onSwitchPlanta(p.id) }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left"
                     style={{
                       background: planta === p.id ? '#EBF0FB' : 'white',
                       color: planta === p.id ? '#0038A8' : '#374151',
                       fontWeight: planta === p.id ? 600 : 400,
-                      borderBottom: '1px solid #F1F5F9',
+                      borderBottom: '1px solid #F8FAFC',
                     }}
                   >
                     <Icon name="factory" size={15} />
@@ -336,18 +222,71 @@ export default function Sidebar({
               </div>
             )}
           </div>
-        ) : plantaAtual ? (
-          <div className="flex items-center gap-1.5 text-xs" style={{ color: '#64748B' }}>
-            <Icon name="factory" size={14} />
-            <span className="truncate max-w-[160px]">{plantaAtual.nome}</span>
-          </div>
-        ) : null}
-      </div>
 
-      {/* 3. Nav items */}
-      <nav className="flex-1 px-3 py-3 space-y-0.5">
+          {/* Profile selector */}
+          <div className="relative">
+            <button
+              onClick={() => { setShowPerfilDropdown(s => !s); setShowPlantaDropdown(false) }}
+              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg transition-colors text-left"
+              style={{
+                background: showPerfilDropdown ? '#EBF0FB' : '#F1F5F9',
+                color: showPerfilDropdown ? '#0038A8' : '#374151',
+                border: '1px solid',
+                borderColor: showPerfilDropdown ? '#0038A8' : '#E2E8F0',
+              }}
+            >
+              <Icon name={PERFIL_ICONS[perfil] ?? 'person'} size={14} />
+              <span className="flex-1 truncate font-medium">
+                {PERFIL_LABELS[perfil] ?? perfil}
+              </span>
+              {hasMultiplePerfis && <Icon name={showPerfilDropdown ? 'expand_less' : 'unfold_more'} size={16} />}
+            </button>
+
+            {showPerfilDropdown && hasMultiplePerfis && (
+              <div
+                className="absolute top-full left-0 right-0 z-50 mt-1 shadow-lg overflow-hidden"
+                style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
+              >
+                {perfisReais.map(p => (
+                  <button
+                    key={p.perfil}
+                    onClick={() => { setShowPerfilDropdown(false); onSwitchPerfil(p.perfil) }}
+                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left"
+                    style={{
+                      background: perfil === p.perfil ? '#EBF0FB' : 'white',
+                      color: perfil === p.perfil ? '#0038A8' : '#374151',
+                      fontWeight: perfil === p.perfil ? 600 : 400,
+                      borderBottom: '1px solid #F8FAFC',
+                    }}
+                  >
+                    <Icon name={PERFIL_ICONS[p.perfil] ?? 'person'} size={15} />
+                    <span className="flex-1 truncate">{PERFIL_LABELS[p.perfil] ?? p.perfil}</span>
+                    {perfil === p.perfil && <Icon name="check" size={14} />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── NAV ITEMS ────────────────────────────────────────────── */}
+      <nav className="flex-1 py-3 overflow-y-auto" style={{ padding: collapsed ? '12px 0' : '12px 8px' }}>
         {navItems.map(item => {
           const active = pathname === item.href || pathname.startsWith(item.href + '/')
+          if (collapsed) {
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                title={item.label}
+                className={`sidebar-nav-item${active ? ' active' : ''}`}
+                style={{ justifyContent: 'center', padding: '10px 0', margin: '2px 8px', borderRadius: 8 }}
+              >
+                <Icon name={item.icon} size={20} />
+              </Link>
+            )
+          }
           return (
             <Link
               key={item.href}
@@ -359,31 +298,103 @@ export default function Sidebar({
             </Link>
           )
         })}
+
+        {/* Backoffice */}
+        <div
+          className="border-t"
+          style={{ borderColor: '#E2E8F0', marginTop: 8, paddingTop: 8, padding: collapsed ? '8px 0 0 0' : '8px 0 0 0' }}
+        >
+          {collapsed ? (
+            <Link
+              href="/admin"
+              title="Backoffice"
+              className={`sidebar-nav-item${pathname.startsWith('/admin') ? ' active' : ''}`}
+              style={{ justifyContent: 'center', padding: '10px 0', margin: '2px 8px', borderRadius: 8, color: pathname.startsWith('/admin') ? undefined : 'var(--sidebar-text-muted)' }}
+            >
+              <Icon name="admin_panel_settings" size={20} />
+            </Link>
+          ) : (
+            <Link
+              href="/admin"
+              className={`sidebar-nav-item${pathname.startsWith('/admin') ? ' active' : ''}`}
+              style={{ color: pathname.startsWith('/admin') ? undefined : 'var(--sidebar-text-muted)' }}
+            >
+              <Icon name="admin_panel_settings" size={20} />
+              Backoffice
+            </Link>
+          )}
+        </div>
       </nav>
 
-      {/* 4. Backoffice link */}
-      <div className="px-3 pb-2 border-t pt-2" style={{ borderColor: '#E2E8F0' }}>
-        <Link
-          href="/admin"
-          className={`sidebar-nav-item${pathname.startsWith('/admin') ? ' active' : ''}`}
-          style={{ color: pathname.startsWith('/admin') ? undefined : 'var(--sidebar-text-muted)' }}
+      {/* ── FOOTER: avatar + name | notif + logout ──────────────── */}
+      <div
+        className="border-t shrink-0 flex items-center"
+        style={{
+          borderColor: '#E2E8F0',
+          padding: collapsed ? '10px 0' : '10px 12px',
+          gap: collapsed ? 0 : 10,
+          justifyContent: collapsed ? 'center' : 'flex-start',
+        }}
+      >
+        {/* Avatar */}
+        <div
+          className="w-8 h-8 flex items-center justify-center text-xs font-semibold shrink-0"
+          style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '50%' }}
+          title={collapsed ? (user.name ?? '') : undefined}
         >
-          <Icon name="admin_panel_settings" size={20} />
-          Backoffice
-        </Link>
+          {user.name?.[0]?.toUpperCase() ?? 'U'}
+        </div>
+
+        {/* Name + email (hidden when collapsed) */}
+        {!collapsed && (
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium truncate leading-tight" style={{ color: '#0F172A' }}>
+              {user.name}
+            </div>
+            <div className="text-xs truncate leading-tight" style={{ color: '#94A3B8' }}>
+              {user.email}
+            </div>
+          </div>
+        )}
+
+        {/* Notification bell + Logout (always visible as icons) */}
+        {!collapsed && (
+          <div className="flex items-center gap-0.5 shrink-0">
+            {/* Bell — abre o drawer global */}
+            <div className="relative">
+              <button
+                onClick={onToggleNotif}
+                className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+                style={{ color: notifCount > 0 ? '#0038A8' : '#94A3B8' }}
+                aria-label="Notificações"
+                title="Notificações"
+              >
+                <Icon name="notifications" size={20} />
+                {notifCount > 0 && (
+                  <span
+                    className="absolute -top-0.5 -right-0.5 flex items-center justify-center text-white font-bold"
+                    style={{ background: '#EF4444', borderRadius: '999px', minWidth: '16px', height: '16px', fontSize: '10px', lineHeight: 1, padding: '0 3px' }}
+                  >
+                    {notifCount > 99 ? '99+' : notifCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Logout */}
+            <button
+              onClick={() => signOut({ callbackUrl: '/login' })}
+              className="w-8 h-8 flex items-center justify-center rounded-lg transition-colors"
+              style={{ color: '#94A3B8' }}
+              aria-label="Sair"
+              title="Sair"
+            >
+              <Icon name="logout" size={20} />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* 5. Logout button */}
-      <div className="px-3 pb-4">
-        <button
-          onClick={() => signOut({ callbackUrl: '/login' })}
-          className="sidebar-nav-item w-full text-left"
-          style={{ color: '#64748B' }}
-        >
-          <Icon name="logout" size={20} />
-          Sair
-        </button>
-      </div>
     </aside>
   )
 }

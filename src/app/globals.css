@@ -4,6 +4,75 @@
 
 /* TOKENS:START */
 :root {
+  /* ─ Primary palette (brand blue) ─ */
+  --color-primary-50:  #EBF0FB;
+  --color-primary-100: #D8E4F8;
+  --color-primary-200: #B0C8F1;
+  --color-primary-300: #7DA4E8;
+  --color-primary-400: #4A80DE;
+  --color-primary-500: #1F5EC8;
+  --color-primary-600: #0E4AB8;
+  --color-primary-700: #0038A8;
+  --color-primary-800: #002D8A;
+  --color-primary-900: #001E5C;
+
+  /* ─ Secondary palette (slate) ─ */
+  --color-secondary-50:  #F8FAFC;
+  --color-secondary-100: #F1F5F9;
+  --color-secondary-200: #E2E8F0;
+  --color-secondary-300: #CBD5E1;
+  --color-secondary-400: #94A3B8;
+  --color-secondary-500: #64748B;
+  --color-secondary-600: #475569;
+  --color-secondary-700: #334155;
+  --color-secondary-800: #1E293B;
+  --color-secondary-900: #0F172A;
+
+  /* ─ Neutral palette ─ */
+  --color-neutral-50:  #F8FAFC;
+  --color-neutral-100: #F1F5F9;
+  --color-neutral-200: #E2E8F0;
+  --color-neutral-300: #CBD5E1;
+  --color-neutral-400: #94A3B8;
+  --color-neutral-500: #64748B;
+  --color-neutral-600: #475569;
+  --color-neutral-700: #334155;
+  --color-neutral-800: #1E293B;
+  --color-neutral-900: #0F172A;
+
+  /* ─ Success palette ─ */
+  --color-success-lightest: #F0FDF4;
+  --color-success-lighter:  #DCFCE7;
+  --color-success-light:    #BBF7D0;
+  --color-success:          #16A34A;
+  --color-success-dark:     #15803D;
+  --color-success-darker:   #14532D;
+
+  /* ─ Warning palette ─ */
+  --color-warning-lightest: #FEFCE8;
+  --color-warning-lighter:  #FEF9C3;
+  --color-warning-light:    #FEF08A;
+  --color-warning:          #EAB308;
+  --color-warning-dark:     #CA8A04;
+  --color-warning-darker:   #92400E;
+
+  /* ─ Danger / Error palette ─ */
+  --color-danger-lightest: #FFF5F5;
+  --color-danger-lighter:  #FEE2E2;
+  --color-danger-light:    #FECACA;
+  --color-danger:          #DC2626;
+  --color-danger-dark:     #B91C1C;
+  --color-danger-darker:   #7F1D1D;
+
+  /* ─ Info palette ─ */
+  --color-info-lightest: #ECFEFF;
+  --color-info-lighter:  #CFFAFE;
+  --color-info-light:    #A5F3FC;
+  --color-info:          #0891B2;
+  --color-info-dark:     #0E7490;
+  --color-info-darker:   #164E63;
+
+  /* ─ Legacy shortcuts (kept for backwards compat) ─ */
   --color-primary: #0038A8;
   --color-primary-hover: #002D8A;
   --color-primary-light: #EBF0FB;
@@ -13,22 +82,32 @@
   --color-text: #0F172A;
   --color-text-secondary: #475569;
   --color-text-muted: #94A3B8;
-  --color-classe1: #16A34A;
-  --color-classe2: #EAB308;
+  /* Severity classes — escala cromática azul→teal→laranja→vermelho→extremo */
+  --color-classe1: #1D4ED8;
+  --color-classe2: #0D9488;
   --color-classe3: #EA580C;
   --color-classe4: #DC2626;
   --color-classe5: #7F1D1D;
+
+  /* Status — agrupados por semântica operacional */
+  /* Neutros */
   --color-status-rascunho: #94A3B8;
-  --color-status-em-aprovacao: #EAB308;
-  --color-status-execucao-autorizada: #3B82F6;
-  --color-status-em-execucao: #0038A8;
-  --color-status-desabilitado: #64748B;
-  --color-status-em-reabilitacao: #8B5CF6;
-  --color-status-em-validacao-da-reabilitacao: #A855F7;
-  --color-status-encerrada: #16A34A;
-  --color-status-rejeitada: #DC2626;
-  --color-status-cancelada: #6B7280;
+  --color-status-cancelada: #94A3B8;
+  /* Atenção (aguarda ação) */
+  --color-status-em-aprovacao: #D97706;
   --color-status-extensao-em-analise: #F97316;
+  /* Em andamento */
+  --color-status-execucao-autorizada: #2563EB;
+  --color-status-em-execucao: #0038A8;
+  /* Alerta operacional — intertravamento desabilitado */
+  --color-status-desabilitado: #EA580C;
+  /* Retorno à segurança */
+  --color-status-em-reabilitacao: #0D9488;
+  --color-status-em-validacao-da-reabilitacao: #0F766E;
+  /* Terminal positivo */
+  --color-status-encerrada: #16A34A;
+  /* Terminal negativo */
+  --color-status-rejeitada: #DC2626;
   --sidebar-background: #FFFFFF;
   --sidebar-border: #E2E8F0;
   --sidebar-text: #0F172A;
@@ -48,12 +127,29 @@
   --sidebar-nav-disabled-text: #94A3B8;
   --sidebar-nav-disabled-opacity: 0.5;
   --radius: 4px;
-  --spacing-xs: 4px;
-  --spacing-sm: 8px;
-  --spacing-md: 16px;
-  --spacing-lg: 24px;
-  --spacing-xl: 32px;
-  --spacing-2xl: 48px;
+
+  /* ─ Spacing scale — grade de 8px com refinamentos ─ */
+  --space-0:   0px;
+  --space-1:   2px;
+  --space-2:   4px;
+  --space-3:   8px;
+  --space-4:  12px;
+  --space-5:  16px;
+  --space-6:  24px;
+  --space-7:  32px;
+  --space-8:  40px;
+  --space-9:  48px;
+  --space-10: 64px;
+  --space-11: 80px;
+  --space-12: 96px;
+
+  /* Aliases semânticos */
+  --spacing-xs: 4px;    /* --space-2 */
+  --spacing-sm: 8px;    /* --space-3 */
+  --spacing-md: 16px;   /* --space-5 */
+  --spacing-lg: 24px;   /* --space-6 */
+  --spacing-xl: 32px;   /* --space-7 */
+  --spacing-2xl: 48px;  /* --space-9 */
   --font-sans: Inter, sans-serif;
   --font-size-2xs: 10px;
   --font-size-xs: 12px;
@@ -230,6 +326,312 @@ body {
 
 .mobile-nav-item.active {
   color: var(--sidebar-nav-active-text);
+}
+
+/* ─── Input / Field — all interactive states ─────────────────────────── */
+
+/* Base field input */
+.field-input {
+  width: 100%;
+  height: 36px;
+  padding: 0 var(--space-4);   /* 0 12px */
+  font-size: var(--font-size-base);
+  font-family: var(--font-sans);
+  color: var(--color-text);
+  background: #FFFFFF;
+  border: 1.5px solid var(--color-border);
+  border-radius: 6px;
+  outline: none;
+  transition:
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+  line-height: 1;
+}
+
+/* Textarea variant */
+textarea.field-input {
+  height: auto;
+  padding: 10px 12px;
+  resize: vertical;
+  line-height: 1.5;
+}
+
+/* Select variant — extra padding-right for the native arrow */
+select.field-input {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 36px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 24 24' fill='%2394A3B8'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 20px;
+  cursor: pointer;
+}
+
+/* Hover */
+.field-input:hover:not(:disabled):not(.field-input--error) {
+  border-color: #94A3B8;
+}
+
+/* Focus */
+.field-input:focus:not(:disabled) {
+  border-color: #0038A8;
+  box-shadow: 0 0 0 3px rgba(0, 56, 168, 0.12);
+}
+
+/* Error state */
+.field-input--error,
+.field-input.field-error {
+  border-color: #DC2626;
+}
+.field-input--error:focus,
+.field-input.field-error:focus {
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.12);
+}
+
+/* Success state */
+.field-input--success {
+  border-color: #16A34A;
+}
+.field-input--success:focus {
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12);
+}
+
+/* Disabled */
+.field-input:disabled {
+  background: #F8FAFC;
+  color: #94A3B8;
+  border-color: var(--color-border);
+  cursor: not-allowed;
+}
+
+/* ─── Field label / hint / error message ─────────────────────────────── */
+.field-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: #374151;
+  margin-bottom: 6px;
+}
+.field-label .field-required {
+  color: #DC2626;
+  margin-left: 2px;
+}
+.field-hint {
+  font-size: var(--font-size-xs);
+  color: #94A3B8;
+  margin-top: 4px;
+}
+.field-error-msg {
+  font-size: var(--font-size-xs);
+  color: #DC2626;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.field-success-msg {
+  font-size: var(--font-size-xs);
+  color: #16A34A;
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ─── Button — base and all variants/states ─────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: var(--font-sans);
+  font-weight: var(--font-weight-normal);
+  border-radius: 8px;
+  border: 1.5px solid transparent;
+  cursor: pointer;
+  transition:
+    background 120ms ease,
+    border-color 120ms ease,
+    color 120ms ease,
+    box-shadow 120ms ease,
+    opacity 120ms ease;
+  white-space: nowrap;
+  text-decoration: none;
+  outline: none;
+  line-height: 1;
+}
+
+/* Focus-visible — keyboard navigation */
+.btn:focus-visible {
+  box-shadow: 0 0 0 3px rgba(0, 56, 168, 0.25);
+}
+
+/* Disabled */
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* ── Sizes ── */
+.btn-sm {
+  height: 30px;
+  padding: 0 var(--space-4);   /* 12px */
+  font-size: var(--font-size-xs);
+  gap: var(--space-2);         /* 4px */
+}
+.btn-md {
+  height: 36px;
+  padding: 0 var(--space-5);   /* 16px */
+  font-size: var(--font-size-base);
+  gap: var(--space-2);         /* 4px */
+}
+.btn-lg {
+  height: 44px;
+  padding: 0 var(--space-6);   /* 24px */
+  font-size: var(--font-size-md);
+  gap: var(--space-3);         /* 8px */
+}
+
+/* ── Variants ── */
+
+/* Primary */
+.btn-primary {
+  background: #0038A8;
+  color: #FFFFFF;
+  border-color: #0038A8;
+}
+.btn-primary:hover:not(:disabled) {
+  background: #002D8A;
+  border-color: #002D8A;
+}
+.btn-primary:active:not(:disabled) {
+  background: #00267A;
+  border-color: #00267A;
+}
+
+/* Secondary */
+.btn-secondary {
+  background: #EBF0FB;
+  color: #0038A8;
+  border-color: #EBF0FB;
+}
+.btn-secondary:hover:not(:disabled) {
+  background: #D8E4F8;
+  border-color: #D8E4F8;
+}
+.btn-secondary:active:not(:disabled) {
+  background: #C0D4F4;
+  border-color: #C0D4F4;
+}
+
+/* Outline */
+.btn-outline {
+  background: transparent;
+  color: #0038A8;
+  border-color: #0038A8;
+}
+.btn-outline:hover:not(:disabled) {
+  background: #EBF0FB;
+}
+.btn-outline:active:not(:disabled) {
+  background: #D8E4F8;
+}
+
+/* Ghost */
+.btn-ghost {
+  background: transparent;
+  color: #374151;
+  border-color: transparent;
+}
+.btn-ghost:hover:not(:disabled) {
+  background: #F1F5F9;
+  color: #0F172A;
+}
+.btn-ghost:active:not(:disabled) {
+  background: #E2E8F0;
+}
+
+/* Danger */
+.btn-danger {
+  background: #DC2626;
+  color: #FFFFFF;
+  border-color: #DC2626;
+}
+.btn-danger:hover:not(:disabled) {
+  background: #B91C1C;
+  border-color: #B91C1C;
+}
+.btn-danger:active:not(:disabled) {
+  background: #991B1B;
+  border-color: #991B1B;
+}
+
+/* Danger outline */
+.btn-danger-outline {
+  background: transparent;
+  color: #DC2626;
+  border-color: #DC2626;
+}
+.btn-danger-outline:hover:not(:disabled) {
+  background: #FEF2F2;
+}
+.btn-danger-outline:active:not(:disabled) {
+  background: #FEE2E2;
+}
+
+/* Success */
+.btn-success {
+  background: #16A34A;
+  color: #FFFFFF;
+  border-color: #16A34A;
+}
+.btn-success:hover:not(:disabled) {
+  background: #15803D;
+  border-color: #15803D;
+}
+.btn-success:active:not(:disabled) {
+  background: #14532D;
+  border-color: #14532D;
+}
+
+/* Tertiary (ghost + primary tint on hover) */
+.btn-tertiary {
+  background: transparent;
+  color: #0038A8;
+  border-color: transparent;
+}
+.btn-tertiary:hover:not(:disabled) {
+  background: #EBF0FB;
+}
+.btn-tertiary:active:not(:disabled) {
+  background: #D8E4F8;
+}
+
+/* Link */
+.btn-link {
+  background: transparent;
+  color: #0038A8;
+  border-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  padding-left: 0;
+  padding-right: 0;
+}
+.btn-link:hover:not(:disabled) {
+  color: #002D8A;
+}
+.btn-link:active:not(:disabled) {
+  color: #001E5C;
+}
+
+/* ── Loading state ── */
+.btn-loading {
+  opacity: 0.75;
+  cursor: wait;
+  pointer-events: none;
 }
 
 @theme {

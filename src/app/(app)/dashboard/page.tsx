@@ -1,5 +1,6 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { cookies } from 'next/headers'
 import { StatusBadge } from '@/components/sgi/StatusBadge'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { tokens, StatusSolicitacao, ClasseNum } from '@/lib/tokens'
@@ -99,9 +100,20 @@ export default async function DashboardPage() {
   const session = await auth()
   const userId = session?.user?.id as string
 
+  // Lê o perfil ativo do cookie (definido pelo cliente ao trocar perfil)
+  const cookieStore = await cookies()
+  const perfilAtivo = cookieStore.get('sgi_perfil_ativo')?.value
+
+  // Fallback: verifica todos os perfis do usuário
   const perfis = await prisma.usuarioPerfil.findMany({ where: { userId } })
-  const isAprovador = perfis.some(p => p.perfil === 'APROVADOR')
-  const isSolicitante = perfis.some(p => p.perfil === 'SOLICITANTE' || p.perfil === 'EXECUTANTE')
+
+  // Se há perfil ativo via cookie, usa apenas ele; senão usa todos (retrocompat)
+  const isAprovador = perfilAtivo
+    ? ['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'].includes(perfilAtivo)
+    : perfis.some(p => ['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'].includes(p.perfil))
+  const isSolicitante = perfilAtivo
+    ? ['SOLICITANTE', 'EXECUTANTE', 'ADMINISTRADOR'].includes(perfilAtivo)
+    : perfis.some(p => ['SOLICITANTE', 'EXECUTANTE', 'ADMINISTRADOR'].includes(p.perfil))
 
   const [metrics, solicitacoes] = await Promise.all([getMetrics(), getRecentSolicitacoes()])
 
@@ -109,16 +121,16 @@ export default async function DashboardPage() {
   const tarefasSolicitante = isSolicitante ? await getTarefasSolicitante() : { paraExecutar: [], paraReabilitar: [], paraProrrogar: [] }
 
   const cards = [
-    { label: 'Em Aprovação', value: metrics.emAprovacao, status: 'EM_APROVACAO' as StatusSolicitacao, href: '/solicitacoes?status=EM_APROVACAO' },
-    { label: 'Execução Autorizada', value: metrics.execucaoAutorizada, status: 'EXECUCAO_AUTORIZADA' as StatusSolicitacao, href: '/solicitacoes?status=EXECUCAO_AUTORIZADA' },
-    { label: 'Desabilitados', value: metrics.desabilitados, status: 'DESABILITADO' as StatusSolicitacao, href: '/solicitacoes?status=DESABILITADO' },
-    { label: 'Aguard. Validação', value: metrics.aguardandoValidacao, status: 'EM_VALIDACAO_DA_REABILITACAO' as StatusSolicitacao, href: '/solicitacoes?status=EM_VALIDACAO_DA_REABILITACAO' },
+    { label: 'Em Aprovação',      value: metrics.emAprovacao,          status: 'EM_APROVACAO' as StatusSolicitacao,                   href: '/solicitacoes?status=EM_APROVACAO',                   icon: 'pending_actions' },
+    { label: 'Exec. Autorizada',  value: metrics.execucaoAutorizada,   status: 'EXECUCAO_AUTORIZADA' as StatusSolicitacao,            href: '/solicitacoes?status=EXECUCAO_AUTORIZADA',            icon: 'engineering' },
+    { label: 'Desabilitados',     value: metrics.desabilitados,        status: 'DESABILITADO' as StatusSolicitacao,                   href: '/solicitacoes?status=DESABILITADO',                   icon: 'lock' },
+    { label: 'Aguard. Validação', value: metrics.aguardandoValidacao,  status: 'EM_VALIDACAO_DA_REABILITACAO' as StatusSolicitacao,   href: '/solicitacoes?status=EM_VALIDACAO_DA_REABILITACAO',   icon: 'fact_check' },
   ]
 
   return (
     <div className="p-4 md:p-6 max-w-full">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-5">
         <div>
           <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Dashboard</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
@@ -136,13 +148,74 @@ export default async function DashboardPage() {
         )}
       </div>
 
+      {/* ─── MÉTRICAS — linha compacta ─── */}
+      <div className="grid grid-cols-3 lg:grid-cols-6 gap-2 mb-5">
+        {cards.map(card => {
+          const colors = tokens.colors.status[card.status]
+          return (
+            <Link key={card.status} href={card.href} className="h-full">
+              <div
+                className="bg-white border cursor-pointer transition-shadow hover:shadow-sm h-full flex items-center justify-between px-3 py-2.5 gap-2"
+                style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}
+              >
+                <div className="flex items-center gap-2 min-w-0">
+                  <span
+                    className="material-symbols-outlined shrink-0 flex items-center justify-center"
+                    style={{
+                      fontSize: 15,
+                      color: colors.text,
+                      lineHeight: 1,
+                      background: `${colors.text}14`,
+                      borderRadius: '6px',
+                      width: 28,
+                      height: 28,
+                    }}
+                    aria-hidden="true"
+                  >
+                    {card.icon}
+                  </span>
+                  <div className="text-xs leading-tight" style={{ color: '#64748B' }}>{card.label}</div>
+                </div>
+                <div className="text-xl font-bold shrink-0" style={{ color: colors.text }}>{card.value}</div>
+              </div>
+            </Link>
+          )
+        })}
+        {/* Encerradas este mês */}
+        <Link href="/solicitacoes?status=ENCERRADA" className="h-full">
+          <div className="bg-white border cursor-pointer transition-shadow hover:shadow-sm h-full flex items-center justify-between px-3 py-2.5 gap-2" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="material-symbols-outlined shrink-0 flex items-center justify-center" style={{ fontSize: 15, color: '#10B981', lineHeight: 1, background: '#10B98114', borderRadius: '6px', width: 28, height: 28 }} aria-hidden="true">check_circle</span>
+              <div className="text-xs leading-tight" style={{ color: '#64748B' }}>Encerradas/mês</div>
+            </div>
+            <div className="text-xl font-bold shrink-0" style={{ color: '#10B981' }}>{metrics.encerradasMes}</div>
+          </div>
+        </Link>
+        {/* Violações SLA */}
+        <div
+          className="border h-full flex items-center justify-between px-3 py-2.5 gap-2"
+          style={{
+            background: metrics.violacoesSla > 0 ? '#FEF2F2' : 'white',
+            borderColor: metrics.violacoesSla > 0 ? '#FECACA' : '#E2E8F0',
+            borderRadius: '8px',
+          }}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <span className="material-symbols-outlined shrink-0 flex items-center justify-center" style={{ fontSize: 15, color: metrics.violacoesSla > 0 ? '#DC2626' : '#10B981', lineHeight: 1, background: metrics.violacoesSla > 0 ? '#DC262614' : '#10B98114', borderRadius: '6px', width: 28, height: 28 }} aria-hidden="true">warning</span>
+            <div className="text-xs leading-tight" style={{ color: metrics.violacoesSla > 0 ? '#DC2626' : '#64748B' }}>Violações SLA</div>
+          </div>
+          <div className="text-xl font-bold shrink-0" style={{ color: metrics.violacoesSla > 0 ? '#DC2626' : '#10B981' }}>{metrics.violacoesSla}</div>
+        </div>
+      </div>
+
       {/* ─── TAREFAS PENDENTES ─── */}
       {isAprovador && tarefasAprovador.length > 0 && (
-        <section className="mb-6">
+        <section className="mb-5">
           <div className="flex items-center justify-between mb-3">
-            <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>
-              Aprovações Pendentes
-              <span className="ml-2 text-sm font-normal px-2 py-0.5 rounded-full" style={{ background: '#DBEAFE', color: '#1D4ED8' }}>
+            <h2 className="text-sm font-semibold flex items-center gap-2" style={{ color: '#0F172A' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#1D4ED8', lineHeight: 1 }} aria-hidden="true">task_alt</span>
+              Aprovações pendentes
+              <span className="text-xs font-medium px-1.5 py-0.5" style={{ background: '#DBEAFE', color: '#1D4ED8', borderRadius: '4px' }}>
                 {tarefasAprovador.length}
               </span>
             </h2>
@@ -195,9 +268,10 @@ export default async function DashboardPage() {
           {/* Executar desabilitação */}
           {tarefasSolicitante.paraExecutar.length > 0 && (
             <section className="mb-4">
-              <h2 className="text-base font-semibold mb-3" style={{ color: '#0F172A' }}>
+              <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#0F172A' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#0E7490', lineHeight: 1 }} aria-hidden="true">engineering</span>
                 Executar Desabilitação
-                <span className="ml-2 text-sm font-normal px-2 py-0.5 rounded-full" style={{ background: '#CFFAFE', color: '#0E7490' }}>
+                <span className="text-xs font-medium px-1.5 py-0.5" style={{ background: '#CFFAFE', color: '#0E7490', borderRadius: '4px' }}>
                   {tarefasSolicitante.paraExecutar.length}
                 </span>
               </h2>
@@ -228,9 +302,10 @@ export default async function DashboardPage() {
           {/* Reabilitar */}
           {tarefasSolicitante.paraReabilitar.length > 0 && (
             <section className="mb-4">
-              <h2 className="text-base font-semibold mb-3" style={{ color: '#0F172A' }}>
+              <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#0F172A' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#B91C1C', lineHeight: 1 }} aria-hidden="true">restart_alt</span>
                 Reabilitar
-                <span className="ml-2 text-sm font-normal px-2 py-0.5 rounded-full" style={{ background: '#FEE2E2', color: '#B91C1C' }}>
+                <span className="text-xs font-medium px-1.5 py-0.5" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
                   {tarefasSolicitante.paraReabilitar.length}
                 </span>
               </h2>
@@ -245,8 +320,9 @@ export default async function DashboardPage() {
                       <div className="flex items-center gap-2">
                         <span className="font-mono text-sm font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
                         {s.prazoMaximoAtingido && (
-                          <span className="text-xs px-1.5 py-0.5 font-medium" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
-                            ⚠ Prazo máximo
+                          <span className="text-xs px-1.5 py-0.5 font-medium flex items-center gap-0.5" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
+                            <span className="material-symbols-outlined" style={{ fontSize: 12, lineHeight: 1 }}>warning</span>
+                            Prazo máximo
                           </span>
                         )}
                       </div>
@@ -268,9 +344,10 @@ export default async function DashboardPage() {
           {/* Prorrogar prazo */}
           {tarefasSolicitante.paraProrrogar.length > 0 && (
             <section className="mb-4">
-              <h2 className="text-base font-semibold mb-3" style={{ color: '#0F172A' }}>
+              <h2 className="text-sm font-semibold mb-3 flex items-center gap-2" style={{ color: '#0F172A' }}>
+                <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#B45309', lineHeight: 1 }} aria-hidden="true">schedule</span>
                 Prorrogar Prazo
-                <span className="ml-2 text-sm font-normal px-2 py-0.5 rounded-full" style={{ background: '#FEF3C7', color: '#B45309' }}>
+                <span className="text-xs font-medium px-1.5 py-0.5" style={{ background: '#FEF3C7', color: '#B45309', borderRadius: '4px' }}>
                   {tarefasSolicitante.paraProrrogar.length}
                 </span>
               </h2>
@@ -300,57 +377,10 @@ export default async function DashboardPage() {
         </>
       )}
 
-      {/* ─── MÉTRICAS ─── */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-        {cards.map(card => {
-          const colors = tokens.colors.status[card.status]
-          return (
-            <Link key={card.status} href={card.href}>
-              <div
-                className="bg-white p-4 border cursor-pointer transition-shadow hover:shadow-md"
-                style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
-              >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium" style={{ color: '#475569' }}>{card.label}</span>
-                  <span
-                    className="w-2 h-2 rounded-full"
-                    style={{ background: colors.dot }}
-                  />
-                </div>
-                <div className="text-3xl font-bold" style={{ color: colors.text }}>{card.value}</div>
-              </div>
-            </Link>
-          )
-        })}
-      </div>
-
-      {/* Alert Cards */}
-      <div className="grid grid-cols-2 gap-3 mb-6">
-        <div className="bg-white p-4 border" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-          <p className="text-xs font-medium mb-1" style={{ color: '#475569' }}>Encerradas este mês</p>
-          <p className="text-2xl font-bold" style={{ color: '#10B981' }}>{metrics.encerradasMes}</p>
-        </div>
-        <div
-          className="p-4 border"
-          style={{
-            background: metrics.violacoesSla > 0 ? '#FEE2E2' : 'white',
-            borderColor: metrics.violacoesSla > 0 ? '#FECACA' : '#E2E8F0',
-            borderRadius: '4px',
-          }}
-        >
-          <p className="text-xs font-medium mb-1" style={{ color: metrics.violacoesSla > 0 ? '#B91C1C' : '#475569' }}>
-            Violações de SLA
-          </p>
-          <p className="text-2xl font-bold" style={{ color: metrics.violacoesSla > 0 ? '#B91C1C' : '#10B981' }}>
-            {metrics.violacoesSla}
-          </p>
-        </div>
-      </div>
-
       {/* Recent Solicitacoes Table */}
       <div className="bg-white border" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
         <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: '#E2E8F0' }}>
-          <h2 className="text-sm font-semibold" style={{ color: '#0F172A' }}>Solicitações Ativas</h2>
+          <h2 className="text-sm font-semibold" style={{ color: '#0F172A' }}>Solicitações ativas</h2>
           <Link href="/solicitacoes" className="text-xs" style={{ color: '#0038A8' }}>Ver todas →</Link>
         </div>
 

@@ -20,7 +20,7 @@ export default async function ClassesPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Classes de Risco</h1>
+          <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Classes de risco</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Backoffice · Prazos e alçadas por classe</p>
         </div>
       </div>

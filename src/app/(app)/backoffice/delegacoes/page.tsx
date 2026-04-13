@@ -20,7 +20,7 @@ export default async function DelegacoesPage() {
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Suplências / Delegações</h1>
+          <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Suplências / delegações</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Backoffice · Vigência automática de aprovações</p>
         </div>
         <button className="px-4 py-2 text-sm font-medium text-white" style={{ background: '#0038A8', borderRadius: '4px' }}>

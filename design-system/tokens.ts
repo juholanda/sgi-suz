@@ -152,8 +152,8 @@ const tokens: DesignTokens = {
     textSecondary: '#475569',
     textMuted: '#94A3B8',
     // Legacy severity classes (flat)
-    classe1: '#16A34A',
-    classe2: '#EAB308',
+    classe1: '#1D4ED8',
+    classe2: '#0D9488',
     classe3: '#EA580C',
     classe4: '#DC2626',
     classe5: '#7F1D1D',
@@ -183,27 +183,36 @@ const tokens: DesignTokens = {
     },
 
     // Classes de severidade (intertravamentos)
+    // Escala cromática: azul (seguro) → teal → laranja → vermelho → marrom escuro (extremo)
     classe: {
-      1: { DEFAULT: '#16A34A', bg: '#D1FAE5', text: '#14532D', label: 'Baixo risco' },
-      2: { DEFAULT: '#EAB308', bg: '#FEF9C3', text: '#92400E', label: 'Risco moderado' },
+      1: { DEFAULT: '#1D4ED8', bg: '#DBEAFE', text: '#1E3A8A', label: 'Baixo risco' },
+      2: { DEFAULT: '#0D9488', bg: '#CCFBF1', text: '#0F766E', label: 'Risco moderado' },
       3: { DEFAULT: '#EA580C', bg: '#FFEDD5', text: '#7C2D12', label: 'Alto risco' },
       4: { DEFAULT: '#DC2626', bg: '#FEE2E2', text: '#7F1D1D', label: 'Risco crítico' },
-      5: { DEFAULT: '#7F1D1D', bg: '#450A0A', text: '#FFFFFF', label: 'NÃO FORÇÁVEL' },
+      5: { DEFAULT: '#7F1D1D', bg: '#1C0505', text: '#FCA5A5', label: 'NÃO FORÇÁVEL' },
     },
 
     // Status colors
+    // Lógica semântica por grupo de significado:
+    // ── Neutros (inativo/encerrado sem ação):   cinza
+    // ── Atenção (aguarda ação humana):          âmbar
+    // ── Em andamento (trabalho ativo):          azul
+    // ── Alerta operacional (intertravamento OFF): laranja
+    // ── Retorno à segurança (reabilitação):    verde-água (teal)
+    // ── Encerrado com sucesso:                  verde
+    // ── Terminal negativo (falha/recusa):       vermelho
     status: {
-      RASCUNHO: '#94A3B8',
-      EM_APROVACAO: '#EAB308',
-      EXECUCAO_AUTORIZADA: '#3B82F6',
-      EM_EXECUCAO: '#0038A8',
-      DESABILITADO: '#64748B',
-      EM_REABILITACAO: '#8B5CF6',
-      EM_VALIDACAO_DA_REABILITACAO: '#A855F7',
-      ENCERRADA: '#16A34A',
-      REJEITADA: '#DC2626',
-      CANCELADA: '#6B7280',
-      EXTENSAO_EM_ANALISE: '#F97316',
+      RASCUNHO:                       '#94A3B8', // cinza — rascunho, ainda não submetido
+      CANCELADA:                      '#94A3B8', // cinza — encerrado sem conclusão
+      EM_APROVACAO:                   '#D97706', // âmbar — aguarda aprovação humana
+      EXTENSAO_EM_ANALISE:            '#F97316', // laranja-âmbar — prorrogação em análise
+      EXECUCAO_AUTORIZADA:            '#2563EB', // azul — aprovado, pronto para executar
+      EM_EXECUCAO:                    '#0038A8', // azul SGI — execução em andamento
+      DESABILITADO:                   '#EA580C', // laranja — ⚠ intertravamento desabilitado (risco ativo)
+      EM_REABILITACAO:                '#0D9488', // teal — retornando à segurança
+      EM_VALIDACAO_DA_REABILITACAO:   '#0F766E', // teal escuro — validação final do retorno
+      ENCERRADA:                      '#16A34A', // verde — concluído, intertravamento ativo novamente
+      REJEITADA:                      '#DC2626', // vermelho — reprovado
     },
   },
 

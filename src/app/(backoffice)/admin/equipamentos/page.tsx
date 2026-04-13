@@ -125,7 +125,7 @@ export default function EquipamentosPage() {
             value={busca}
             onChange={e => setBusca(e.target.value)}
             placeholder="Buscar por TAG ou descrição..."
-            style={{ width: '100%', padding: '6px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+            className="field-input"
           />
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
@@ -185,32 +185,33 @@ export default function EquipamentosPage() {
             )}
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>TAG *</label>
+              <label className="field-label">TAG <span className="field-required">*</span></label>
               <input
                 value={form.tag}
                 onChange={e => setForm(f => ({ ...f, tag: e.target.value.toUpperCase() }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box' }}
+                className="field-input"
+                style={{ fontFamily: 'monospace' }}
                 placeholder="Ex: FIC-1001"
                 autoFocus
               />
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Descrição *</label>
+              <label className="field-label">Descrição <span className="field-required">*</span></label>
               <input
                 value={form.descricao}
                 onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                className="field-input"
                 placeholder="Ex: Controlador de Fluxo da Linha 1"
               />
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Área *</label>
+              <label className="field-label">Área <span className="field-required">*</span></label>
               <select
                 value={form.areaId}
                 onChange={e => setForm(f => ({ ...f, areaId: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white' }}
+                className="field-input"
               >
                 <option value="">Selecione uma área...</option>
                 {areas.map(a => (

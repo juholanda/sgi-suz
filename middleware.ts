@@ -11,7 +11,7 @@ export default auth((req) => {
     return NextResponse.redirect(new URL('/login', req.nextUrl))
   }
   if (isLoggedIn && isAuthRoute) {
-    return NextResponse.redirect(new URL('/dashboard', req.nextUrl))
+    return NextResponse.redirect(new URL('/selecionar-planta', req.nextUrl))
   }
   return NextResponse.next()
 })

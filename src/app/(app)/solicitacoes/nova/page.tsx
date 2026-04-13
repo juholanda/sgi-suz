@@ -62,8 +62,24 @@ const PRAZO_MAX: Record<string, string> = {
 }
 
 const COR_CLASSE: Record<string, string> = {
-  '1': '#16A34A', '2': '#EAB308', '3': '#EA580C', '4': '#DC2626', '5': '#7F1D1D',
+  '1': '#1D4ED8', '2': '#0D9488', '3': '#EA580C', '4': '#DC2626', '5': '#7F1D1D',
 }
+
+const FUNCOES_INTERTRAVAMENTO = [
+  'Desligamento de motor',
+  'Inibição de abertura de válvula',
+  'Bloqueio de partida',
+  'Parada de processo',
+  'Proteção contra sobrepressão',
+  'Proteção contra sobre-temperatura',
+  'Proteção contra sobrenível',
+  'Proteção contra baixo nível',
+  'Alarme e bloqueio',
+  'Intertravamento de segurança (SIL)',
+  'Proteção de equipamento rotativo',
+  'Bloqueio de fluxo',
+  'Outros',
+]
 
 function Icon({ name, size = 20 }: { name: string; size?: number }) {
   return (
@@ -77,12 +93,25 @@ function Icon({ name, size = 20 }: { name: string; size?: number }) {
   )
 }
 
+interface SubmittedData {
+  id: string
+  protocolo: string
+  tag: string
+  tagDescricao: string
+  area: string
+  classeNumero: string
+  executanteNome: string
+  periodoInicio: string
+  periodoFim: string
+}
+
 export default function NovaSolicitacaoPage() {
   const router = useRouter()
   const [etapa, setEtapa] = useState<Etapa>(1)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<FieldError>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [submitted, setSubmitted] = useState<SubmittedData | null>(null)
 
   // Dados externos
   const [areas, setAreas] = useState<Area[]>([])
@@ -224,16 +253,137 @@ export default function NovaSolicitacaoPage() {
         body: formData,
       })
       const data = await res.json()
-      router.push(`/solicitacoes/${data.id}`)
+      setSubmitted({
+        id: data.id,
+        protocolo: data.protocolo,
+        tag: equipSelecionado?.tag ?? '',
+        tagDescricao: equipSelecionado?.descricao ?? '',
+        area: areaSelecionada ? `${areaSelecionada.planta.nome} › ${areaSelecionada.nome}` : '',
+        classeNumero: form.classeNumero,
+        executanteNome: executanteSelecionado?.nome ?? '—',
+        periodoInicio: form.periodoInicio,
+        periodoFim: form.periodoFim,
+      })
     } finally {
       setLoading(false)
     }
   }
 
+  // ── Tela de confirmação pós-envio ───────────────────────────────────────────
+  if (submitted) {
+    const cor = COR_CLASSE[submitted.classeNumero] ?? '#64748B'
+    const fmtDate = (s: string) => s ? new Date(s + 'T00:00:00').toLocaleDateString('pt-BR') : '—'
+
+    return (
+      <div className="p-4 md:p-6 w-full max-w-2xl">
+        {/* Success header */}
+        <div className="flex flex-col items-center text-center mb-8 pt-4">
+          <div
+            className="w-16 h-16 flex items-center justify-center mb-4"
+            style={{ background: '#D1FAE5', borderRadius: '50%' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 36, color: '#16A34A' }}>check_circle</span>
+          </div>
+          <h1 className="text-xl font-bold mb-1" style={{ color: '#0F172A' }}>Solicitação enviada para aprovação</h1>
+          <p className="text-sm" style={{ color: '#64748B' }}>A fila de aprovadores foi notificada e você receberá atualizações conforme o processo avança.</p>
+        </div>
+
+        {/* Protocol card */}
+        <div
+          className="flex items-center justify-between p-4 mb-6"
+          style={{ background: '#EBF0FB', border: '1px solid #BFD0F0', borderRadius: '8px' }}
+        >
+          <div>
+            <p className="text-xs font-medium mb-0.5" style={{ color: '#475569' }}>Protocolo</p>
+            <p className="text-lg font-bold font-mono" style={{ color: '#0038A8' }}>{submitted.protocolo}</p>
+          </div>
+          <span
+            className="text-xs font-semibold px-3 py-1"
+            style={{ background: '#DBEAFE', color: '#1D4ED8', borderRadius: '20px' }}
+          >
+            Em aprovação
+          </span>
+        </div>
+
+        {/* Details */}
+        <div className="bg-white border mb-6" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
+          <div className="p-4 border-b" style={{ borderColor: '#F1F5F9' }}>
+            <p className="text-sm font-semibold" style={{ color: '#0F172A' }}>Dados da solicitação</p>
+          </div>
+          <div className="divide-y" style={{ borderColor: '#F1F5F9' }}>
+            <DetailRow label="Equipamento / TAG">
+              <span className="font-mono font-semibold" style={{ color: '#0038A8' }}>{submitted.tag}</span>
+              {submitted.tagDescricao && <span className="ml-2 text-sm" style={{ color: '#64748B' }}>{submitted.tagDescricao}</span>}
+            </DetailRow>
+            <DetailRow label="Área">{submitted.area || '—'}</DetailRow>
+            <DetailRow label="Classe de risco">
+              <span
+                className="inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5"
+                style={{ background: cor + '20', color: cor, borderRadius: '4px', border: `1px solid ${cor}40` }}
+              >
+                <span style={{ width: 8, height: 8, borderRadius: '50%', background: cor, display: 'inline-block' }} />
+                Classe {submitted.classeNumero}
+              </span>
+            </DetailRow>
+            <DetailRow label="Período">
+              {fmtDate(submitted.periodoInicio)} → {fmtDate(submitted.periodoFim)}
+            </DetailRow>
+            <DetailRow label="Executante">{submitted.executanteNome}</DetailRow>
+          </div>
+        </div>
+
+        {/* Next steps info */}
+        <div
+          className="flex gap-3 p-4 mb-8"
+          style={{ background: '#FFFBEB', border: '1px solid #FDE68A', borderRadius: '8px' }}
+        >
+          <span className="material-symbols-outlined shrink-0" style={{ fontSize: 20, color: '#B45309', marginTop: 1 }}>info</span>
+          <div>
+            <p className="text-sm font-medium mb-1" style={{ color: '#92400E' }}>Próximos passos</p>
+            <p className="text-xs" style={{ color: '#B45309', lineHeight: 1.6 }}>
+              Os aprovadores receberão notificação e terão o prazo máximo da classe para deliberar.
+              Você será notificado a cada mudança de status. Acompanhe em <strong>Minhas solicitações</strong>.
+            </p>
+          </div>
+        </div>
+
+        {/* Actions */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <button
+            onClick={() => router.push(`/solicitacoes/${submitted.id}`)}
+            className="btn btn-primary btn-md flex-1 justify-center"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>description</span>
+            Ver solicitação
+          </button>
+          <button
+            onClick={() => {
+              setSubmitted(null)
+              setEtapa(1)
+              setForm({ areaId: '', equipamentoId: '', executanteId: '', tipo: '', classeNumero: '', funcaoIntertravamento: '', motivoDesabilitacao: '', periodoInicio: '', periodoFim: '', medidasContingenciais: '', cienteRiscos: false })
+              setAnexos([])
+            }}
+            className="btn btn-secondary btn-md flex-1 justify-center"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>add</span>
+            Nova solicitação
+          </button>
+          <button
+            onClick={() => router.push('/solicitacoes')}
+            className="btn btn-outline btn-md flex-1 justify-center"
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 18 }}>list</span>
+            Minhas solicitações
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="p-6 max-w-3xl">
+    <div className="p-4 md:p-6 w-full max-w-4xl">
       <div className="mb-6">
-        <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Nova Solicitação de Desabilitação</h1>
+        <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Nova solicitação de desabilitação</h1>
       </div>
 
       {/* Progress steps */}
@@ -272,7 +422,7 @@ export default function NovaSolicitacaoPage() {
             <div className="grid grid-cols-2 gap-4">
               <Field label="Área *" error={errors.areaId}>
                 <select
-                  className={`field-input ${errors.areaId ? 'field-error' : ''}`}
+                  className={`field-input ${errors.areaId ? 'field-input--error' : ''}`}
                   value={form.areaId}
                   onChange={e => set('areaId', e.target.value)}
                   disabled={loadingAreas}
@@ -284,9 +434,9 @@ export default function NovaSolicitacaoPage() {
                 </select>
               </Field>
 
-              <Field label="TAG do Intertravamento *" error={errors.equipamentoId}>
+              <Field label="TAG do intertravamento *" error={errors.equipamentoId}>
                 <select
-                  className={`field-input ${errors.equipamentoId ? 'field-error' : ''}`}
+                  className={`field-input ${errors.equipamentoId ? 'field-input--error' : ''}`}
                   value={form.equipamentoId}
                   onChange={e => set('equipamentoId', e.target.value)}
                   disabled={!form.areaId}
@@ -299,7 +449,7 @@ export default function NovaSolicitacaoPage() {
               </Field>
             </div>
 
-            {/* Info block da TAG — RF-014 */}
+            {/* Info block da TAG — logo abaixo da seleção */}
             {equipSelecionado && (
               <div
                 className="p-4 space-y-2"
@@ -308,7 +458,7 @@ export default function NovaSolicitacaoPage() {
                 <div className="flex items-center gap-2 mb-2">
                   <Icon name="info" size={16} />
                   <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#475569' }}>
-                    Informações do Intertravamento
+                    Informações do intertravamento
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
@@ -322,35 +472,49 @@ export default function NovaSolicitacaoPage() {
               </div>
             )}
 
+            {/* Função + Tipo */}
             <div className="grid grid-cols-2 gap-4">
-              <Field label="Executante *" error={errors.executanteId}>
+              <Field label="Função do intertravamento *" error={errors.funcaoIntertravamento}>
                 <select
-                  className={`field-input ${errors.executanteId ? 'field-error' : ''}`}
-                  value={form.executanteId}
-                  onChange={e => set('executanteId', e.target.value)}
+                  className={`field-input ${errors.funcaoIntertravamento ? 'field-input--error' : ''}`}
+                  value={form.funcaoIntertravamento}
+                  onChange={e => set('funcaoIntertravamento', e.target.value)}
                 >
-                  <option value="">Selecione o executante</option>
-                  {executantes.map(u => (
-                    <option key={u.id} value={u.id}>
-                      {u.nome} ({u.matricula}){u.cargo ? ` — ${u.cargo.nome}` : ''}
-                    </option>
+                  <option value="">Selecione a função</option>
+                  {FUNCOES_INTERTRAVAMENTO.map(f => (
+                    <option key={f} value={f}>{f}</option>
                   ))}
                 </select>
               </Field>
 
-              <Field label="Tipo de Intertravamento *" error={errors.tipo}>
+              <Field label="Tipo de intertravamento *" error={errors.tipo}>
                 <select
-                  className={`field-input ${errors.tipo ? 'field-error' : ''}`}
+                  className={`field-input ${errors.tipo ? 'field-input--error' : ''}`}
                   value={form.tipo}
                   onChange={e => set('tipo', e.target.value)}
                 >
                   <option value="">Selecione o tipo</option>
                   <option value="FISICO">Físico</option>
                   <option value="LOGICO">Lógico</option>
-                  <option value="DISPOSITIVO_SEGURANCA">Dispositivo de Segurança</option>
+                  <option value="DISPOSITIVO_SEGURANCA">Dispositivo de segurança</option>
                 </select>
               </Field>
             </div>
+
+            <Field label="Executante *" error={errors.executanteId}>
+              <select
+                className={`field-input ${errors.executanteId ? 'field-input--error' : ''}`}
+                value={form.executanteId}
+                onChange={e => set('executanteId', e.target.value)}
+              >
+                <option value="">Selecione o executante</option>
+                {executantes.map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.nome} ({u.matricula}){u.cargo ? ` — ${u.cargo.nome}` : ''}
+                  </option>
+                ))}
+              </select>
+            </Field>
 
             {/* Seletor de Classe — RF-012: Classe 5 desabilitada */}
             <Field label="Classe *" error={errors.classeNumero}>
@@ -405,18 +569,9 @@ export default function NovaSolicitacaoPage() {
               )}
             </Field>
 
-            <Field label="Função do intertravamento *" error={errors.funcaoIntertravamento}>
-              <input
-                className={`field-input ${errors.funcaoIntertravamento ? 'field-error' : ''}`}
-                placeholder="Descreva a função de proteção deste intertravamento"
-                value={form.funcaoIntertravamento}
-                onChange={e => set('funcaoIntertravamento', e.target.value)}
-              />
-            </Field>
-
             <Field label="Motivo da desabilitação *" error={errors.motivoDesabilitacao}>
               <textarea
-                className={`field-input ${errors.motivoDesabilitacao ? 'field-error' : ''}`}
+                className={`field-input ${errors.motivoDesabilitacao ? 'field-input--error' : ''}`}
                 rows={3}
                 placeholder="Descreva o motivo técnico da desabilitação..."
                 value={form.motivoDesabilitacao}
@@ -428,7 +583,7 @@ export default function NovaSolicitacaoPage() {
               <Field label="Período início *" error={errors.periodoInicio}>
                 <input
                   type="datetime-local"
-                  className={`field-input ${errors.periodoInicio ? 'field-error' : ''}`}
+                  className={`field-input ${errors.periodoInicio ? 'field-input--error' : ''}`}
                   value={form.periodoInicio}
                   onChange={e => set('periodoInicio', e.target.value)}
                 />
@@ -436,7 +591,7 @@ export default function NovaSolicitacaoPage() {
               <Field label="Período fim *" error={errors.periodoFim}>
                 <input
                   type="datetime-local"
-                  className={`field-input ${errors.periodoFim ? 'field-error' : ''}`}
+                  className={`field-input ${errors.periodoFim ? 'field-input--error' : ''}`}
                   value={form.periodoFim}
                   onChange={e => set('periodoFim', e.target.value)}
                 />
@@ -455,7 +610,7 @@ export default function NovaSolicitacaoPage() {
         {/* ETAPA 2 — Contingência + Anexos */}
         {etapa === 2 && (
           <div className="space-y-5">
-            <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 2 — Medidas Contingenciais e Anexos</h2>
+            <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 2 — Medidas contingenciais e anexos</h2>
 
             <div className="flex items-start gap-2 px-4 py-3 text-sm" style={{ background: '#FEF9C3', color: '#92400E', borderRadius: '6px', border: '1px solid #FDE68A' }}>
               <Icon name="warning" size={18} />
@@ -464,7 +619,7 @@ export default function NovaSolicitacaoPage() {
 
             <Field label="Medidas Preventivas / Contingenciais *" error={errors.medidasContingenciais}>
               <textarea
-                className={`field-input ${errors.medidasContingenciais ? 'field-error' : ''}`}
+                className={`field-input ${errors.medidasContingenciais ? 'field-input--error' : ''}`}
                 rows={6}
                 placeholder="Exemplos:&#10;• Monitoramento manual periódico&#10;• Isolamento de área&#10;• Sinalização adicional&#10;• Procedimentos operacionais alternativos"
                 value={form.medidasContingenciais}
@@ -545,7 +700,7 @@ export default function NovaSolicitacaoPage() {
         {/* ETAPA 3 — Revisão */}
         {etapa === 3 && (
           <div className="space-y-5">
-            <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 3 — Revisão e Envio</h2>
+            <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 3 — Revisão e envio</h2>
 
             <div className="border divide-y" style={{ borderColor: '#E2E8F0', borderRadius: '6px' }}>
               <ResumoRow label="Área" value={areaSelecionada ? `${areaSelecionada.planta.nome} › ${areaSelecionada.nome}` : '—'} />
@@ -638,24 +793,6 @@ export default function NovaSolicitacaoPage() {
         </div>
       </div>
 
-      <style jsx>{`
-        .field-input {
-          width: 100%;
-          padding: 8px 12px;
-          border: 1px solid #E2E8F0;
-          border-radius: 6px;
-          font-size: 14px;
-          color: #0F172A;
-          outline: none;
-          transition: border-color 0.15s;
-          background: white;
-          font-family: inherit;
-        }
-        .field-input:focus { border-color: #0038A8; }
-        .field-input:disabled { background: #F8FAFC; color: #94A3B8; cursor: not-allowed; }
-        .field-error { border-color: #EF4444 !important; }
-        select.field-input { appearance: auto; }
-      `}</style>
     </div>
   )
 }
@@ -663,9 +800,14 @@ export default function NovaSolicitacaoPage() {
 function Field({ label, children, error }: { label: string; children: React.ReactNode; error?: string }) {
   return (
     <div>
-      <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>{label}</label>
+      <label className="field-label">{label}</label>
       {children}
-      {error && <p className="mt-1 text-xs" style={{ color: '#EF4444' }}>{error}</p>}
+      {error && (
+        <p className="field-error-msg">
+          <span className="material-symbols-outlined select-none" style={{ fontSize: 13, lineHeight: 1 }} aria-hidden="true">error</span>
+          {error}
+        </p>
+      )}
     </div>
   )
 }
@@ -688,6 +830,15 @@ function ResumoRow({ label, value, mono }: { label: string; value: string; mono?
       <span className={`text-sm flex-1 ${mono ? 'font-mono font-semibold' : ''}`} style={{ color: mono ? '#0038A8' : '#0F172A' }}>
         {value || <span style={{ color: '#94A3B8' }}>—</span>}
       </span>
+    </div>
+  )
+}
+
+function DetailRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex gap-4 px-4 py-3">
+      <span className="text-xs font-medium w-28 shrink-0 pt-0.5" style={{ color: '#6B7280' }}>{label}</span>
+      <span className="text-sm flex-1" style={{ color: '#0F172A' }}>{children}</span>
     </div>
   )
 }

@@ -160,11 +160,11 @@ export default function AreasPage() {
             )}
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Planta *</label>
+              <label className="field-label">Planta <span className="field-required">*</span></label>
               <select
                 value={form.plantaId}
                 onChange={e => setForm(f => ({ ...f, plantaId: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white' }}
+                className="field-input"
               >
                 <option value="">Selecione uma planta...</option>
                 {plantas.map(p => (
@@ -174,22 +174,22 @@ export default function AreasPage() {
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Nome da Área *</label>
+              <label className="field-label">Nome da Área <span className="field-required">*</span></label>
               <input
                 value={form.nome}
                 onChange={e => setForm(f => ({ ...f, nome: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                className="field-input"
                 placeholder="Ex: Área de Produção"
                 autoFocus
               />
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Código</label>
+              <label className="field-label">Código</label>
               <input
                 value={form.codigo}
                 onChange={e => setForm(f => ({ ...f, codigo: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                className="field-input"
                 placeholder="Ex: PROD"
               />
             </div>

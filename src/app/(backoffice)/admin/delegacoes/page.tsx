@@ -224,11 +224,11 @@ export default function DelegacoesPage() {
             )}
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Delegado por (quem estará ausente) *</label>
+              <label className="field-label">Delegado por (quem estará ausente) <span className="field-required">*</span></label>
               <select
                 value={form.delegadoPorId}
                 onChange={e => setForm(f => ({ ...f, delegadoPorId: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white' }}
+                className="field-input"
               >
                 <option value="">Selecione...</option>
                 {usuarios.map(u => <option key={u.id} value={u.id}>{u.nome} ({u.matricula})</option>)}
@@ -236,11 +236,11 @@ export default function DelegacoesPage() {
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Suplente (quem assumirá as aprovações) *</label>
+              <label className="field-label">Suplente (quem assumirá as aprovações) <span className="field-required">*</span></label>
               <select
                 value={form.delegadoParaId}
                 onChange={e => setForm(f => ({ ...f, delegadoParaId: e.target.value }))}
-                style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box', background: 'white' }}
+                className="field-input"
               >
                 <option value="">Selecione...</option>
                 {usuarios.filter(u => u.id !== form.delegadoPorId).map(u => (
@@ -251,21 +251,21 @@ export default function DelegacoesPage() {
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Data de início *</label>
+                <label className="field-label">Data de início <span className="field-required">*</span></label>
                 <input
                   type="date"
                   value={form.dataInicio}
                   onChange={e => setForm(f => ({ ...f, dataInicio: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  className="field-input"
                 />
               </div>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: 500, color: '#374151', marginBottom: '6px' }}>Data de fim *</label>
+                <label className="field-label">Data de fim <span className="field-required">*</span></label>
                 <input
                   type="date"
                   value={form.dataFim}
                   onChange={e => setForm(f => ({ ...f, dataFim: e.target.value }))}
-                  style={{ width: '100%', padding: '8px 12px', border: '1px solid #E2E8F0', borderRadius: '4px', fontSize: '14px', outline: 'none', boxSizing: 'border-box' }}
+                  className="field-input"
                 />
               </div>
             </div>

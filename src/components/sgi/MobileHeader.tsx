@@ -11,7 +11,7 @@ interface Props {
   planta: string
   plantas: Planta[]
   notifCount: number
-  notifItems: NotifItem[]
+  onToggleNotif: () => void
   onSwitchPerfil: (perfil: string) => void
   onSwitchPlanta: (plantaId: string) => void
 }
@@ -44,7 +44,7 @@ function Icon({ name, size = 20 }: { name: string; size?: number }) {
   )
 }
 
-type OpenPanel = 'perfil' | 'planta' | 'notif' | null
+type OpenPanel = 'perfil' | 'planta' | null
 
 export default function MobileHeader({
   perfil,
@@ -52,7 +52,7 @@ export default function MobileHeader({
   planta,
   plantas,
   notifCount,
-  notifItems,
+  onToggleNotif,
   onSwitchPerfil,
   onSwitchPlanta,
 }: Props) {
@@ -135,9 +135,9 @@ export default function MobileHeader({
           </button>
         )}
 
-        {/* Notification bell */}
+        {/* Notification bell — abre o drawer global */}
         <button
-          onClick={() => toggle('notif')}
+          onClick={() => { setOpen(null); onToggleNotif() }}
           className="relative w-8 h-8 flex items-center justify-center"
           style={{ color: notifCount > 0 ? '#0038A8' : '#64748B' }}
           aria-label="Notificações"
@@ -220,64 +220,6 @@ export default function MobileHeader({
               {planta === p.id && <Icon name="check" size={16} />}
             </button>
           ))}
-        </div>
-      )}
-
-      {open === 'notif' && (
-        <div
-          className="w-full shadow-lg"
-          style={{ background: 'white', borderBottom: '1px solid #E2E8F0', maxHeight: '360px', overflowY: 'auto' }}
-        >
-          <div
-            className="px-4 py-2.5 border-b flex items-center justify-between"
-            style={{ borderColor: '#F1F5F9' }}
-          >
-            <span className="text-sm font-semibold" style={{ color: '#0F172A' }}>Notificações</span>
-            {notifCount > 0 && (
-              <span
-                className="text-xs font-medium px-1.5 py-0.5"
-                style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}
-              >
-                {notifCount}
-              </span>
-            )}
-          </div>
-
-          {notifItems.length === 0 ? (
-            <div className="px-4 py-6 text-center">
-              <Icon name="notifications_off" size={24} />
-              <p className="mt-2 text-sm" style={{ color: '#64748B' }}>Nenhuma notificação</p>
-            </div>
-          ) : (
-            notifItems.map(item => (
-              <Link
-                key={item.id}
-                href={item.href}
-                onClick={() => setOpen(null)}
-                className="block px-4 py-3 border-b transition-colors active:bg-gray-50"
-                style={{ borderColor: '#F1F5F9' }}
-              >
-                <div className="flex items-start gap-2">
-                  {item.urgente && (
-                    <span className="shrink-0 mt-0.5" style={{ color: '#DC2626' }}>
-                      <Icon name="priority_high" size={16} />
-                    </span>
-                  )}
-                  <div className="flex-1 min-w-0">
-                    <p
-                      className="text-xs font-semibold"
-                      style={{ color: item.urgente ? '#DC2626' : '#0F172A' }}
-                    >
-                      {item.titulo}
-                    </p>
-                    <p className="text-xs mt-0.5 truncate" style={{ color: '#64748B' }}>
-                      {item.descricao}
-                    </p>
-                  </div>
-                </div>
-              </Link>
-            ))
-          )}
         </div>
       )}
 

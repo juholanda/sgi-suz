@@ -46,7 +46,7 @@ export default async function ExecucaoReabilitacaoPage() {
           <div className="flex items-center gap-2 mb-1">
             <Link href="/relatorios" className="text-xs" style={{ color: '#6B7280' }}>← Relatórios</Link>
           </div>
-          <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Relatório de Execução e Reabilitação</h1>
+          <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Relatório de execução e reabilitação</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Uso: Manutenção e SMS — disciplina operacional</p>
         </div>
         <button className="px-4 py-2 text-sm border hidden md:block" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>

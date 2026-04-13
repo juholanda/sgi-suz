@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
 import MobileHeader from './MobileHeader'
+import NotificacaoDrawer from './NotificacaoDrawer'
 import type { NotifItem } from '@/app/api/notificacoes/route'
 
 export interface Perfil {
@@ -21,24 +22,23 @@ interface Props {
   user: { name?: string | null; email?: string | null }
   perfisReais: Perfil[]
   plantas: Planta[]
+  perfilInicial: string
 }
 
-export default function AppLayoutClient({ children, user, perfisReais, plantas }: Props) {
-  const [perfilAtivo, setPerfilAtivo] = useState<string>('')
+export default function AppLayoutClient({ children, user, perfisReais, plantas, perfilInicial }: Props) {
+  const [perfilAtivo, setPerfilAtivo] = useState<string>(perfilInicial)
   const [plantaAtiva, setPlantaAtiva] = useState<string>('')
   const [notifCount, setNotifCount] = useState(0)
   const [notifItems, setNotifItems] = useState<NotifItem[]>([])
   const [showNotif, setShowNotif] = useState(false)
 
-  // Inicializar perfil ativo do localStorage
+  // Sincronizar cookie na primeira montagem (caso seja a primeira visita sem cookie)
   useEffect(() => {
-    const stored = localStorage.getItem('sgi_demo_perfil')
-    if (stored && perfisReais.some(p => p.perfil === stored)) {
-      setPerfilAtivo(stored)
-    } else if (perfisReais.length > 0) {
-      setPerfilAtivo(perfisReais[0].perfil)
+    if (perfilInicial) {
+      document.cookie = `sgi_perfil_ativo=${perfilInicial};path=/;max-age=86400`
     }
-  }, [perfisReais])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Inicializar planta ativa do localStorage
   useEffect(() => {
@@ -79,6 +79,7 @@ export default function AppLayoutClient({ children, user, perfisReais, plantas }
 
   function switchPerfil(perfil: string) {
     localStorage.setItem('sgi_demo_perfil', perfil)
+    document.cookie = `sgi_perfil_ativo=${perfil};path=/;max-age=86400`
     window.location.reload()
   }
 
@@ -103,8 +104,6 @@ export default function AppLayoutClient({ children, user, perfisReais, plantas }
           isAprovador={isAprovador}
           isSolicitante={isSolicitante}
           notifCount={notifCount}
-          notifItems={notifItems}
-          showNotif={showNotif}
           onToggleNotif={() => setShowNotif(s => !s)}
           onSwitchPerfil={switchPerfil}
           onSwitchPlanta={switchPlanta}
@@ -120,7 +119,7 @@ export default function AppLayoutClient({ children, user, perfisReais, plantas }
           planta={plantaAtiva}
           plantas={plantas}
           notifCount={notifCount}
-          notifItems={notifItems}
+          onToggleNotif={() => setShowNotif(s => !s)}
           onSwitchPerfil={switchPerfil}
           onSwitchPlanta={switchPlanta}
         />
@@ -128,6 +127,14 @@ export default function AppLayoutClient({ children, user, perfisReais, plantas }
       </main>
 
       <MobileNav isAprovador={isAprovador} isSolicitante={isSolicitante} />
+
+      {/* Notification drawer — global, fora do sidebar para não ser cortado */}
+      <NotificacaoDrawer
+        open={showNotif}
+        onClose={() => setShowNotif(false)}
+        notifCount={notifCount}
+        notifItems={notifItems}
+      />
     </div>
   )
 }

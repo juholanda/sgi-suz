@@ -24,7 +24,7 @@ export default async function ExecucaoPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Execução em Campo</h1>
+        <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Execução em campo</h1>
         <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Desabilitações autorizadas e em andamento</p>
       </div>
 

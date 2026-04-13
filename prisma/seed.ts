@@ -120,6 +120,13 @@ async function main() {
   await prisma.usuarioPerfil.create({
     data: { userId: solicitante.id, perfil: 'SOLICITANTE', plantaId: planta.id, areaId: areaFibras.id },
   }).catch(() => {})
+  // Demo: João também tem perfil APROVADOR e EXECUTANTE para testar o switcher
+  await prisma.usuarioPerfil.create({
+    data: { userId: solicitante.id, perfil: 'APROVADOR', plantaId: planta.id },
+  }).catch(() => {})
+  await prisma.usuarioPerfil.create({
+    data: { userId: solicitante.id, perfil: 'EXECUTANTE', plantaId: planta.id, areaId: areaFibras.id },
+  }).catch(() => {})
 
   // Executante
   const executante = await prisma.user.upsert({
