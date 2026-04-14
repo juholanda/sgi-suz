@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SGI — Home Solicitante (Proposta UX)</title>
+    <style>
+      :root {
+        --bg: #f0f4f8;
+        --panel: #ffffff;
+        --line: #e2e8f0;
+        --text: #0f172a;
+        --muted: #64748b;
+        --blue: #1d4ed8;
+        --blue-soft: #eaf1ff;
+        --red: #dc2626;
+        --red-soft: #fee2e2;
+        --amber: #f59e0b;
+        --amber-soft: #ffedd5;
+        --green: #059669;
+        --green-soft: #dcfce7;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font: 14px/1.4 Inter, "Segoe UI", Arial, sans-serif;
+      }
+
+      .app {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 14px;
+      }
+
+      .title {
+        margin: 0;
+        font-size: 28px;
+        line-height: 1.1;
+      }
+
+      .subtitle {
+        margin: 6px 0 0;
+        color: var(--muted);
+      }
+
+      .btn-primary {
+        border: 0;
+        background: #0038a8;
+        color: #fff;
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+      }
+
+      .panorama {
+        padding: 14px;
+        margin-bottom: 16px;
+      }
+
+      .panorama-head {
+        margin-bottom: 10px;
+      }
+
+      .panorama-head h2 {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .panorama-head p {
+        margin: 4px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .panorama-grid {
+        display: grid;
+        grid-template-columns: 1.6fr 1fr 1fr;
+        gap: 10px;
+      }
+
+      .mini {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 10px;
+        min-height: 80px;
+      }
+
+      .mini h3 {
+        margin: 0 0 8px;
+        font-size: 12px;
+        color: var(--muted);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      .stack {
+        display: flex;
+        width: 100%;
+        height: 14px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: #eef2f7;
+        margin: 8px 0;
+      }
+
+      .seg-acao {
+        width: 18%;
+        background: var(--blue);
+      }
+      .seg-risco {
+        width: 12%;
+        background: var(--red);
+      }
+      .seg-terceiros {
+        width: 54%;
+        background: var(--amber);
+      }
+      .seg-desab {
+        width: 16%;
+        background: var(--green);
+      }
+
+      .legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 10px;
+        color: #334155;
+        font-size: 12px;
+      }
+
+      .dot {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 99px;
+        margin-right: 5px;
+      }
+
+      .risk-number {
+        font-size: 20px;
+        font-weight: 700;
+        margin: 0;
+      }
+
+      .risk-line {
+        height: 10px;
+        border-radius: 999px;
+        overflow: hidden;
+        background: #f1f5f9;
+        margin-top: 8px;
+      }
+
+      .risk-fill {
+        width: 11%;
+        height: 100%;
+        background: linear-gradient(90deg, var(--amber), var(--red));
+      }
+
+      .trend-wrap {
+        margin-top: 8px;
+      }
+
+      .trend-svg {
+        width: 100%;
+        height: 46px;
+        display: block;
+      }
+
+      .trend-axis {
+        stroke: #cbd5e1;
+        stroke-width: 1;
+      }
+
+      .trend-open {
+        fill: none;
+        stroke: #1d4ed8;
+        stroke-width: 2;
+      }
+
+      .trend-closed {
+        fill: none;
+        stroke: #059669;
+        stroke-width: 2;
+      }
+
+      .trend-legend {
+        margin-top: 6px;
+        display: flex;
+        gap: 10px;
+        font-size: 11px;
+        color: #475569;
+      }
+
+      .section-title {
+        margin: 0 0 10px;
+        font-size: 19px;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+      }
+
+      .quad {
+        padding: 12px;
+      }
+
+      .quad.highlight-action {
+        border-color: #bfdbfe;
+        background: linear-gradient(180deg, #f8fbff 0%, #ffffff 40%);
+      }
+
+      .quad.highlight-risk {
+        border-color: #fecaca;
+        background: linear-gradient(180deg, #fff8f8 0%, #ffffff 40%);
+      }
+
+      .quad-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+
+      .quad-head h3 {
+        margin: 0;
+        font-size: 16px;
+      }
+
+      .quad-head p {
+        margin: 3px 0 0;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .link {
+        color: #1d4ed8;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 12px;
+      }
+
+      .cards {
+        display: grid;
+        gap: 8px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        background: #fff;
+        padding: 10px;
+      }
+
+      .card-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .tag {
+        font-size: 19px;
+        font-weight: 700;
+      }
+
+      .meta {
+        color: var(--muted);
+        font-size: 12px;
+        margin-top: 2px;
+      }
+
+      .badge {
+        border-radius: 999px;
+        padding: 3px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        white-space: nowrap;
+      }
+
+      .b-rascunho {
+        background: #e2e8f0;
+        color: #334155;
+      }
+
+      .b-risco {
+        background: var(--red-soft);
+        color: #b91c1c;
+      }
+
+      .b-info {
+        background: var(--blue-soft);
+        color: var(--blue);
+      }
+
+      .b-op {
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .btn-inline {
+        margin-top: 9px;
+        border: 0;
+        border-radius: 8px;
+        padding: 7px 10px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+      }
+
+      .btn-action {
+        background: #1d4ed8;
+        color: #fff;
+      }
+
+      .btn-risk {
+        background: #dc2626;
+        color: #fff;
+      }
+
+      .btn-neutral {
+        background: #f1f5f9;
+        color: #0f172a;
+      }
+
+      @media (max-width: 1020px) {
+        .panorama-grid {
+          grid-template-columns: 1fr;
+        }
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app">
+      <header class="header">
+        <div>
+          <h1 class="title">Início</h1>
+          <p class="subtitle">Olá, João. Veja o que precisa da sua atenção.</p>
+        </div>
+        <button class="btn-primary">+ Nova Solicitação</button>
+      </header>
+
+      <section class="panel panorama">
+        <div class="panorama-head">
+          <h2>Panorama rápido da planta</h2>
+          <p>Visão de 1 minuto para priorizar sua ação.</p>
+        </div>
+        <div class="panorama-grid">
+          <article class="mini">
+            <h3>Distribuição das solicitações ativas</h3>
+            <div class="stack">
+              <span class="seg-acao"></span>
+              <span class="seg-risco"></span>
+              <span class="seg-terceiros"></span>
+              <span class="seg-desab"></span>
+            </div>
+            <div class="legend">
+              <span><i class="dot" style="background:#1d4ed8"></i>Ação 18%</span>
+              <span><i class="dot" style="background:#dc2626"></i>Risco 12%</span>
+              <span><i class="dot" style="background:#f59e0b"></i>Terceiros 54%</span>
+              <span><i class="dot" style="background:#059669"></i>Desabilitadas 16%</span>
+            </div>
+          </article>
+
+          <article class="mini">
+            <h3>Risco de SLA hoje</h3>
+            <p class="risk-number">3 <span style="font-size:12px;font-weight:600;color:#64748b">de 27 abertas</span></p>
+            <div class="risk-line"><div class="risk-fill"></div></div>
+            <div class="meta">11% em risco no momento</div>
+          </article>
+
+          <article class="mini">
+            <h3>Evolução operacional (7 dias)</h3>
+            <div class="trend-wrap">
+              <svg class="trend-svg" viewBox="0 0 220 46" aria-label="Evolução de abertas e encerradas">
+                <line class="trend-axis" x1="0" y1="40" x2="220" y2="40"></line>
+                <polyline class="trend-open" points="0,24 30,20 60,27 90,17 120,21 150,19 180,22 220,18"></polyline>
+                <polyline class="trend-closed" points="0,31 30,33 60,29 90,32 120,28 150,30 180,27 220,26"></polyline>
+              </svg>
+              <div class="trend-legend">
+                <span><i class="dot" style="background:#1d4ed8"></i>Abertas</span>
+                <span><i class="dot" style="background:#059669"></i>Encerradas</span>
+              </div>
+            </div>
+            <div class="meta">Saldo estável nas últimas 48h</div>
+          </article>
+        </div>
+      </section>
+
+      <h2 class="section-title">Painel operacional</h2>
+      <section class="grid">
+        <article class="panel quad highlight-action">
+          <div class="quad-head">
+            <div>
+              <h3>Ações pendentes (1)</h3>
+              <p>Pendências que dependem de você agora.</p>
+            </div>
+            <a class="link" href="#">Ver todos →</a>
+          </div>
+          <div class="cards">
+            <div class="card">
+              <div class="card-row">
+                <div>
+                  <div class="tag">FIB-BOM-032</div>
+                  <div class="meta">Intertravamento FIB-BOM-032 · Físico</div>
+                  <div class="meta">Área de Fibras</div>
+                </div>
+                <span class="badge b-rascunho">Rascunho</span>
+              </div>
+              <button class="btn-inline btn-action">Continuar rascunho →</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel quad highlight-risk">
+          <div class="quad-head">
+            <div>
+              <h3>Em risco de prazo (1)</h3>
+              <p>Itens com risco de SLA e atenção imediata.</p>
+            </div>
+            <a class="link" href="#">Ver todos →</a>
+          </div>
+          <div class="cards">
+            <div class="card">
+              <div class="card-row">
+                <div>
+                  <div class="tag">CL4 · FIB-BOM-032</div>
+                  <div class="meta">Intertravamento FIB-BOM-032 · Lógico</div>
+                  <div class="meta">Área de Fibras</div>
+                </div>
+                <span class="badge b-risco">Desabilitado</span>
+              </div>
+              <div class="meta" style="color:#b91c1c;margin-top:8px">Prazo máximo encerrado · 0d / 1d máx.</div>
+              <button class="btn-inline btn-risk">Ver agora →</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel quad">
+          <div class="quad-head">
+            <div>
+              <h3>Aguardando terceiros (26)</h3>
+              <p>Em andamento, dependendo da ação de outras áreas.</p>
+            </div>
+            <a class="link" href="#">Ver todos →</a>
+          </div>
+          <div class="cards">
+            <div class="card">
+              <div class="card-row">
+                <div>
+                  <div class="tag">SGI-2026-0142</div>
+                  <div class="meta">TAG CAL-PMP-003 · Área de Fibras</div>
+                  <div class="meta">Próxima etapa: aprovador nível 1</div>
+                </div>
+                <span class="badge b-info">Em aprovação</span>
+              </div>
+              <button class="btn-inline btn-neutral">Acompanhar →</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel quad">
+          <div class="quad-head">
+            <div>
+              <h3>Desabilitadas no momento (4)</h3>
+              <p>Intertravamentos abertos operacionalmente.</p>
+            </div>
+            <a class="link" href="#">Ver todos →</a>
+          </div>
+          <div class="cards">
+            <div class="card">
+              <div class="card-row">
+                <div>
+                  <div class="tag">FIB-VAL-107</div>
+                  <div class="meta">Área de Fibras · Classe 2</div>
+                  <div class="meta">Tempo restante previsto: 6h</div>
+                </div>
+                <span class="badge b-op">Desabilitado</span>
+              </div>
+              <button class="btn-inline btn-neutral">Ver solicitação →</button>
+            </div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </body>
+</html>
