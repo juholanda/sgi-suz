@@ -9,10 +9,12 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await auth()
   if (!session) redirect('/login')
 
-  const perfis = ((session.user as any)?.perfis as string[]) ?? ['SOLICITANTE']
-  const plantas = ((session.user as any)?.plantas as Array<{ id: string; nome: string }>) ?? [
-    { id: 'planta-default', nome: 'Planta 1' },
-  ]
+  const perfisRaw = ((session.user as any)?.perfis as string[] | undefined) ?? []
+  const plantasRaw =
+    ((session.user as any)?.plantas as Array<{ id: string; nome: string }> | undefined) ?? []
+  const perfis = perfisRaw.length > 0 ? perfisRaw : ['SOLICITANTE']
+  const plantas =
+    plantasRaw.length > 0 ? plantasRaw : [{ id: 'planta-default', nome: 'Planta 1' }]
   const cookieStore = cookies()
   const rawContext = cookieStore.get('sgi_contexto')?.value
   let persistedContext: { perfil?: string; plantaId?: string } = {}
