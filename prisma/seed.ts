@@ -78,7 +78,22 @@ async function main() {
     data: { userId: solicitante.id, perfil: 'SOLICITANTE', plantaId: planta.id, areaId: area.id },
   }).catch(() => {/* already exists */})
 
-  console.log('Seed completo! Credenciais: matrícula 000001 / senha suzano123')
+  // Executante demo
+  const executante = await prisma.user.upsert({
+    where: { matricula: '000003' },
+    update: {},
+    create: {
+      matricula: '000003',
+      nome: 'Maria Executante',
+      email: 'maria.executante@suzano.com.br',
+      passwordHash: await bcrypt.hash('suzano123', 10),
+    },
+  })
+  await prisma.usuarioPerfil.create({
+    data: { userId: executante.id, perfil: 'EXECUTANTE', plantaId: planta.id, areaId: area.id },
+  }).catch(() => {/* already exists */})
+
+  console.log('Seed completo! Credenciais: 000001 (admin), 000002 (solicitante), 000003 (executante) / senha suzano123')
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect())

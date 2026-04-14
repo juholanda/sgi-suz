@@ -28,7 +28,14 @@ export async function GET() {
       prisma.equipamento.findMany({
         where: { ativo: true, area: { ativa: true, planta: { ativa: true } } },
         include: {
-          area: { select: { id: true, plantaId: true } },
+          area: {
+            select: {
+              id: true,
+              nome: true,
+              plantaId: true,
+              planta: { select: { nome: true } },
+            },
+          },
           solicitacoes: {
             select: {
               tipo: true,
@@ -51,7 +58,15 @@ export async function GET() {
           ativo: true,
           perfis: { some: { perfil: 'EXECUTANTE' } },
         },
-        select: { id: true, nome: true, matricula: true, perfis: { select: { areaId: true, plantaId: true } } },
+        select: {
+          id: true,
+          nome: true,
+          matricula: true,
+          perfis: {
+            where: { perfil: 'EXECUTANTE' },
+            select: { areaId: true, plantaId: true },
+          },
+        },
         orderBy: { nome: 'asc' },
       }),
     ])
@@ -82,6 +97,8 @@ export async function GET() {
         descricao: eq.descricao,
         areaId: eq.area.id,
         plantaId: eq.area.plantaId,
+        areaNome: eq.area.nome,
+        plantaNome: eq.area.planta.nome,
         tipoSugerido: snapshot?.tipo ?? null,
         funcaoSugerida: snapshot?.funcaoIntertravamento ?? eq.descricao,
         classeSugerida: snapshot?.classe?.numero ?? null,
@@ -96,12 +113,39 @@ export async function GET() {
           (p.plantaId ? plantaIds.has(p.plantaId) : true),
       ),
     )
-    .map(user => ({ id: user.id, nome: user.nome, matricula: user.matricula }))
+    .map(user => ({
+      id: user.id,
+      nome: user.nome,
+      matricula: user.matricula,
+      areaIds: user.perfis.map(p => p.areaId).filter((value): value is string => Boolean(value)),
+      plantaIds: user.perfis.map(p => p.plantaId).filter((value): value is string => Boolean(value)),
+    }))
+
+  const executantesResponse =
+    scopedExecutantes.length > 0
+      ? scopedExecutantes
+      : executantes.map(user => ({
+          id: user.id,
+          nome: user.nome,
+          matricula: user.matricula,
+          areaIds: user.perfis.map(p => p.areaId).filter((value): value is string => Boolean(value)),
+          plantaIds: user.perfis.map(p => p.plantaId).filter((value): value is string => Boolean(value)),
+        }))
+
+  const funcoesIntertravamento = Array.from(
+    new Set(
+      equipments
+        .map(eq => eq.funcaoSugerida)
+        .filter((value): value is string => Boolean(value && value.trim()))
+        .map(value => value.trim()),
+    ),
+  ).sort((a, b) => a.localeCompare(b))
 
   return NextResponse.json({
     areas: scopedAreas,
     equipamentos: equipments,
-    executantes: scopedExecutantes,
+    executantes: executantesResponse,
+    funcoesIntertravamento,
     classes: classes.map(c => ({
       id: c.id,
       numero: c.numero,
