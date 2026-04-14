@@ -5,6 +5,7 @@ import { StatusSolicitacao, ClasseNum } from '@/lib/tokens'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
+import { PageBreadcrumb } from '@/components/sgi/PageBreadcrumb'
 
 async function getSolicitacoesAuditoria() {
   return prisma.solicitacao.findMany({
@@ -42,6 +43,13 @@ export default async function AuditoriaPage() {
 
   return (
     <div className="p-4 md:p-6">
+      <PageBreadcrumb
+        backHref="/relatorios"
+        items={[
+          { label: 'Relatórios', href: '/relatorios' },
+          { label: 'Auditoria End-to-End' },
+        ]}
+      />
       <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">

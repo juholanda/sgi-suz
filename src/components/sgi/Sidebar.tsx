@@ -10,22 +10,28 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: '/dashboard',    label: 'Dashboard',    icon: '⊞' },
-  { href: '/solicitacoes', label: 'Solicitações', icon: '📋' },
-  { href: '/aprovacoes',   label: 'Aprovações',   icon: '✓' },
-  { href: '/execucao',     label: 'Execução',     icon: '⚙' },
-  { href: '/relatorios',   label: 'Relatórios',   icon: '📊' },
+  { href: '/dashboard', label: 'Início', icon: '⌂' },
+  { href: '/solicitacoes', label: 'Solicitações', icon: '☰' },
+  { href: '/relatorios', label: 'Métricas', icon: '◔' },
+  { href: '/perfil', label: 'Perfil', icon: '◉' },
 ]
 
-// Link separado para o admin — exibido apenas para administradores
-const adminLink: NavItem = { href: '/admin', label: 'Backoffice', icon: '🔧' }
+const adminLink: NavItem = { href: '/admin', label: 'Backoffice', icon: '⚙' }
 
 interface Props {
-  user: { name?: string | null; email?: string | null }
+  user: {
+    name?: string | null
+    email?: string | null
+    perfis?: string[]
+    plantaAtivaNome?: string
+    perfilAtivoNome?: string
+  }
 }
 
 export default function Sidebar({ user }: Props) {
   const pathname = usePathname()
+  const isNonProd = process.env.NODE_ENV !== 'production'
+  const canAccessBackoffice = (user.perfis ?? []).includes('ADMINISTRADOR')
 
   return (
     <aside
@@ -50,10 +56,41 @@ export default function Sidebar({ user }: Props) {
         </div>
       </div>
 
+      {/* Context switchers */}
+      <div className="px-4 py-4 border-b space-y-2" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+        <div>
+          <label className="block text-[11px] mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
+            Planta ativa
+          </label>
+          <button
+            type="button"
+            className="w-full text-left text-xs px-3 py-2"
+            style={{ background: 'rgba(255,255,255,0.12)', color: 'white', border: 'none', borderRadius: '4px' }}
+          >
+            {user.plantaAtivaNome ?? 'Planta 1'} ▼
+          </button>
+        </div>
+        {isNonProd && (
+          <div>
+            <label className="block text-[11px] mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              Perfil ativo
+            </label>
+            <button
+              type="button"
+              className="w-full text-left text-xs px-3 py-2"
+              style={{ background: 'rgba(255,255,255,0.12)', color: 'white', border: 'none', borderRadius: '4px' }}
+            >
+              {user.perfilAtivoNome ?? 'Solicitante'} ▼
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map(item => {
-          const active = pathname.startsWith(item.href)
+          const active =
+            item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href)
           return (
             <Link
               key={item.href}
@@ -72,21 +109,23 @@ export default function Sidebar({ user }: Props) {
           )
         })}
 
-        {/* Divisor + link admin */}
-        <div className="pt-3 mt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
-          <Link
-            href="/admin"
-            className="flex items-center gap-3 px-3 py-2 text-sm transition-colors"
-            style={{
-              borderRadius: '4px',
-              color: 'rgba(255,255,255,0.45)',
-              fontWeight: 400,
-            }}
-          >
-            <span className="text-base w-5 text-center">{adminLink.icon}</span>
-            {adminLink.label}
-          </Link>
-        </div>
+        {canAccessBackoffice && (
+          <div className="pt-3 mt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+            <Link
+              href="/admin"
+              className="flex items-center gap-3 px-3 py-2 text-sm transition-colors"
+              style={{
+                borderRadius: '4px',
+                color: pathname.startsWith('/admin') ? 'white' : 'rgba(255,255,255,0.7)',
+                background: pathname.startsWith('/admin') ? 'rgba(255,255,255,0.15)' : 'transparent',
+                fontWeight: pathname.startsWith('/admin') ? 500 : 400,
+              }}
+            >
+              <span className="text-base w-5 text-center">{adminLink.icon}</span>
+              {adminLink.label}
+            </Link>
+          </div>
+        )}
       </nav>
 
       {/* User */}

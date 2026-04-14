@@ -3,11 +3,10 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const mobileNavItems = [
-  { href: '/dashboard',    label: 'Início',       icon: '⊞' },
-  { href: '/solicitacoes', label: 'Solicitações',  icon: '📋' },
-  { href: '/aprovacoes',   label: 'Aprovações',    icon: '✓' },
-  { href: '/execucao',     label: 'Execução',      icon: '⚙' },
-  { href: '/relatorios',   label: 'Relatórios',    icon: '📊' },
+  { href: '/dashboard', label: 'Início', icon: '⌂' },
+  { href: '/solicitacoes', label: 'Solicitações', icon: '▤' },
+  { href: '/relatorios', label: 'Métricas', icon: '◍' },
+  { href: '/perfil', label: 'Perfil', icon: '◉' },
 ]
 
 export default function MobileNav() {

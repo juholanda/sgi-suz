@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { PageBreadcrumb } from '@/components/sgi/PageBreadcrumb'
 
 const relatorios = [
   { href: '/relatorios/violacao-sla',           label: 'Violação de SLA',              desc: 'Solicitações que excederam SLA. Uso: Compliance, Segurança do Processo.', icon: '⚠' },
@@ -9,6 +10,12 @@ const relatorios = [
 export default function RelatoriosPage() {
   return (
     <div className="p-6">
+      <PageBreadcrumb
+        items={[
+          { label: 'Início', href: '/dashboard' },
+          { label: 'Métricas' },
+        ]}
+      />
       <div className="mb-6">
         <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Relatórios</h1>
         <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Análises e exportações do SGI</p>

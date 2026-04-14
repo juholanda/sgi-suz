@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { StatusSolicitacao } from '@/lib/tokens'
+import { useAppToast } from '@/components/sgi/AppToastProvider'
 
 interface Props {
   solicitacaoId: string
@@ -41,6 +42,7 @@ const CHECKLIST_REAB_LABELS: Record<number, string> = {
 
 export default function AcoesButtons({ solicitacaoId, status, tipo }: Props) {
   const router = useRouter()
+  const { showToast } = useAppToast()
   const [showCancelarModal, setShowCancelarModal] = useState(false)
   const [showAprovarModal, setShowAprovarModal] = useState(false)
   const [showRejeitarModal, setShowRejeitarModal] = useState(false)
@@ -81,6 +83,7 @@ export default function AcoesButtons({ solicitacaoId, status, tipo }: Props) {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Falha ao executar ação')
+      showToast({ title: 'Ação executada com sucesso', variant: 'success' })
       router.refresh()
     } catch (e: any) {
       setError(e?.message ?? 'Erro inesperado na ação')

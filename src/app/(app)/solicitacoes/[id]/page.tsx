@@ -6,6 +6,7 @@ import { StatusSolicitacao, ClasseNum, STATUS_LABELS } from '@/lib/tokens'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import AcoesButtons from './AcoesButtons'
+import { PageBreadcrumb } from '@/components/sgi/PageBreadcrumb'
 
 async function getSolicitacao(id: string) {
   return prisma.solicitacao.findUnique({
@@ -67,6 +68,14 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
 
   return (
     <div className="p-6 max-w-4xl">
+      <PageBreadcrumb
+        backHref="/solicitacoes"
+        items={[
+          { label: 'Solicitações', href: '/solicitacoes' },
+          { label: s.protocolo, href: `/solicitacoes/${s.id}` },
+          { label: 'Detalhe' },
+        ]}
+      />
       {/* Header */}
       <div className="flex items-start gap-4 mb-6">
         <div className="flex-1">

@@ -3,6 +3,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { ClasseNum } from '@/lib/tokens'
+import { PageBreadcrumb } from '@/components/sgi/PageBreadcrumb'
+import { useAppToast } from '@/components/sgi/AppToastProvider'
 
 type Etapa = 1 | 2 | 3
 
@@ -65,6 +67,7 @@ const PRAZO_MAX: Record<string, string> = {
 
 export default function NovaSolicitacaoPage() {
   const router = useRouter()
+  const { showToast } = useAppToast()
   const [etapa, setEtapa] = useState<Etapa>(1)
   const [loading, setLoading] = useState(false)
   const [metaLoading, setMetaLoading] = useState(true)
@@ -195,6 +198,7 @@ export default function NovaSolicitacaoPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Falha ao salvar rascunho.')
+      showToast({ title: 'Rascunho salvo com sucesso', variant: 'success' })
       router.push('/solicitacoes')
     } catch (e: any) {
       setError(e?.message ?? 'Falha ao salvar rascunho.')
@@ -223,6 +227,7 @@ export default function NovaSolicitacaoPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data?.error || 'Falha ao enviar solicitação.')
+      showToast({ title: 'Solicitação enviada com sucesso', variant: 'success' })
       router.push(`/solicitacoes/${data.id}`)
     } catch (e: any) {
       setError(e?.message ?? 'Falha ao enviar solicitação.')
@@ -233,6 +238,13 @@ export default function NovaSolicitacaoPage() {
 
   return (
     <div className="p-6 max-w-3xl">
+      <PageBreadcrumb
+        backHref="/solicitacoes"
+        items={[
+          { label: 'Solicitações', href: '/solicitacoes' },
+          { label: 'Nova Solicitação' },
+        ]}
+      />
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Nova Solicitação de Desabilitação</h1>
@@ -489,17 +501,30 @@ export default function NovaSolicitacaoPage() {
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center justify-between mt-6 pt-5 border-t" style={{ borderColor: '#E2E8F0' }}>
+      </div>
+      <div
+        className="sticky bottom-0 left-0 right-0 mt-4 border bg-white/95 backdrop-blur"
+        style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
+      >
+        <div className="flex items-center justify-between gap-3 px-4 py-3">
           <div className="flex gap-2">
-            {etapa > 1 && (
+            {etapa > 1 ? (
               <button
                 type="button"
                 onClick={() => setEtapa(e => (e - 1) as Etapa)}
                 className="px-4 py-2 text-sm border"
                 style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}
               >
-                ← Anterior
+                Anterior
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => router.push('/solicitacoes')}
+                className="px-4 py-2 text-sm border"
+                style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}
+              >
+                Cancelar
               </button>
             )}
             <button
@@ -520,7 +545,7 @@ export default function NovaSolicitacaoPage() {
               style={{ background: '#0038A8', borderRadius: '4px' }}
               disabled={metaLoading || loading}
             >
-              Próximo: {ETAPAS[etapa].label} →
+              Próximo
             </button>
           ) : (
             <button

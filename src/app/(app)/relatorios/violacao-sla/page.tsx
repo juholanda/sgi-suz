@@ -4,6 +4,7 @@ import { ClasseNum } from '@/lib/tokens'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
+import { PageBreadcrumb } from '@/components/sgi/PageBreadcrumb'
 
 async function getViolacoes() {
   return prisma.solicitacao.findMany({
@@ -39,9 +40,13 @@ export default async function ViolacaoSlaPage() {
     <div className="p-4 md:p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <Link href="/relatorios" className="text-xs" style={{ color: '#6B7280' }}>← Relatórios</Link>
-          </div>
+          <PageBreadcrumb
+            backHref="/relatorios"
+            items={[
+              { label: 'Métricas', href: '/relatorios' },
+              { label: 'Violação de SLA' },
+            ]}
+          />
           <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Relatório de Violação de SLA</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Uso: Compliance, Segurança do Processo, Auditoria</p>
         </div>

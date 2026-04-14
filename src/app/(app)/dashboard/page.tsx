@@ -3,6 +3,7 @@ import { prisma } from '@/lib/db'
 import { StatusBadge } from '@/components/sgi/StatusBadge'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { tokens, StatusSolicitacao, ClasseNum } from '@/lib/tokens'
+import { PageBreadcrumb } from '@/components/sgi/PageBreadcrumb'
 import Link from 'next/link'
 
 async function getMetrics() {
@@ -57,6 +58,10 @@ export default async function DashboardPage() {
 
   return (
     <div className="p-6">
+      <PageBreadcrumb
+        items={[{ label: 'Início' }, { label: 'Worklist' }]}
+        backHref="/solicitacoes"
+      />
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -141,8 +146,14 @@ export default async function DashboardPage() {
             <tbody>
               {solicitacoes.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="text-center py-8 text-sm" style={{ color: '#94A3B8' }}>
-                    Nenhuma solicitação ativa
+                  <td colSpan={6} className="text-center py-8 text-sm">
+                    <div className="flex flex-col items-center gap-2" style={{ color: '#94A3B8' }}>
+                      <span style={{ fontSize: '20px' }}>📭</span>
+                      <span>Nenhuma solicitação encontrada</span>
+                      <Link href="/solicitacoes/nova" className="text-xs font-medium" style={{ color: '#0038A8' }}>
+                        Criar nova solicitação
+                      </Link>
+                    </div>
                   </td>
                 </tr>
               ) : (

@@ -1,10 +1,8 @@
 import { prisma } from '@/lib/db'
-import { StatusBadge } from '@/components/sgi/StatusBadge'
-import { ClasseBadge } from '@/components/sgi/ClasseBadge'
-import { StatusSolicitacao, ClasseNum } from '@/lib/tokens'
+import { PageBreadcrumb } from '@/components/sgi/PageBreadcrumb'
+import { SolicitacaoCard } from '@/components/sgi/SolicitacaoCard'
+import { StatusSolicitacao } from '@/lib/tokens'
 import Link from 'next/link'
-import { formatDistanceToNow } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 
 const WORKLIST_STATUSES: StatusSolicitacao[] = [
   'EM_APROVACAO',
@@ -22,20 +20,6 @@ const WORKLIST_SECTIONS = [
     label: 'Reabilitação Aguardando Validação',
   },
 ]
-
-const TIME_BASED_LABELS: Record<StatusSolicitacao, string> = {
-  EM_APROVACAO: 'Em aprovação há',
-  EXECUCAO_AUTORIZADA: 'Aguardando execução há',
-  DESABILITADO: 'Desabilitado há',
-  EM_VALIDACAO_DA_REABILITACAO: 'Aguardando validação há',
-  RASCUNHO: 'Criado há',
-  EM_EXECUCAO: 'Em execução há',
-  EM_REABILITACAO: 'Em reabilitação há',
-  ENCERRADA: 'Encerrada há',
-  REJEITADA: 'Rejeitada há',
-  CANCELADA: 'Cancelada há',
-  EXTENSAO_EM_ANALISE: 'Extensão em análise há',
-}
 
 async function getWorklistData() {
   const solicitacoes = await prisma.solicitacao.findMany({
@@ -78,11 +62,6 @@ export default async function SolicitacoesPage() {
     items: solicitacoes.filter(s => s.status === g.status),
   }))
 
-  function getTimeReferenceLabel(status: StatusSolicitacao, date: Date | null | undefined) {
-    if (!date) return null
-    return `${TIME_BASED_LABELS[status]} ${formatDistanceToNow(date, { locale: ptBR, addSuffix: false })}`
-  }
-
   const metricCards = [
     {
       key: 'EM_APROVACAO',
@@ -112,6 +91,14 @@ export default async function SolicitacoesPage() {
 
   return (
     <div className="p-6">
+        <PageBreadcrumb
+          backHref="/dashboard"
+          items={[
+            { label: 'Início', href: '/dashboard' },
+            { label: 'Solicitações' },
+          ]}
+        />
+
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Solicitações</h1>
@@ -137,7 +124,6 @@ export default async function SolicitacoesPage() {
               <span className="text-xs font-medium" style={{ color: '#475569' }}>
                 {card.label}
               </span>
-              <StatusBadge status={card.status} size="sm" />
             </div>
             <div className="text-3xl font-bold" style={{ color: '#0F172A' }}>
               {card.value}
@@ -150,93 +136,54 @@ export default async function SolicitacoesPage() {
         {grouped.map(group => (
           <div key={group.status}>
             <div className="flex items-center gap-2 mb-3">
-              <StatusBadge status={group.status as StatusSolicitacao} />
-              <span className="text-sm font-medium" style={{ color: '#374151' }}>{group.label}</span>
+              <span className="text-sm font-semibold" style={{ color: '#334155' }}>{group.label}</span>
               <span className="text-sm" style={{ color: '#6B7280' }}>({group.items.length})</span>
             </div>
             {group.items.length === 0 ? (
               <div
-                className="bg-white border px-4 py-6 text-sm"
+                className="bg-white border px-4 py-10 text-sm flex flex-col items-center gap-2"
                 style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#94A3B8' }}
               >
-                Nenhuma solicitação neste status.
+                <span style={{ fontSize: '20px' }}>🗂️</span>
+                <span>Nenhuma solicitação encontrada</span>
+                <Link href="/solicitacoes/nova" className="text-xs font-medium" style={{ color: '#0038A8' }}>
+                  Criar nova solicitação
+                </Link>
               </div>
             ) : (
               <div className="grid gap-3">
                 {group.items.map(s => (
-                  <Link key={s.id} href={`/solicitacoes/${s.id}`}>
-                    <div
-                      className="bg-white border p-4 flex items-center gap-4 hover:shadow-sm transition-shadow cursor-pointer"
-                      style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
-                    >
-                      {/* TAG */}
-                      <div className="flex-shrink-0">
-                        <div
-                          className="px-3 py-1.5 font-mono text-sm font-semibold"
-                          style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}
-                        >
-                          {s.equipamento.tag}
-                        </div>
-                      </div>
-
-                      {/* Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>
-                            {s.protocolo}
-                          </span>
-                          {s.prazoMaximoAtingido && (
-                            <span className="text-xs px-1.5 py-0.5 font-medium" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
-                              ⚠ Prazo máximo atingido
-                            </span>
-                          )}
-                          {s.prazoPrevitoAtingido && !s.prazoMaximoAtingido && (
-                            <span className="text-xs px-1.5 py-0.5 font-medium" style={{ background: '#FEF3C7', color: '#B45309', borderRadius: '4px' }}>
-                              ⏱ Prazo previsto atingido
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 text-xs" style={{ color: '#6B7280' }}>
-                          <span>{s.area.planta.nome} · {s.area.nome}</span>
-                          <span>·</span>
-                          <span>Solicitante: {s.solicitante.nome}</span>
-                          {getTimeReferenceLabel(s.status as StatusSolicitacao, s.status === 'DESABILITADO'
-                            ? s.dataDesabilitacao
-                            : s.status === 'EM_APROVACAO'
-                            ? s.dataEnvio
-                            : s.status === 'EXECUCAO_AUTORIZADA'
-                            ? s.dataAprovacaoFinal
-                            : s.status === 'EM_VALIDACAO_DA_REABILITACAO'
-                            ? s.dataReabilitacao
-                            : s.updatedAt,
-                          ) && (
-                            <>
-                              <span>·</span>
-                              <span>
-                                {getTimeReferenceLabel(
-                                  s.status as StatusSolicitacao,
-                                  s.status === 'DESABILITADO'
-                                    ? s.dataDesabilitacao
-                                    : s.status === 'EM_APROVACAO'
-                                    ? s.dataEnvio
-                                    : s.status === 'EXECUCAO_AUTORIZADA'
-                                    ? s.dataAprovacaoFinal
-                                    : s.status === 'EM_VALIDACAO_DA_REABILITACAO'
-                                    ? s.dataReabilitacao
-                                    : s.updatedAt,
-                                )}
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Classe */}
-                      {s.classe && (
-                        <ClasseBadge classe={s.classe.numero as ClasseNum} showPrazo size="sm" />
-                      )}
-                    </div>
-                  </Link>
+                  <SolicitacaoCard
+                    key={s.id}
+                    data={{
+                      id: s.id,
+                      protocolo: s.protocolo,
+                      status: s.status as StatusSolicitacao,
+                      equipamento: { tag: s.equipamento.tag, descricao: s.equipamento.descricao },
+                      area: { nome: s.area.nome, planta: { nome: s.area.planta.nome } },
+                      classe: s.classe ? { numero: s.classe.numero } : null,
+                      periodoInicio: s.periodoInicio,
+                      periodoFim: s.periodoFim,
+                      dataEnvio: s.dataEnvio,
+                      dataAprovacaoFinal: s.dataAprovacaoFinal,
+                      dataDesabilitacao: s.dataDesabilitacao,
+                      dataReabilitacao: s.dataReabilitacao,
+                      prazoPrevitoAtingido: s.prazoPrevitoAtingido,
+                      prazoMaximoAtingido: s.prazoMaximoAtingido,
+                    }}
+                    actionHref={`/solicitacoes/${s.id}`}
+                    actionLabel={
+                      s.status === 'EXECUCAO_AUTORIZADA'
+                        ? 'Executar desabilitação →'
+                        : s.status === 'EM_APROVACAO'
+                        ? 'Analisar'
+                        : s.status === 'DESABILITADO'
+                        ? 'Reabilitar'
+                        : s.status === 'EM_VALIDACAO_DA_REABILITACAO'
+                        ? 'Validar'
+                        : undefined
+                    }
+                  />
                 ))}
               </div>
             )}
