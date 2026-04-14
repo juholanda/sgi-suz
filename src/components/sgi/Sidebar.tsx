@@ -2,6 +2,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { signOut } from 'next-auth/react'
+import { useState } from 'react'
 
 interface NavItem {
   href: string
@@ -23,6 +24,7 @@ interface Props {
     name?: string | null
     email?: string | null
     perfis?: string[]
+    plantas?: Array<{ id: string; nome: string }>
     plantaAtivaNome?: string
     perfilAtivoNome?: string
   }
@@ -31,7 +33,39 @@ interface Props {
 export default function Sidebar({ user }: Props) {
   const pathname = usePathname()
   const isNonProd = process.env.NODE_ENV !== 'production'
-  const canAccessBackoffice = (user.perfis ?? []).includes('ADMINISTRADOR')
+  const perfis = user.perfis ?? []
+  const plantas = user.plantas ?? []
+  const canAccessBackoffice = perfis.includes('ADMINISTRADOR')
+  const initialPlantaId =
+    plantas.find(planta => planta.nome === user.plantaAtivaNome)?.id ??
+    plantas[0]?.id ??
+    'planta-default'
+  const [activePlantaId, setActivePlantaId] = useState(initialPlantaId)
+  const [activePerfil, setActivePerfil] = useState(user.perfilAtivoNome ?? perfis[0] ?? 'SOLICITANTE')
+  const [savingContext, setSavingContext] = useState(false)
+
+  const perfilOptions = perfis.length > 0 ? perfis : ['SOLICITANTE']
+  const plantaOptions = plantas.length > 0 ? plantas : [{ id: 'planta-default', nome: 'Planta 1' }]
+
+  async function updateContext(input: { perfil?: string; plantaId?: string }) {
+    setSavingContext(true)
+    try {
+      const response = await fetch('/api/contexto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      })
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar contexto ativo.')
+      }
+      window.location.reload()
+    } catch (err) {
+      console.error(err)
+      alert('Não foi possível atualizar o contexto ativo. Tente novamente.')
+    } finally {
+      setSavingContext(false)
+    }
+  }
 
   return (
     <aside
@@ -62,26 +96,58 @@ export default function Sidebar({ user }: Props) {
           <label className="block text-[11px] mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
             Planta ativa
           </label>
-          <button
-            type="button"
+          <select
             className="w-full text-left text-xs px-3 py-2"
-            style={{ background: 'rgba(255,255,255,0.12)', color: 'white', border: 'none', borderRadius: '4px' }}
+            value={activePlantaId}
+            onChange={e => {
+              const nextPlantaId = e.target.value
+              setActivePlantaId(nextPlantaId)
+              void updateContext({ plantaId: nextPlantaId })
+            }}
+            disabled={savingContext}
+            style={{
+              background: 'rgba(255,255,255,0.12)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              width: '100%',
+            }}
           >
-            {user.plantaAtivaNome ?? 'Planta 1'} ▼
-          </button>
+            {plantaOptions.map(planta => (
+              <option key={planta.id} value={planta.id} style={{ color: '#0F172A' }}>
+                {planta.nome}
+              </option>
+            ))}
+          </select>
         </div>
         {isNonProd && (
           <div>
             <label className="block text-[11px] mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
               Perfil ativo
             </label>
-            <button
-              type="button"
+            <select
               className="w-full text-left text-xs px-3 py-2"
-              style={{ background: 'rgba(255,255,255,0.12)', color: 'white', border: 'none', borderRadius: '4px' }}
+              value={activePerfil}
+              onChange={e => {
+                const nextPerfil = e.target.value
+                setActivePerfil(nextPerfil)
+                void updateContext({ perfil: nextPerfil })
+              }}
+              disabled={savingContext}
+              style={{
+                background: 'rgba(255,255,255,0.12)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                width: '100%',
+              }}
             >
-              {user.perfilAtivoNome ?? 'Solicitante'} ▼
-            </button>
+              {perfilOptions.map(perfil => (
+                <option key={perfil} value={perfil} style={{ color: '#0F172A' }}>
+                  {perfil}
+                </option>
+              ))}
+            </select>
           </div>
         )}
       </div>
@@ -109,8 +175,8 @@ export default function Sidebar({ user }: Props) {
           )
         })}
 
-        {canAccessBackoffice && (
-          <div className="pt-3 mt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+        <div className="pt-3 mt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+          {canAccessBackoffice ? (
             <Link
               href="/admin"
               className="flex items-center gap-3 px-3 py-2 text-sm transition-colors"
@@ -124,8 +190,8 @@ export default function Sidebar({ user }: Props) {
               <span className="text-base w-5 text-center">{adminLink.icon}</span>
               {adminLink.label}
             </Link>
-          </div>
-        )}
+          ) : null}
+        </div>
       </nav>
 
       {/* User */}

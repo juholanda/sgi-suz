@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth'
+import { cookies } from 'next/headers'
 import { redirect } from 'next/navigation'
 import Sidebar from '@/components/sgi/Sidebar'
 import MobileNav from '@/components/sgi/MobileNav'
@@ -12,13 +13,29 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const plantas = ((session.user as any)?.plantas as Array<{ id: string; nome: string }>) ?? [
     { id: 'planta-default', nome: 'Planta 1' },
   ]
-  const contextoAtivo = {
-    plantaId: ((session.user as any)?.plantaAtivaId as string) ?? plantas[0].id,
-    perfil: ((session.user as any)?.perfilAtivo as string) ?? perfis[0],
+  const cookieStore = cookies()
+  const rawContext = cookieStore.get('sgi_contexto')?.value
+  let persistedContext: { perfil?: string; plantaId?: string } = {}
+  if (rawContext) {
+    try {
+      persistedContext = JSON.parse(decodeURIComponent(rawContext))
+    } catch {
+      persistedContext = {}
+    }
   }
-  const canSeeBackoffice = perfis.includes('ADMINISTRADOR')
-  const canSwitchPerfil = process.env.NODE_ENV !== 'production'
-  const isDevelopment = process.env.NODE_ENV !== 'production'
+
+  const perfilPersistido =
+    persistedContext.perfil && perfis.includes(persistedContext.perfil)
+      ? persistedContext.perfil
+      : undefined
+  const plantaPersistida =
+    persistedContext.plantaId && plantas.some(planta => planta.id === persistedContext.plantaId)
+      ? persistedContext.plantaId
+      : undefined
+  const contextoAtivo = {
+    plantaId: plantaPersistida ?? ((session.user as any)?.plantaAtivaId as string) ?? plantas[0].id,
+    perfil: perfilPersistido ?? ((session.user as any)?.perfilAtivo as string) ?? perfis[0],
+  }
 
   return (
     <AppToastProvider>
@@ -29,6 +46,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             user={{
               ...(session.user ?? {}),
               perfis,
+              plantas,
               plantaAtivaNome:
                 plantas.find(p => p.id === contextoAtivo.plantaId)?.nome ?? plantas[0]?.nome ?? 'Planta 1',
               perfilAtivoNome: contextoAtivo.perfil,
