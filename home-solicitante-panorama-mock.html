@@ -177,11 +177,39 @@
         background: linear-gradient(90deg, var(--amber), var(--red));
       }
 
-      .spark {
-        margin-top: 10px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        color: #334155;
-        font-size: 12px;
+      .trend-wrap {
+        margin-top: 8px;
+      }
+
+      .trend-svg {
+        width: 100%;
+        height: 46px;
+        display: block;
+      }
+
+      .trend-axis {
+        stroke: #cbd5e1;
+        stroke-width: 1;
+      }
+
+      .trend-open {
+        fill: none;
+        stroke: #1d4ed8;
+        stroke-width: 2;
+      }
+
+      .trend-closed {
+        fill: none;
+        stroke: #059669;
+        stroke-width: 2;
+      }
+
+      .trend-legend {
+        margin-top: 6px;
+        display: flex;
+        gap: 10px;
+        font-size: 11px;
+        color: #475569;
       }
 
       .section-title {
@@ -344,7 +372,7 @@
         </div>
         <div class="panorama-grid">
           <article class="mini">
-            <h3>Composição do aberto agora</h3>
+            <h3>Distribuição das solicitações ativas</h3>
             <div class="stack">
               <span class="seg-acao"></span>
               <span class="seg-risco"></span>
@@ -367,10 +395,17 @@
           </article>
 
           <article class="mini">
-            <h3>Tendência 7 dias</h3>
-            <div class="spark">
-              Abertas&nbsp;&nbsp; ─╮__╭─╮__<br />
-              Encerradas ─╭─╮╯╭─╯
+            <h3>Evolução operacional (7 dias)</h3>
+            <div class="trend-wrap">
+              <svg class="trend-svg" viewBox="0 0 220 46" aria-label="Evolução de abertas e encerradas">
+                <line class="trend-axis" x1="0" y1="40" x2="220" y2="40"></line>
+                <polyline class="trend-open" points="0,24 30,20 60,27 90,17 120,21 150,19 180,22 220,18"></polyline>
+                <polyline class="trend-closed" points="0,31 30,33 60,29 90,32 120,28 150,30 180,27 220,26"></polyline>
+              </svg>
+              <div class="trend-legend">
+                <span><i class="dot" style="background:#1d4ed8"></i>Abertas</span>
+                <span><i class="dot" style="background:#059669"></i>Encerradas</span>
+              </div>
             </div>
             <div class="meta">Saldo estável nas últimas 48h</div>
           </article>
