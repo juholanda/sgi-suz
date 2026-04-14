@@ -4,6 +4,7 @@ import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
 import MobileHeader from './MobileHeader'
 import NotificacaoDrawer from './NotificacaoDrawer'
+import { ToastContainer } from './Toast'
 import type { NotifItem } from '@/app/api/notificacoes/route'
 
 export interface Perfil {
@@ -135,6 +136,9 @@ export default function AppLayoutClient({ children, user, perfisReais, plantas, 
         notifCount={notifCount}
         notifItems={notifItems}
       />
+
+      {/* Global toast notifications */}
+      <ToastContainer />
     </div>
   )
 }

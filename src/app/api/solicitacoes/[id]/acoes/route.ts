@@ -198,6 +198,31 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ ok: true })
   }
 
+  // ── SOLICITAR EXTENSÃO ─── UC008 ──────────────────────────────────────────
+  if (tipo === 'SOLICITAR_EXTENSAO') {
+    const { novaDataFim, justificativa } = body
+    if (!novaDataFim || !justificativa) {
+      return NextResponse.json({ error: 'Nova data fim e justificativa são obrigatórios' }, { status: 400 })
+    }
+    if (solicitacao.status !== 'DESABILITADO') {
+      return NextResponse.json({ error: 'Só é possível solicitar extensão quando DESABILITADO' }, { status: 400 })
+    }
+    // Valida que novo fim não ultrapassa prazo máximo da classe
+    if (solicitacao.classe?.prazoMaximoDias && solicitacao.dataDesabilitacao) {
+      const maxFim = new Date(solicitacao.dataDesabilitacao)
+      maxFim.setDate(maxFim.getDate() + solicitacao.classe.prazoMaximoDias)
+      if (new Date(novaDataFim) > maxFim) {
+        return NextResponse.json({ error: 'Nova data ultrapassa o prazo máximo da classe' }, { status: 400 })
+      }
+    }
+    await prisma.solicitacao.update({
+      where: { id },
+      data: { periodoFim: new Date(novaDataFim) },
+    })
+    await registrarEvento(id, userId, 'EXTENSAO_REGISTRADA', `Nova data fim: ${novaDataFim}. Justificativa: ${justificativa}`)
+    return NextResponse.json({ ok: true })
+  }
+
   return NextResponse.json({ error: 'Ação desconhecida' }, { status: 400 })
 }
 

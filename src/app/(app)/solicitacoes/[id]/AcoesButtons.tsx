@@ -26,14 +26,14 @@ interface Props {
 }
 
 const CHECKLIST_DESABILITACAO: Omit<ChecklistItemState, 'resposta' | 'observacao'>[] = [
-  { numero: 1, descricao: 'Foram verificadas as condições operacionais e de segurança da área antes da desabilitação?' },
-  { numero: 2, descricao: 'As medidas contingenciais descritas foram implementadas e estão em vigor?' },
-  { numero: 3, descricao: 'O cartão de advertência foi afixado no local de forma visível? (apenas para intertravamentos físicos)' },
-  { numero: 4, descricao: 'Os responsáveis pela área foram informados sobre a desabilitação e o período previsto?' },
+  { numero: 1, descricao: 'A desabilitação será feita com o equipamento em operação?' },
+  { numero: 2, descricao: 'Foi estabelecida uma proteção alternativa em substituição ao intertravamento/dispositivo de segurança desabilitado?' },
+  { numero: 3, descricao: 'O cartão de advertência está instalado no equipamento ou painel?' },
+  { numero: 4, descricao: 'A desabilitação será em instalação elétrica?' },
 ]
 
 const CHECKLIST_REABILITACAO: Omit<ChecklistItemState, 'resposta' | 'observacao'>[] = [
-  { numero: 1, descricao: 'Todos os dispositivos de bloqueio/sinalização foram removidos?' },
+  { numero: 1, descricao: 'Todos os dispositivos de bloqueio/sinalização foram removidos?' }, // note about cartão added in render for FISICO
   { numero: 2, descricao: 'Foram verificadas as condições de funcionamento do intertravamento/dispositivo de segurança?' },
 ]
 
@@ -110,13 +110,17 @@ export default function AcoesButtons({
   const canValidarReab = isAprovador && status === 'EM_VALIDACAO_DA_REABILITACAO'
   const canIniciarExec = (isSolicitante || isExecutante) && status === 'EXECUCAO_AUTORIZADA'
   const canConfirmarDesab = (isSolicitante || isExecutante) && status === 'EM_EXECUCAO'
-  const canIniciarReab = isSolicitante && status === 'DESABILITADO'
+  // Spec: Executante (and Solicitante) can initiate rehabilitation when DESABILITADO
+  const canIniciarReab = (isSolicitante || isExecutante) && status === 'DESABILITADO'
   const canConcluirReab = (isSolicitante || isExecutante) && status === 'EM_REABILITACAO'
   const canCancelar = isSolicitante && ['RASCUNHO', 'EM_APROVACAO', 'EXECUCAO_AUTORIZADA'].includes(status)
   const canSolicitarExtensao = isSolicitante && status === 'DESABILITADO'
+  // Spec: Solicitante can clone from REJEITADA/CANCELADA
+  const canClonar = isSolicitante && ['REJEITADA', 'CANCELADA'].includes(status)
+  const canExportarPdf = status === 'ENCERRADA'
 
   const hasAcoes = canAprovar || canValidarReab || canIniciarExec || canConfirmarDesab ||
-    canIniciarReab || canConcluirReab || canCancelar || canSolicitarExtensao
+    canIniciarReab || canConcluirReab || canCancelar || canSolicitarExtensao || canClonar || canExportarPdf
 
   if (!hasAcoes) return null
 
@@ -248,6 +252,31 @@ export default function AcoesButtons({
           >
             Cancelar solicitação
           </button>
+        )}
+
+        {/* Clonar como nova solicitação — spec: Solicitante can clone from REJEITADA/CANCELADA */}
+        {canClonar && (
+          <button
+            onClick={() => router.push(`/solicitacoes/nova?clonar=${solicitacaoId}`)}
+            className="px-4 py-2 text-sm font-medium"
+            style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px', border: '1px solid #BFD0F0' }}
+          >
+            Clonar como nova solicitação
+          </button>
+        )}
+
+        {/* Exportar PDF — when ENCERRADA */}
+        {canExportarPdf && (
+          <a
+            href={`/api/solicitacoes/${solicitacaoId}/pdf`}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 px-4 py-2 text-sm font-medium"
+            style={{ background: '#F1F5F9', color: '#475569', borderRadius: '4px', border: '1px solid #E2E8F0' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>picture_as_pdf</span>
+            Exportar formulário digital (PDF)
+          </a>
         )}
       </ActionFooter>
 

@@ -5,6 +5,7 @@ import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { ClasseNum } from '@/lib/tokens'
 import { Input, Select, Textarea } from '@/components/design-system/Input'
 import { Button } from '@/components/design-system/Button'
+import { ActionFooter } from '@/components/design-system/ActionFooter'
 
 type Etapa = 1 | 2 | 3
 
@@ -21,6 +22,9 @@ interface Equipamento {
   descricao: string
   areaId: string
   area: { nome: string }
+  tipo?: string | null       // LOGICO | FISICO | DISPOSITIVO_SEGURANCA
+  classeNumero?: number | null // 1-4
+  funcaoProtegida?: string | null
 }
 
 interface UserOption {
@@ -157,7 +161,16 @@ export default function NovaSolicitacaoPage() {
   function set(field: keyof FormData, value: string | boolean) {
     setErrors(prev => { const n = { ...prev }; delete n[field]; return n })
     if (field === 'areaId') {
-      setForm(prev => ({ ...prev, areaId: value as string, equipamentoId: '' }))
+      setForm(prev => ({ ...prev, areaId: value as string, equipamentoId: '', tipo: '', classeNumero: '' }))
+    } else if (field === 'equipamentoId') {
+      const equip = equipamentos.find(e => e.id === value)
+      setForm(prev => ({
+        ...prev,
+        equipamentoId: value as string,
+        // Auto-fill from equipment data if available
+        tipo: equip?.tipo ?? prev.tipo,
+        classeNumero: equip?.classeNumero != null ? String(equip.classeNumero) : prev.classeNumero,
+      }))
     } else {
       setForm(prev => ({ ...prev, [field]: value }))
     }
@@ -167,6 +180,10 @@ export default function NovaSolicitacaoPage() {
   const equipSelecionado = equipamentos.find(e => e.id === form.equipamentoId)
   const areaSelecionada = areas.find(a => a.id === form.areaId)
   const executanteSelecionado = executantes.find(u => u.id === form.executanteId)
+
+  // Track which fields were auto-filled from equipment
+  const autoFilledTipo = !!(equipSelecionado?.tipo)
+  const autoFilledClasse = equipSelecionado?.classeNumero != null
 
   function validateEtapa1(): boolean {
     const e: FieldError = {}
@@ -390,6 +407,20 @@ export default function NovaSolicitacaoPage() {
 
   return (
     <div className="p-4 md:p-6 w-full max-w-4xl mx-auto">
+      {/* Breadcrumb / back nav */}
+      <div className="flex items-center gap-2 mb-5">
+        <a
+          href="/solicitacoes"
+          className="flex items-center gap-1 text-sm"
+          style={{ color: '#64748B' }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>arrow_back</span>
+          <span className="hidden sm:inline">Solicitações</span>
+        </a>
+        <span className="hidden sm:inline text-sm" style={{ color: '#CBD5E1' }}>/</span>
+        <span className="hidden sm:inline text-sm font-medium" style={{ color: '#0F172A' }}>Nova solicitação</span>
+      </div>
+
       <div className="mb-6">
         <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Nova solicitação de desabilitação</h1>
       </div>
@@ -476,7 +507,24 @@ export default function NovaSolicitacaoPage() {
                   {areaSelecionada && (
                     <InfoRow icon="factory" label="Planta" value={areaSelecionada.planta.nome} />
                   )}
+                  {equipSelecionado.funcaoProtegida && (
+                    <InfoRow icon="security" label="Função protegida" value={equipSelecionado.funcaoProtegida} />
+                  )}
                 </div>
+                {(autoFilledTipo || autoFilledClasse) && (
+                  <div
+                    className="flex items-center gap-2 mt-2 px-3 py-2 text-xs"
+                    style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px', border: '1px solid #BFD0F0' }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 14, lineHeight: 1 }}>auto_fix_high</span>
+                    <span>
+                      Campos pré-preenchidos automaticamente:
+                      {autoFilledTipo && <strong className="ml-1">Tipo ({equipSelecionado.tipo})</strong>}
+                      {autoFilledTipo && autoFilledClasse && ' · '}
+                      {autoFilledClasse && <strong className="ml-1">Classe {equipSelecionado.classeNumero}</strong>}
+                    </span>
+                  </div>
+                )}
               </div>
             )}
 
@@ -495,18 +543,32 @@ export default function NovaSolicitacaoPage() {
                 ))}
               </Select>
 
-              <Select
-                label="Tipo de intertravamento *"
-                value={form.tipo}
-                onChange={e => set('tipo', e.target.value)}
-                variant={errors.tipo ? 'error' : 'default'}
-                errorMessage={errors.tipo}
-              >
-                <option value="">Selecione o tipo</option>
-                <option value="FISICO">Físico</option>
-                <option value="LOGICO">Lógico</option>
-                <option value="DISPOSITIVO_SEGURANCA">Dispositivo de segurança</option>
-              </Select>
+              {autoFilledTipo ? (
+                <div>
+                  <label className="field-label">Tipo de intertravamento</label>
+                  <div
+                    className="px-3 py-2 text-sm flex items-center gap-2"
+                    style={{ background: '#F0F4F8', borderRadius: '4px', border: '1px solid #E2E8F0', color: '#374151' }}
+                  >
+                    <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#0038A8', lineHeight: 1 }}>lock</span>
+                    {form.tipo === 'FISICO' ? 'Físico' : form.tipo === 'LOGICO' ? 'Lógico' : form.tipo === 'DISPOSITIVO_SEGURANCA' ? 'Dispositivo de segurança' : form.tipo}
+                    <span className="ml-auto text-xs" style={{ color: '#0038A8' }}>pré-preenchido</span>
+                  </div>
+                </div>
+              ) : (
+                <Select
+                  label="Tipo de intertravamento *"
+                  value={form.tipo}
+                  onChange={e => set('tipo', e.target.value)}
+                  variant={errors.tipo ? 'error' : 'default'}
+                  errorMessage={errors.tipo}
+                >
+                  <option value="">Selecione o tipo</option>
+                  <option value="FISICO">Físico</option>
+                  <option value="LOGICO">Lógico</option>
+                  <option value="DISPOSITIVO_SEGURANCA">Dispositivo de segurança</option>
+                </Select>
+              )}
             </div>
 
             <Select
@@ -531,17 +593,23 @@ export default function NovaSolicitacaoPage() {
                   <button
                     key={c}
                     type="button"
-                    onClick={() => set('classeNumero', String(c))}
+                    onClick={() => !autoFilledClasse && set('classeNumero', String(c))}
+                    disabled={autoFilledClasse}
                     className="flex-1 py-2.5 text-sm font-medium border transition-all"
                     style={{
                       borderRadius: '6px',
                       borderColor: form.classeNumero === String(c) ? COR_CLASSE[String(c)] : '#E2E8F0',
                       background: form.classeNumero === String(c) ? `${COR_CLASSE[String(c)]}18` : 'white',
                       color: form.classeNumero === String(c) ? COR_CLASSE[String(c)] : '#6B7280',
+                      cursor: autoFilledClasse ? 'default' : 'pointer',
+                      opacity: autoFilledClasse && form.classeNumero !== String(c) ? 0.4 : 1,
                     }}
                   >
                     <div className="font-semibold">Classe {c}</div>
                     <div className="text-xs opacity-80">{PRAZO_MAX[String(c)]}</div>
+                    {autoFilledClasse && form.classeNumero === String(c) && (
+                      <div className="text-xs mt-0.5" style={{ color: '#0038A8' }}>pré-preenchido</div>
+                    )}
                   </button>
                 ))}
                 {/* Classe 5 — desabilitada, RF-012 */}
@@ -730,6 +798,24 @@ export default function NovaSolicitacaoPage() {
               )}
             </div>
 
+            {/* Aprovadores — RF-030 */}
+            <div
+              className="flex items-start gap-3 px-4 py-3"
+              style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '6px', color: '#1D4ED8' }}
+            >
+              <span className="material-symbols-outlined shrink-0" style={{ fontSize: 18, lineHeight: 1, marginTop: 1 }}>
+                group
+              </span>
+              <div>
+                <p className="text-sm font-medium" style={{ color: '#1E40AF' }}>Aprovadores que serão notificados</p>
+                <p className="text-xs mt-0.5" style={{ color: '#3B82F6', lineHeight: 1.5 }}>
+                  {form.classeNumero
+                    ? `Os aprovadores serão notificados conforme a alçada configurada para Classe ${form.classeNumero}.`
+                    : 'Os aprovadores serão notificados conforme a alçada configurada para a classe selecionada.'}
+                </p>
+              </div>
+            </div>
+
             {/* Ciência — RF-024 */}
             <div className="border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '6px' }}>
               <label className="flex items-start gap-3 cursor-pointer">
@@ -748,8 +834,11 @@ export default function NovaSolicitacaoPage() {
           </div>
         )}
 
-        {/* Actions */}
-        <div className="flex items-center justify-between mt-6 pt-5 border-t" style={{ borderColor: '#E2E8F0' }}>
+      </div>
+
+      {/* Sticky footer navigation */}
+      <ActionFooter>
+        <div className="flex items-center justify-between w-full">
           <div className="flex gap-2">
             {etapa > 1 && (
               <Button
@@ -797,8 +886,7 @@ export default function NovaSolicitacaoPage() {
             </Button>
           )}
         </div>
-      </div>
-
+      </ActionFooter>
     </div>
   )
 }

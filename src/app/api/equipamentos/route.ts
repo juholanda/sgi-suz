@@ -34,6 +34,10 @@ export async function GET(req: NextRequest) {
       descricao: e.descricao,
       area: { nome: e.area.nome },
       areaId: e.areaId,
+      // Optional fields: tipo, classeNumero, funcaoProtegida — only present if model has them
+      tipo: (e as any).tipo ?? null,
+      classeNumero: (e as any).classeNumero ?? null,
+      funcaoProtegida: (e as any).funcaoProtegida ?? null,
     }))
   )
 }

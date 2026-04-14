@@ -1,75 +1,177 @@
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
-import { StatusBadge } from '@/components/sgi/StatusBadge'
-import { ClasseBadge } from '@/components/sgi/ClasseBadge'
-import { StatusSolicitacao, ClasseNum } from '@/lib/tokens'
+import { SolicitacaoCard } from '@/components/sgi/SolicitacaoCard'
 import Link from 'next/link'
 
-async function getSolicitacoesParaAprovar() {
+const FILTER_CHIPS: Record<string, { label: string; description: string }> = {
+  todas:       { label: 'Todas',                       description: '' },
+  aguardando:  { label: 'Aguardando minha aprovação',  description: 'EM_APROVACAO ou EM_VALIDACAO' },
+  desabilitados: { label: 'Desabilitados',             description: 'DESABILITADO' },
+  em_risco:    { label: 'Em risco',                    description: 'Prazo atingido' },
+  encerradas:  { label: 'Encerradas',                  description: 'ENCERRADA' },
+}
+
+async function getSolicitacoes(filter: string) {
+  const where: any = {}
+
+  if (filter === 'aguardando') {
+    where.status = { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'EXTENSAO_EM_ANALISE'] }
+  } else if (filter === 'desabilitados') {
+    where.status = 'DESABILITADO'
+  } else if (filter === 'em_risco') {
+    where.AND = [
+      { status: 'DESABILITADO' },
+      { OR: [{ prazoMaximoAtingido: true }, { prazoPrevitoAtingido: true }] },
+    ]
+  } else if (filter === 'encerradas') {
+    where.status = { in: ['ENCERRADA', 'CANCELADA', 'REJEITADA'] }
+  } else {
+    // todas — show relevant statuses for approvers
+    where.status = { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'EXTENSAO_EM_ANALISE', 'DESABILITADO', 'ENCERRADA', 'CANCELADA', 'REJEITADA'] }
+  }
+
   return prisma.solicitacao.findMany({
-    where: { status: { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'EXTENSAO_EM_ANALISE'] } },
+    where,
     include: {
       equipamento: true,
       area: { include: { planta: true } },
-      classe: true,
+      classe: { select: { numero: true, prazoMaximoDias: true } },
       solicitante: { select: { nome: true } },
-      aprovacoes: { include: { aprovador: { select: { nome: true } } } },
+      aprovacoes: {
+        orderBy: { nivel: 'asc' },
+        select: {
+          nivel: true,
+          status: true,
+          tipo: true,
+          aprovador: { select: { nome: true, id: true } },
+        },
+      },
     },
-    orderBy: { dataEnvio: 'asc' },
+    orderBy: { updatedAt: 'desc' },
+    take: 100,
   })
 }
 
-export default async function AprovacoesPage() {
-  const solicitacoes = await getSolicitacoesParaAprovar()
+async function getCounts() {
+  const [aguardando, desabilitados, emRisco, encerradas, todas] = await Promise.all([
+    prisma.solicitacao.count({ where: { status: { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'EXTENSAO_EM_ANALISE'] } } }),
+    prisma.solicitacao.count({ where: { status: 'DESABILITADO' } }),
+    prisma.solicitacao.count({ where: { AND: [{ status: 'DESABILITADO' }, { OR: [{ prazoMaximoAtingido: true }, { prazoPrevitoAtingido: true }] }] } }),
+    prisma.solicitacao.count({ where: { status: { in: ['ENCERRADA', 'CANCELADA', 'REJEITADA'] } } }),
+    prisma.solicitacao.count({ where: { status: { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'EXTENSAO_EM_ANALISE', 'DESABILITADO', 'ENCERRADA', 'CANCELADA', 'REJEITADA'] } } }),
+  ])
+  return { todas, aguardando, desabilitados, em_risco: emRisco, encerradas }
+}
+
+export default async function AprovacoesPage({
+  searchParams,
+}: {
+  searchParams: { filter?: string }
+}) {
+  const session = await auth()
+  const userId = (session?.user as any)?.id as string | undefined
+  const activeFilter = searchParams.filter && FILTER_CHIPS[searchParams.filter] ? searchParams.filter : 'aguardando'
+
+  const [solicitacoes, counts] = await Promise.all([
+    getSolicitacoes(activeFilter),
+    getCounts(),
+  ])
+
+  const CHIP_COUNTS: Record<string, number> = counts as any
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
+    <div className="p-4 md:p-6">
+      {/* Header */}
+      <div className="mb-5">
         <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Aprovações</h1>
-        <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Solicitações aguardando sua análise</p>
+        <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Sua fila de trabalho como aprovador</p>
       </div>
 
+      {/* Filter chips */}
+      <div className="flex flex-wrap gap-2 mb-5 overflow-x-auto pb-1">
+        {Object.entries(FILTER_CHIPS).map(([key, chip]) => {
+          const isActive = activeFilter === key
+          const count = CHIP_COUNTS[key] ?? 0
+          return (
+            <Link
+              key={key}
+              href={key === 'aguardando' ? '/aprovacoes' : `/aprovacoes?filter=${key}`}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium shrink-0 transition-colors"
+              style={{
+                borderRadius: '20px',
+                border: isActive ? '1.5px solid #0038A8' : '1.5px solid #E2E8F0',
+                background: isActive ? '#EBF0FB' : 'white',
+                color: isActive ? '#0038A8' : '#475569',
+              }}
+            >
+              {chip.label}
+              {count > 0 && (
+                <span
+                  className="px-1.5 py-0.5 text-xs font-semibold"
+                  style={{
+                    background: isActive ? '#0038A8' : '#F1F5F9',
+                    color: isActive ? 'white' : '#64748B',
+                    borderRadius: '10px',
+                  }}
+                >
+                  {count}
+                </span>
+              )}
+            </Link>
+          )
+        })}
+      </div>
+
+      {/* Results */}
       {solicitacoes.length === 0 ? (
-        <div className="bg-white border text-center py-12" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-          <p className="text-sm" style={{ color: '#94A3B8' }}>Nenhuma solicitação aguardando aprovação.</p>
+        <div className="text-center py-16 bg-white border" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+          <span className="material-symbols-outlined" style={{ fontSize: 40, color: '#CBD5E1', display: 'block', marginBottom: 12 }}>
+            task_alt
+          </span>
+          <p className="text-sm font-medium" style={{ color: '#94A3B8' }}>
+            {activeFilter === 'aguardando' ? 'Nenhuma solicitação aguardando aprovação.' : 'Nenhuma solicitação encontrada.'}
+          </p>
+          {activeFilter === 'aguardando' && (
+            <p className="text-xs mt-1" style={{ color: '#CBD5E1' }}>Você está em dia com suas aprovações.</p>
+          )}
         </div>
       ) : (
-        <div className="space-y-3">
-          {solicitacoes.map(s => (
-            <div key={s.id} className="bg-white border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-              <div className="flex items-start gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="font-mono text-sm font-semibold" style={{ color: '#0038A8' }}>{s.protocolo}</span>
-                    <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
-                    {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
-                  </div>
-                  <div className="flex items-center gap-3 text-xs" style={{ color: '#6B7280' }}>
-                    <span className="font-mono font-medium" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
-                    <span>·</span>
-                    <span>{s.area.planta.nome} · {s.area.nome}</span>
-                    <span>·</span>
-                    <span>Solicitante: {s.solicitante.nome}</span>
-                  </div>
-                  {s.motivoDesabilitacao && (
-                    <p className="text-xs mt-2 line-clamp-2" style={{ color: '#475569' }}>{s.motivoDesabilitacao}</p>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2 shrink-0">
-                  <div className="px-3 py-1.5 text-xs font-medium text-white text-center" style={{ background: '#0038A8', borderRadius: '4px' }}>
+        <div className="flex flex-col gap-2">
+          {solicitacoes.map(s => {
+            const minhaPendente = userId
+              ? s.aprovacoes.some(a => a.aprovador.id === userId && a.status === 'PENDENTE')
+              : false
+
+            return (
+              <div key={s.id} className="relative">
+                {minhaPendente && (
+                  <div
+                    className="absolute top-2 right-2 z-20 px-2 py-0.5 text-xs font-semibold text-white"
+                    style={{ background: '#0038A8', borderRadius: '10px' }}
+                  >
                     Sua aprovação é necessária
                   </div>
-                  <Link
-                    href={`/solicitacoes/${s.id}`}
-                    className="px-3 py-1.5 text-xs text-center border"
-                    style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}
-                  >
-                    Ver detalhes
-                  </Link>
-                </div>
+                )}
+                <SolicitacaoCard
+                  id={s.id}
+                  protocolo={s.protocolo}
+                  status={s.status}
+                  classe={s.classe ? { numero: s.classe.numero, prazoMaxDias: s.classe.prazoMaximoDias } : null}
+                  equipamento={{ tag: s.equipamento.tag, descricao: s.equipamento.descricao }}
+                  area={{ nome: s.area.nome }}
+                  planta={{ nome: s.area.planta.nome }}
+                  solicitante={{ nome: s.solicitante.nome }}
+                  periodoInicio={s.periodoInicio}
+                  periodoFim={s.periodoFim}
+                  dataDesabilitacao={s.dataDesabilitacao}
+                  prazoMaximoAtingido={s.prazoMaximoAtingido}
+                  prazoPrevitoAtingido={s.prazoPrevitoAtingido}
+                  aprovacoes={s.aprovacoes}
+                  isAprovador={true}
+                />
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>
