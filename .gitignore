@@ -17,3 +17,6 @@ prisma/*.db
 # misc
 .DS_Store
 *.log
+
+*storybook.log
+storybook-static
