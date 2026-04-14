@@ -177,7 +177,7 @@ export default function NovaSolicitacaoPage() {
     [equipamentos, form.areaId],
   )
 
-  const executantesDaArea = useMemo(() => {
+  const executantesFiltradosPorArea = useMemo(() => {
     if (!selectedArea) return executantes
     return executantes.filter(executante => {
       const scopedByArea = executante.areaIds.length === 0 || executante.areaIds.includes(selectedArea.id)
@@ -186,6 +186,15 @@ export default function NovaSolicitacaoPage() {
       return scopedByArea && scopedByPlanta
     })
   }, [executantes, selectedArea])
+
+  const usingExecutanteFallback = Boolean(
+    selectedArea && executantesFiltradosPorArea.length === 0 && executantes.length > 0,
+  )
+
+  const executantesDaArea = useMemo(
+    () => (usingExecutanteFallback ? executantes : executantesFiltradosPorArea),
+    [executantes, executantesFiltradosPorArea, usingExecutanteFallback],
+  )
 
   useEffect(() => {
     if (form.executanteId && !executantesDaArea.some(executante => executante.id === form.executanteId)) {
@@ -221,8 +230,8 @@ export default function NovaSolicitacaoPage() {
     if (!form.equipamentoId) errors.equipamentoId = 'Selecione a TAG do intertravamento.'
     if (!form.executanteId) {
       errors.executanteId =
-        executantesDaArea.length === 0
-          ? 'Nenhum executante está disponível para a área selecionada.'
+        executantes.length === 0
+          ? 'Nenhum executante ativo foi encontrado no cadastro.'
           : 'Selecione o executante responsável.'
     }
     if (!form.tipo) errors.tipo = 'Selecione o tipo de intertravamento.'
@@ -245,7 +254,7 @@ export default function NovaSolicitacaoPage() {
       }
     }
     return errors
-  }, [exceedsSla, executantesDaArea.length, form])
+  }, [exceedsSla, executantes.length, form])
 
   const step2Error = useMemo(
     () =>
@@ -264,7 +273,7 @@ export default function NovaSolicitacaoPage() {
       return form.periodoInicio || form.periodoFim ? message : ''
     }
     if (key === 'executanteId') {
-      return form.areaId && executantesDaArea.length === 0 ? message : ''
+      return form.areaId && executantes.length === 0 ? message : ''
     }
     return ''
   }
@@ -477,8 +486,10 @@ export default function NovaSolicitacaoPage() {
                 icon="engineering"
                 error={visibleStep1Error('executanteId')}
                 hint={
-                  selectedArea && executantesDaArea.length === 0
-                    ? 'Nenhum executante para esta área. Ajuste o cadastro/perfis.'
+                  selectedArea && executantes.length === 0
+                    ? 'Nenhum executante ativo encontrado. Rode o seed ou ajuste cadastro/perfis.'
+                    : usingExecutanteFallback
+                    ? 'Nenhum executante vinculado a esta área; exibindo executantes ativos da planta/contexto.'
                     : undefined
                 }
               >
@@ -486,7 +497,7 @@ export default function NovaSolicitacaoPage() {
                   className={`field-input ${visibleStep1Error('executanteId') ? 'field-input-error' : ''}`}
                   value={form.executanteId}
                   onChange={e => set('executanteId', e.target.value)}
-                  disabled={metaLoading || executantesDaArea.length === 0}
+                  disabled={metaLoading || executantes.length === 0}
                 >
                   <option value="">{executantesDaArea.length ? 'Selecione o executante' : 'Sem executantes disponíveis'}</option>
                   {executantesDaArea.map(executante => (
