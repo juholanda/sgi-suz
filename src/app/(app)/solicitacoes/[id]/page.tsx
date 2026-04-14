@@ -44,8 +44,13 @@ const ACAO_LABELS: Record<string, string> = {
   EXECUCAO_INICIADA: 'Execução iniciada em campo',
   DESABILITACAO_CONFIRMADA: 'Desabilitação confirmada',
   REABILITACAO_INICIADA: 'Reabilitação iniciada',
+  REABILITACAO_ENVIADA_PARA_VALIDACAO: 'Reabilitação enviada para validação',
+  REABILITACAO_REJEITADA: 'Reabilitação rejeitada para correção',
   REABILITACAO_VALIDADA: 'Reabilitação validada — solicitação encerrada',
   CANCELADA: 'Solicitação cancelada',
+  EXTENSAO_SOLICITADA: 'Solicitação de extensão registrada',
+  EXTENSAO_APROVADA: 'Extensão de prazo aprovada',
+  EXTENSAO_REJEITADA: 'Extensão de prazo rejeitada',
 }
 
 function fmt(d: Date | null | undefined) {
@@ -97,7 +102,11 @@ export default async function SolicitacaoDetailPage({ params }: { params: { id: 
       </div>
 
       {/* Ações (client component) */}
-      <AcoesButtons solicitacaoId={s.id} status={s.status as StatusSolicitacao} />
+      <AcoesButtons
+        solicitacaoId={s.id}
+        status={s.status as StatusSolicitacao}
+        tipo={s.tipo}
+      />
 
       {/* Grid detalhes */}
       <div className="grid grid-cols-2 gap-4 mb-4">

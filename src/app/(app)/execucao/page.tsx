@@ -47,6 +47,11 @@ export default async function ExecucaoPage() {
                         ⚠ Prazo máximo atingido
                       </span>
                     )}
+                    {s.prazoPrevitoAtingido && !s.prazoMaximoAtingido && (
+                      <span className="text-xs px-2 py-0.5 font-medium" style={{ background: '#FEF3C7', color: '#B45309', borderRadius: '4px' }}>
+                        ⏱ Prazo previsto atingido
+                      </span>
+                    )}
                   </div>
                   <span className="text-xs" style={{ color: '#6B7280' }}>{s.protocolo}</span>
                 </div>

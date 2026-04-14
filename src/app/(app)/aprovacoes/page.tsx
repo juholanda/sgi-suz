@@ -20,7 +20,22 @@ async function getSolicitacoesParaAprovar() {
 }
 
 export default async function AprovacoesPage() {
+  const session = await auth()
+  if (!session?.user?.id) return null
+  const userId = session.user.id as string
   const solicitacoes = await getSolicitacoesParaAprovar()
+  const comAcaoDisponivel = solicitacoes.filter(s => {
+    if (['EM_APROVACAO', 'EXTENSAO_EM_ANALISE'].includes(s.status)) {
+      const pendentes = s.aprovacoes.filter(a => a.status === 'PENDENTE' && a.tipo !== 'REABILITACAO')
+      if (pendentes.length === 0) return false
+      const nextNivel = Math.min(...pendentes.map(a => a.nivel))
+      return pendentes.some(a => a.nivel === nextNivel && a.aprovadorId === userId)
+    }
+    if (s.status === 'EM_VALIDACAO_DA_REABILITACAO') {
+      return s.aprovacoes.some(a => a.tipo === 'REABILITACAO' && a.status === 'PENDENTE' && a.aprovadorId === userId)
+    }
+    return false
+  })
 
   return (
     <div className="p-6">
@@ -29,13 +44,13 @@ export default async function AprovacoesPage() {
         <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Solicitações aguardando sua análise</p>
       </div>
 
-      {solicitacoes.length === 0 ? (
+      {comAcaoDisponivel.length === 0 ? (
         <div className="bg-white border text-center py-12" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
           <p className="text-sm" style={{ color: '#94A3B8' }}>Nenhuma solicitação aguardando aprovação.</p>
         </div>
       ) : (
         <div className="space-y-3">
-          {solicitacoes.map(s => (
+          {comAcaoDisponivel.map(s => (
             <div key={s.id} className="bg-white border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
               <div className="flex items-start gap-4">
                 <div className="flex-1">

@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { ClasseNum } from '@/lib/tokens'
@@ -8,6 +8,7 @@ type Etapa = 1 | 2 | 3
 
 interface FormData {
   areaId: string
+  equipamentoId: string
   equipamentoTag: string
   executanteId: string
   tipo: string
@@ -18,6 +19,38 @@ interface FormData {
   periodoFim: string
   medidasContingenciais: string
   cienteRiscos: boolean
+}
+
+interface MetaArea {
+  id: string
+  nome: string
+  plantaId: string
+  plantaNome: string
+}
+
+interface MetaEquipamento {
+  id: string
+  tag: string
+  descricao: string
+  areaId: string
+  plantaId: string
+  tipoSugerido: string | null
+  funcaoSugerida: string | null
+  classeSugerida: number | null
+}
+
+interface MetaExecutante {
+  id: string
+  nome: string
+  matricula: string
+}
+
+interface MetaClasse {
+  id: string
+  numero: number
+  descricao: string
+  prazoMaximoDias: number | null
+  cor: string
 }
 
 const ETAPAS = [
@@ -34,32 +67,154 @@ export default function NovaSolicitacaoPage() {
   const router = useRouter()
   const [etapa, setEtapa] = useState<Etapa>(1)
   const [loading, setLoading] = useState(false)
+  const [metaLoading, setMetaLoading] = useState(true)
+  const [areas, setAreas] = useState<MetaArea[]>([])
+  const [equipamentos, setEquipamentos] = useState<MetaEquipamento[]>([])
+  const [executantes, setExecutantes] = useState<MetaExecutante[]>([])
+  const [classes, setClasses] = useState<MetaClasse[]>([])
+  const [error, setError] = useState('')
   const [form, setForm] = useState<FormData>({
-    areaId: '', equipamentoTag: '', executanteId: '', tipo: '', classeNumero: '',
+    areaId: '', equipamentoId: '', equipamentoTag: '', executanteId: '', tipo: '', classeNumero: '',
     funcaoIntertravamento: '', motivoDesabilitacao: '', periodoInicio: '', periodoFim: '',
     medidasContingenciais: '', cienteRiscos: false,
   })
 
+  useEffect(() => {
+    let cancelled = false
+    async function loadMeta() {
+      setMetaLoading(true)
+      setError('')
+      try {
+        const res = await fetch('/api/solicitacoes/meta')
+        const data = await res.json()
+        if (!res.ok) throw new Error(data?.error || 'Falha ao carregar dados para abertura de solicitação.')
+        if (cancelled) return
+        setAreas(data.areas ?? [])
+        setEquipamentos(data.equipamentos ?? [])
+        setExecutantes(data.executantes ?? [])
+        setClasses(data.classes ?? [])
+        if ((data.areas ?? []).length === 1) {
+          setForm(prev => ({ ...prev, areaId: data.areas[0].id }))
+        }
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message ?? 'Erro ao carregar dados')
+      } finally {
+        if (!cancelled) setMetaLoading(false)
+      }
+    }
+    loadMeta()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   function set(field: keyof FormData, value: string | boolean) {
+    setError('')
     setForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  const selectedClasse = useMemo(
+    () => classes.find(c => String(c.numero) === form.classeNumero),
+    [classes, form.classeNumero],
+  )
+
+  const equipamentosDaArea = useMemo(
+    () => equipamentos.filter(eq => !form.areaId || eq.areaId === form.areaId),
+    [equipamentos, form.areaId],
+  )
+
+  const durationDays = useMemo(() => {
+    if (!form.periodoInicio || !form.periodoFim) return null
+    const start = new Date(form.periodoInicio)
+    const end = new Date(form.periodoFim)
+    if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime()) || end <= start) return null
+    return (end.getTime() - start.getTime()) / 86_400_000
+  }, [form.periodoInicio, form.periodoFim])
+
+  const exceedsSla = useMemo(() => {
+    if (!selectedClasse || selectedClasse.prazoMaximoDias == null || durationDays == null) return false
+    return durationDays > selectedClasse.prazoMaximoDias
+  }, [durationDays, selectedClasse])
+
+  const canAdvanceStep1 =
+    !!form.areaId &&
+    !!form.equipamentoTag &&
+    !!form.executanteId &&
+    !!form.tipo &&
+    !!form.classeNumero &&
+    !!form.funcaoIntertravamento &&
+    !!form.motivoDesabilitacao.trim() &&
+    !!form.periodoInicio &&
+    !!form.periodoFim &&
+    durationDays != null &&
+    !exceedsSla
+
+  const canAdvanceStep2 = !!form.medidasContingenciais.trim()
+
+  function handleSelectEquipamento(equipamentoId: string) {
+    const eq = equipamentosDaArea.find(item => item.id === equipamentoId)
+    if (!eq) {
+      setForm(prev => ({
+        ...prev,
+        equipamentoId: '',
+        equipamentoTag: '',
+      }))
+      return
+    }
+
+    setForm(prev => ({
+      ...prev,
+      equipamentoId: eq.id,
+      equipamentoTag: eq.tag,
+      tipo: eq.tipoSugerido ?? prev.tipo,
+      classeNumero: eq.classeSugerida ? String(eq.classeSugerida) : prev.classeNumero,
+      funcaoIntertravamento: eq.funcaoSugerida ?? prev.funcaoIntertravamento,
+    }))
+  }
+
+  function nextStep() {
+    if (etapa === 1 && !canAdvanceStep1) {
+      setError('Preencha os campos obrigatórios da Etapa 1 e corrija o período/SLA.')
+      return
+    }
+    if (etapa === 2 && !canAdvanceStep2) {
+      setError('Informe as medidas preventivas/contingenciais para avançar.')
+      return
+    }
+    setEtapa(e => (e + 1) as Etapa)
   }
 
   async function handleSalvarRascunho() {
     setLoading(true)
+    setError('')
     try {
-      await fetch('/api/solicitacoes', {
+      const res = await fetch('/api/solicitacoes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...form, rascunho: true }),
       })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Falha ao salvar rascunho.')
       router.push('/solicitacoes')
+    } catch (e: any) {
+      setError(e?.message ?? 'Falha ao salvar rascunho.')
     } finally {
       setLoading(false)
     }
   }
 
   async function handleEnviar() {
+    if (!form.cienteRiscos) {
+      setError('Marque a declaração de ciência para enviar.')
+      return
+    }
+    if (!canAdvanceStep1 || !canAdvanceStep2) {
+      setError('Há campos obrigatórios pendentes antes do envio.')
+      return
+    }
+
     setLoading(true)
+    setError('')
     try {
       const res = await fetch('/api/solicitacoes', {
         method: 'POST',
@@ -67,7 +222,10 @@ export default function NovaSolicitacaoPage() {
         body: JSON.stringify({ ...form, rascunho: false }),
       })
       const data = await res.json()
+      if (!res.ok) throw new Error(data?.error || 'Falha ao enviar solicitação.')
       router.push(`/solicitacoes/${data.id}`)
+    } catch (e: any) {
+      setError(e?.message ?? 'Falha ao enviar solicitação.')
     } finally {
       setLoading(false)
     }
@@ -108,6 +266,16 @@ export default function NovaSolicitacaoPage() {
 
       {/* Card */}
       <div className="bg-white border p-6" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+        {metaLoading && (
+          <div className="mb-4 px-3 py-2 text-sm" style={{ background: '#F8FAFC', color: '#475569', borderRadius: '4px' }}>
+            Carregando dados mestres para abertura...
+          </div>
+        )}
+        {error && (
+          <div className="mb-4 px-3 py-2 text-sm" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
+            {error}
+          </div>
+        )}
 
         {/* ETAPA 1 */}
         {etapa === 1 && (
@@ -116,31 +284,60 @@ export default function NovaSolicitacaoPage() {
 
             <div className="grid grid-cols-2 gap-4">
               <Field label="Área *">
-                <input
+                <select
                   className="field-input"
-                  placeholder="Selecione a área"
                   value={form.areaId}
-                  onChange={e => set('areaId', e.target.value)}
-                />
+                  onChange={e => {
+                    const nextArea = e.target.value
+                    setForm(prev => ({
+                      ...prev,
+                      areaId: nextArea,
+                      equipamentoId: '',
+                      equipamentoTag: '',
+                    }))
+                  }}
+                  disabled={metaLoading}
+                >
+                  <option value="">Selecione a área</option>
+                  {areas.map(area => (
+                    <option key={area.id} value={area.id}>
+                      {area.plantaNome} · {area.nome}
+                    </option>
+                  ))}
+                </select>
               </Field>
               <Field label="TAG do Intertravamento *">
-                <input
+                <select
                   className="field-input"
-                  placeholder="Digite ou busque a TAG"
-                  value={form.equipamentoTag}
-                  onChange={e => set('equipamentoTag', e.target.value)}
-                />
+                  value={form.equipamentoId}
+                  onChange={e => handleSelectEquipamento(e.target.value)}
+                  disabled={metaLoading || !form.areaId}
+                >
+                  <option value="">{form.areaId ? 'Selecione a TAG' : 'Selecione a área antes'}</option>
+                  {equipamentosDaArea.map(eq => (
+                    <option key={eq.id} value={eq.id}>
+                      {eq.tag} · {eq.descricao}
+                    </option>
+                  ))}
+                </select>
               </Field>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <Field label="Executante *">
-                <input
+                <select
                   className="field-input"
-                  placeholder="Nome do executante"
                   value={form.executanteId}
                   onChange={e => set('executanteId', e.target.value)}
-                />
+                  disabled={metaLoading}
+                >
+                  <option value="">Selecione o executante</option>
+                  {executantes.map(executante => (
+                    <option key={executante.id} value={executante.id}>
+                      {executante.nome} ({executante.matricula})
+                    </option>
+                  ))}
+                </select>
               </Field>
               <Field label="Tipo de Intertravamento *">
                 <select className="field-input" value={form.tipo} onChange={e => set('tipo', e.target.value)}>
@@ -154,21 +351,21 @@ export default function NovaSolicitacaoPage() {
 
             <Field label="Classe *">
               <div className="flex gap-3">
-                {([1, 2, 3, 4] as ClasseNum[]).map(c => (
+                {classes.map(c => (
                   <button
-                    key={c}
+                    key={c.id}
                     type="button"
-                    onClick={() => set('classeNumero', String(c))}
+                    onClick={() => set('classeNumero', String(c.numero))}
                     className="flex-1 py-2 text-sm font-medium border transition-all"
                     style={{
                       borderRadius: '4px',
-                      borderColor: form.classeNumero === String(c) ? '#0038A8' : '#E2E8F0',
-                      background: form.classeNumero === String(c) ? '#EBF0FB' : 'white',
-                      color: form.classeNumero === String(c) ? '#0038A8' : '#6B7280',
+                      borderColor: form.classeNumero === String(c.numero) ? '#0038A8' : '#E2E8F0',
+                      background: form.classeNumero === String(c.numero) ? '#EBF0FB' : 'white',
+                      color: form.classeNumero === String(c.numero) ? '#0038A8' : '#6B7280',
                     }}
                   >
-                    <div>Classe {c}</div>
-                    <div className="text-xs opacity-70">{PRAZO_MAX[String(c)]}</div>
+                    <div>Classe {c.numero}</div>
+                    <div className="text-xs opacity-70">{PRAZO_MAX[String(c.numero)]}</div>
                   </button>
                 ))}
               </div>
@@ -210,7 +407,12 @@ export default function NovaSolicitacaoPage() {
 
             {form.periodoInicio && form.periodoFim && new Date(form.periodoFim) > new Date(form.periodoInicio) && (
               <div className="px-3 py-2 text-sm" style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}>
-                Duração prevista: {Math.ceil((new Date(form.periodoFim).getTime() - new Date(form.periodoInicio).getTime()) / 86400000)} dia(s)
+                Duração prevista: {durationDays?.toFixed(2)} dia(s)
+              </div>
+            )}
+            {exceedsSla && (
+              <div className="px-3 py-2 text-sm" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
+                Período previsto excede o prazo máximo da Classe selecionada.
               </div>
             )}
           </div>
@@ -246,12 +448,27 @@ export default function NovaSolicitacaoPage() {
 
             {/* Resumo */}
             <div className="border divide-y" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+              <ResumoRow
+                label="Área"
+                value={areas.find(a => a.id === form.areaId) ? `${areas.find(a => a.id === form.areaId)?.plantaNome} · ${areas.find(a => a.id === form.areaId)?.nome}` : ''}
+              />
               <ResumoRow label="TAG" value={form.equipamentoTag} />
               <ResumoRow label="Tipo" value={form.tipo} />
               <ResumoRow label="Classe" value={form.classeNumero ? `Classe ${form.classeNumero} (${PRAZO_MAX[form.classeNumero]})` : ''} />
               <ResumoRow label="Período" value={form.periodoInicio && form.periodoFim ? `${new Date(form.periodoInicio).toLocaleString('pt-BR')} → ${new Date(form.periodoFim).toLocaleString('pt-BR')}` : ''} />
+              <ResumoRow
+                label="Executante"
+                value={executantes.find(e => e.id === form.executanteId) ? `${executantes.find(e => e.id === form.executanteId)?.nome} (${executantes.find(e => e.id === form.executanteId)?.matricula})` : ''}
+              />
               <ResumoRow label="Motivo" value={form.motivoDesabilitacao} />
               <ResumoRow label="Medidas" value={form.medidasContingenciais} />
+            </div>
+
+            <div className="border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+              <h3 className="text-sm font-semibold mb-1" style={{ color: '#0F172A' }}>Aprovadores que serão notificados</h3>
+              <p className="text-xs" style={{ color: '#6B7280' }}>
+                O fluxo será definido automaticamente pela alçada configurada para a Classe/Planta, com precedência sequencial.
+              </p>
             </div>
 
             {/* Ciência */}
@@ -298,9 +515,10 @@ export default function NovaSolicitacaoPage() {
           {etapa < 3 ? (
             <button
               type="button"
-              onClick={() => setEtapa(e => (e + 1) as Etapa)}
+              onClick={nextStep}
               className="px-4 py-2 text-sm font-medium text-white"
               style={{ background: '#0038A8', borderRadius: '4px' }}
+              disabled={metaLoading || loading}
             >
               Próximo: {ETAPAS[etapa].label} →
             </button>

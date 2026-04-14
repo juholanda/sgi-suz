@@ -49,7 +49,7 @@ export default async function AuditoriaPage() {
           </div>
           <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Auditoria End-to-End</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
-            Linha do tempo completa. "Documento ouro" para auditorias formais.
+            Linha do tempo completa. &quot;Documento ouro&quot; para auditorias formais.
           </p>
         </div>
         <button className="px-4 py-2 text-sm border hidden md:block" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>
