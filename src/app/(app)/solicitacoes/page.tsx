@@ -127,6 +127,18 @@ export default async function SolicitacoesPage({
     }),
   ])
 
+  const filterInputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '8px 12px',
+    border: '1px solid #E2E8F0',
+    borderRadius: '4px',
+    fontSize: '14px',
+    color: '#0F172A',
+    outline: 'none',
+    background: 'white',
+    fontFamily: 'inherit',
+  }
+
   const query = new URLSearchParams()
   if (status) query.set('status', status)
   if (classe) query.set('classe', classe)
@@ -171,7 +183,7 @@ export default async function SolicitacoesPage({
           <label className="mb-1 block text-xs font-medium" style={{ color: '#475569' }}>
             Status
           </label>
-          <select name="status" defaultValue={status} className="field-input">
+          <select name="status" defaultValue={status} style={filterInputStyle}>
             <option value="">Todos os status</option>
             {STATUS_OPTIONS.map(option => (
               <option key={option.value} value={option.value}>
@@ -185,7 +197,7 @@ export default async function SolicitacoesPage({
           <label className="mb-1 block text-xs font-medium" style={{ color: '#475569' }}>
             Classe
           </label>
-          <select name="classe" defaultValue={classe} className="field-input">
+          <select name="classe" defaultValue={classe} style={filterInputStyle}>
             <option value="">Todas as classes</option>
             {[1, 2, 3, 4, 5].map(numero => (
               <option key={numero} value={numero}>
@@ -199,7 +211,7 @@ export default async function SolicitacoesPage({
           <label className="mb-1 block text-xs font-medium" style={{ color: '#475569' }}>
             Área
           </label>
-          <select name="areaId" defaultValue={areaId} className="field-input">
+          <select name="areaId" defaultValue={areaId} style={filterInputStyle}>
             <option value="">Todas as áreas</option>
             {areas.map(area => (
               <option key={area.id} value={area.id}>
@@ -316,23 +328,6 @@ export default async function SolicitacoesPage({
           </table>
         </div>
       )}
-
-      <style jsx>{`
-        .field-input {
-          width: 100%;
-          padding: 8px 12px;
-          border: 1px solid #E2E8F0;
-          border-radius: 4px;
-          font-size: 14px;
-          color: #0F172A;
-          outline: none;
-          background: white;
-          font-family: inherit;
-        }
-        .field-input:focus {
-          border-color: #0038A8;
-        }
-      `}</style>
     </div>
   )
 }
