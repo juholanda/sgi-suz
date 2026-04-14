@@ -199,25 +199,47 @@ async function main() {
     data: { userId: gestor.id, perfil: 'GESTOR_SMS', plantaId: planta.id },
   }).catch(() => {})
 
-  // ── Alçadas de aprovação ───────────────────────────────────────────────────
-  // Classe 1: 1 aprovador (nível 1 = Ana Costa)
-  await prisma.alcadaAprovacao.upsert({
-    where: { plantaId_classeId_nivel_userId: { plantaId: planta.id, classeId: classe1.id, nivel: 1, userId: aprovador1.id } },
-    update: {},
-    create: { plantaId: planta.id, classeId: classe1.id, nivel: 1, userId: aprovador1.id },
-  })
+  // ── Alçadas de aprovação — todas as classes, todas as plantas ─────────────
+  const todasClasses = await prisma.classe.findMany({ where: { ativa: true, numero: { lte: 4 } } })
+  const todasPlantas = [planta, plantaLimeira]
 
-  // Classe 2: 2 aprovadores sequenciais
-  await prisma.alcadaAprovacao.upsert({
-    where: { plantaId_classeId_nivel_userId: { plantaId: planta.id, classeId: classe2.id, nivel: 1, userId: aprovador1.id } },
-    update: {},
-    create: { plantaId: planta.id, classeId: classe2.id, nivel: 1, userId: aprovador1.id },
-  })
-  await prisma.alcadaAprovacao.upsert({
-    where: { plantaId_classeId_nivel_userId: { plantaId: planta.id, classeId: classe2.id, nivel: 2, userId: aprovador2.id } },
-    update: {},
-    create: { plantaId: planta.id, classeId: classe2.id, nivel: 2, userId: aprovador2.id },
-  })
+  for (const plantaItem of todasPlantas) {
+    for (const classeItem of todasClasses) {
+      // Nível 1: Ana Costa (aprovador1) — para todas as classes e plantas
+      await prisma.alcadaAprovacao.upsert({
+        where: { plantaId_classeId_nivel_userId: { plantaId: plantaItem.id, classeId: classeItem.id, nivel: 1, userId: aprovador1.id } },
+        update: {},
+        create: { plantaId: plantaItem.id, classeId: classeItem.id, nivel: 1, userId: aprovador1.id },
+      })
+      // Nível 2: Roberto Alves (aprovador2) — para classes 2, 3, 4 (mais exigentes)
+      if (classeItem.numero >= 2) {
+        await prisma.alcadaAprovacao.upsert({
+          where: { plantaId_classeId_nivel_userId: { plantaId: plantaItem.id, classeId: classeItem.id, nivel: 2, userId: aprovador2.id } },
+          update: {},
+          create: { plantaId: plantaItem.id, classeId: classeItem.id, nivel: 2, userId: aprovador2.id },
+        })
+      }
+      // Nível 3 para classe 4: gestor SMS como aprovador final
+      if (classeItem.numero >= 4) {
+        await prisma.alcadaAprovacao.upsert({
+          where: { plantaId_classeId_nivel_userId: { plantaId: plantaItem.id, classeId: classeItem.id, nivel: 3, userId: gestor.id } },
+          update: {},
+          create: { plantaId: plantaItem.id, classeId: classeItem.id, nivel: 3, userId: gestor.id },
+        })
+        // Perfil APROVADOR para gestor também (para que possa aprovar)
+        await prisma.usuarioPerfil.create({
+          data: { userId: gestor.id, perfil: 'APROVADOR', plantaId: plantaItem.id },
+        }).catch(() => {})
+      }
+    }
+    // Garantir que aprovador1 e aprovador2 têm perfil APROVADOR na planta Limeira também
+    await prisma.usuarioPerfil.create({
+      data: { userId: aprovador1.id, perfil: 'APROVADOR', plantaId: plantaItem.id },
+    }).catch(() => {})
+    await prisma.usuarioPerfil.create({
+      data: { userId: aprovador2.id, perfil: 'APROVADOR', plantaId: plantaItem.id },
+    }).catch(() => {})
+  }
 
   console.log(`
 ✅ Seed completo!
@@ -226,9 +248,9 @@ Credenciais de acesso (senha: suzano123):
   000001 — Administrador SGI
   000002 — João Silva (Solicitante — Fibras/Aracruz)
   000003 — Carlos Mendes (Executante — Fibras/Aracruz)
-  000004 — Ana Costa (Aprovador nível 1 — Fibras/Aracruz)
-  000005 — Roberto Alves (Aprovador nível 2 — Fibras/Aracruz)
-  000006 — Maria Santos (Gestor SMS — Aracruz)
+  000004 — Ana Costa (Aprovador nível 1 — todas as classes/plantas)
+  000005 — Roberto Alves (Aprovador nível 2 — classes 2-4/todas as plantas)
+  000006 — Maria Santos (Gestor SMS + Aprovador nível 3 — classe 4)
 `)
 }
 

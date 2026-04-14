@@ -53,9 +53,35 @@ async function getSolicitacoesByStatus(status: string) {
   })
 }
 
-async function getTarefasAprovador() {
+async function getTarefasAprovador(userId: string) {
+  // Solicitações onde este userId tem aprovação PENDENTE (EM_APROVACAO)
+  // ou é o aprovador de maior nível e está em EM_VALIDACAO_DA_REABILITACAO
   return prisma.solicitacao.findMany({
-    where: { status: { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO'] } },
+    where: {
+      OR: [
+        // Aprovação de desabilitação pendente para este usuário
+        {
+          status: 'EM_APROVACAO',
+          aprovacoes: {
+            some: {
+              aprovadorId: userId,
+              status: 'PENDENTE',
+              tipo: 'DESABILITACAO',
+            },
+          },
+        },
+        // Validação de reabilitação: este usuário foi aprovador e solicitação aguarda validação
+        {
+          status: 'EM_VALIDACAO_DA_REABILITACAO',
+          aprovacoes: {
+            some: {
+              aprovadorId: userId,
+              tipo: 'DESABILITACAO',
+            },
+          },
+        },
+      ],
+    },
     include: {
       equipamento: true,
       area: { include: { planta: true } },
@@ -67,13 +93,16 @@ async function getTarefasAprovador() {
   })
 }
 
-async function getTarefasSolicitante() {
+async function getTarefasSolicitante(userId: string) {
   const now = new Date()
   const tresDias = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
 
+  // Filtra pelo userId como solicitante OU executante (o mesmo usuário pode ter ambos os perfis)
+  const userFilter = { OR: [{ solicitanteId: userId }, { executanteId: userId }] }
+
   const [paraExecutar, paraReabilitar, paraProrrogar] = await Promise.all([
     prisma.solicitacao.findMany({
-      where: { status: 'EXECUCAO_AUTORIZADA' },
+      where: { status: 'EXECUCAO_AUTORIZADA', ...userFilter },
       include: { equipamento: true, area: true, classe: true },
       orderBy: { dataAprovacaoFinal: 'asc' },
       take: 5,
@@ -81,6 +110,7 @@ async function getTarefasSolicitante() {
     prisma.solicitacao.findMany({
       where: {
         status: 'DESABILITADO',
+        ...userFilter,
         OR: [
           { prazoMaximoAtingido: true },
           { prazoPrevitoAtingido: true },
@@ -92,7 +122,7 @@ async function getTarefasSolicitante() {
       take: 5,
     }),
     prisma.solicitacao.findMany({
-      where: { status: 'DESABILITADO', prazoMaximoAtingido: true },
+      where: { status: 'DESABILITADO', prazoMaximoAtingido: true, ...userFilter },
       include: { equipamento: true, area: true, classe: true },
       orderBy: { periodoFim: 'asc' },
       take: 5,
@@ -137,8 +167,8 @@ export default async function DashboardPage() {
     getSolicitacoesByStatus('EM_VALIDACAO_DA_REABILITACAO'),
   ])
 
-  const tarefasAprovador = isAprovador ? await getTarefasAprovador() : []
-  const tarefasSolicitante = isSolicitante ? await getTarefasSolicitante() : { paraExecutar: [], paraReabilitar: [], paraProrrogar: [] }
+  const tarefasAprovador = isAprovador ? await getTarefasAprovador(userId) : []
+  const tarefasSolicitante = isSolicitante ? await getTarefasSolicitante(userId) : { paraExecutar: [], paraReabilitar: [], paraProrrogar: [] }
 
   const metricCards = [
     { label: 'Em Aprovação',      value: metrics.emAprovacao,          status: 'EM_APROVACAO' as StatusSolicitacao,                   href: '/solicitacoes?filter=andamento',  icon: 'pending_actions' },

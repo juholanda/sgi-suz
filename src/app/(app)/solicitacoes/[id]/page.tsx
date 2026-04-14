@@ -64,6 +64,7 @@ const ACAO_LABELS: Record<string, string> = {
   REABILITACAO_VALIDADA: 'Reabilitação validada — solicitação encerrada',
   REABILITACAO_REJEITADA: 'Reabilitação devolvida para correção',
   CANCELADA: 'Solicitação cancelada',
+  EXTENSAO_REGISTRADA: 'Extensão de prazo registrada',
 }
 
 function fmt(d: Date | null | undefined) {
@@ -373,6 +374,63 @@ export default async function SolicitacaoDetailPage({
                   </div>
                 )}
               </div>
+
+              {/* Seção: Responsável pela Validação da Reabilitação */}
+              {['DESABILITADO', 'EM_REABILITACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'ENCERRADA'].includes(s.status) && aprovDesab.length > 0 && (
+                <div className="bg-white border mt-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+                  <div className="px-4 py-3 border-b flex items-center gap-2" style={{ borderColor: '#E2E8F0' }}>
+                    <span className="material-symbols-outlined" style={{ fontSize: 14, lineHeight: 1, color: '#6B7280' }}>verified</span>
+                    <h3 className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#6B7280' }}>
+                      Responsável pela Validação da Reabilitação
+                    </h3>
+                  </div>
+                  <div className="px-4 py-3">
+                    {/* O responsável é o aprovador do nível mais alto */}
+                    {(() => {
+                      const aprovadorFinal = aprovDesab[aprovDesab.length - 1]
+                      const perfil = (aprovadorFinal?.aprovador as any).perfis?.[0]?.perfil
+                      const PERFIL_LABELS: Record<string, string> = { APROVADOR: 'Aprovador', GESTOR_SMS: 'Gestor SMS', ADMINISTRADOR: 'Administrador' }
+                      return aprovadorFinal ? (
+                        <div className="flex items-center gap-3">
+                          <div
+                            className="w-8 h-8 flex items-center justify-center text-sm font-bold rounded-full shrink-0"
+                            style={{ background: '#EDE9FE', color: '#7C3AED' }}
+                          >
+                            {aprovadorFinal.aprovador.nome[0]}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-medium" style={{ color: '#0F172A' }}>{aprovadorFinal.aprovador.nome}</span>
+                              {perfil && (
+                                <span className="text-xs px-1.5 py-0.5" style={{ background: '#EDE9FE', color: '#7C3AED', borderRadius: '4px' }}>
+                                  {PERFIL_LABELS[perfil] ?? perfil}
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs mt-0.5" style={{ color: '#6B7280' }}>
+                              {s.status === 'EM_VALIDACAO_DA_REABILITACAO' ? 'Aguardando validação desta pessoa' :
+                               s.status === 'ENCERRADA' ? 'Reabilitação validada' :
+                               'Validará a reabilitação ao concluir'}
+                            </p>
+                          </div>
+                          {s.status === 'EM_VALIDACAO_DA_REABILITACAO' && (
+                            <span className="flex items-center gap-1 text-xs font-medium" style={{ color: '#7C3AED' }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 14, lineHeight: 1 }}>pending</span>
+                              Aguardando
+                            </span>
+                          )}
+                          {s.status === 'ENCERRADA' && (
+                            <span className="flex items-center gap-1 text-xs font-medium" style={{ color: '#16A34A' }}>
+                              <span className="material-symbols-outlined" style={{ fontSize: 14, lineHeight: 1 }}>check_circle</span>
+                              Validado
+                            </span>
+                          )}
+                        </div>
+                      ) : null
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
