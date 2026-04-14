@@ -1,7 +1,7 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { signOut } from 'next-auth/react'
+import { signIn, signOut } from 'next-auth/react'
 import { useState } from 'react'
 
 interface NavItem {
@@ -19,6 +19,13 @@ const navItems: NavItem[] = [
 
 const adminLink: NavItem = { href: '/admin', label: 'Backoffice', icon: '⚙' }
 
+const DEMO_USERS = [
+  { matricula: '000001', nome: 'Administrador SGI', perfil: 'ADMINISTRADOR' },
+  { matricula: '000002', nome: 'João Silva', perfil: 'SOLICITANTE' },
+  { matricula: '000003', nome: 'Maria Executante', perfil: 'EXECUTANTE' },
+  { matricula: '000004', nome: 'Carlos Aprovador', perfil: 'APROVADOR' },
+] as const
+
 interface Props {
   user: {
     name?: string | null
@@ -27,6 +34,7 @@ interface Props {
     plantas?: Array<{ id: string; nome: string }>
     plantaAtivaNome?: string
     perfilAtivoNome?: string
+    matricula?: string
   }
 }
 
@@ -43,6 +51,8 @@ export default function Sidebar({ user }: Props) {
   const [activePlantaId, setActivePlantaId] = useState(initialPlantaId)
   const [activePerfil, setActivePerfil] = useState(user.perfilAtivoNome ?? perfis[0] ?? 'SOLICITANTE')
   const [savingContext, setSavingContext] = useState(false)
+  const [switchingDemoUser, setSwitchingDemoUser] = useState(false)
+  const [activeDemoMatricula, setActiveDemoMatricula] = useState(user.matricula ?? '')
 
   const perfilOptions = perfis.length > 0 ? perfis : ['SOLICITANTE']
   const plantaOptions = plantas.length > 0 ? plantas : [{ id: 'planta-default', nome: 'Planta 1' }]
@@ -64,6 +74,27 @@ export default function Sidebar({ user }: Props) {
       alert('Não foi possível atualizar o contexto ativo. Tente novamente.')
     } finally {
       setSavingContext(false)
+    }
+  }
+
+  async function switchDemoUser(matricula: string) {
+    setSwitchingDemoUser(true)
+    try {
+      const result = await signIn('credentials', {
+        matricula,
+        senha: 'suzano123',
+        redirect: false,
+      })
+      if (result?.error) {
+        throw new Error('Falha ao trocar usuário de demonstração.')
+      }
+      window.location.href = '/dashboard'
+    } catch (err) {
+      console.error(err)
+      alert('Não foi possível trocar o usuário de demonstração. Verifique se o seed foi executado.')
+      setActiveDemoMatricula(user.matricula ?? '')
+    } finally {
+      setSwitchingDemoUser(false)
     }
   }
 
@@ -145,6 +176,36 @@ export default function Sidebar({ user }: Props) {
               {perfilOptions.map(perfil => (
                 <option key={perfil} value={perfil} style={{ color: '#0F172A' }}>
                   {perfil}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {isNonProd && (
+          <div>
+            <label className="block text-[11px] mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              Entrar como (demo)
+            </label>
+            <select
+              className="w-full text-left text-xs px-3 py-2"
+              value={activeDemoMatricula}
+              onChange={e => {
+                const nextMatricula = e.target.value
+                setActiveDemoMatricula(nextMatricula)
+                void switchDemoUser(nextMatricula)
+              }}
+              disabled={switchingDemoUser}
+              style={{
+                background: 'rgba(255,255,255,0.12)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                width: '100%',
+              }}
+            >
+              {DEMO_USERS.map(demoUser => (
+                <option key={demoUser.matricula} value={demoUser.matricula} style={{ color: '#0F172A' }}>
+                  {demoUser.nome} · {demoUser.perfil}
                 </option>
               ))}
             </select>

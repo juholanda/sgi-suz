@@ -18,6 +18,8 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id?: string
     matricula?: string
+    name?: string | null
+    email?: string | null
     perfis?: string[]
     plantas?: Array<{ id: string; nome: string }>
   }
