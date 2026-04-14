@@ -78,7 +78,85 @@ async function main() {
     data: { userId: solicitante.id, perfil: 'SOLICITANTE', plantaId: planta.id, areaId: area.id },
   }).catch(() => {/* already exists */})
 
-  console.log('Seed completo! Credenciais: matrícula 000001 / senha suzano123')
+  // Executante demo
+  const executante = await prisma.user.upsert({
+    where: { matricula: '000003' },
+    update: {},
+    create: {
+      matricula: '000003',
+      nome: 'Maria Executante',
+      email: 'maria.executante@suzano.com.br',
+      passwordHash: await bcrypt.hash('suzano123', 10),
+    },
+  })
+  await prisma.usuarioPerfil.create({
+    data: { userId: executante.id, perfil: 'EXECUTANTE', plantaId: planta.id, areaId: area.id },
+  }).catch(() => {/* already exists */})
+
+  // Aprovador demo (nível 1)
+  const aprovador = await prisma.user.upsert({
+    where: { matricula: '000004' },
+    update: {},
+    create: {
+      matricula: '000004',
+      nome: 'Carlos Aprovador',
+      email: 'carlos.aprovador@suzano.com.br',
+      passwordHash: await bcrypt.hash('suzano123', 10),
+    },
+  })
+  await prisma.usuarioPerfil.create({
+    data: { userId: aprovador.id, perfil: 'APROVADOR', plantaId: planta.id, areaId: area.id },
+  }).catch(() => {/* already exists */})
+
+  // Admin também como aprovador (nível final)
+  await prisma.usuarioPerfil.create({
+    data: { userId: admin.id, perfil: 'APROVADOR', plantaId: planta.id },
+  }).catch(() => {/* already exists */})
+
+  // Alçadas de aprovação por classe (1..4), com 2 níveis para demonstrar o fluxo completo.
+  const classesAtivas = await prisma.classe.findMany({
+    where: { numero: { in: [1, 2, 3, 4] } },
+    select: { id: true, numero: true },
+  })
+  for (const classe of classesAtivas) {
+    await prisma.alcadaAprovacao.upsert({
+      where: {
+        plantaId_classeId_nivel_userId: {
+          plantaId: planta.id,
+          classeId: classe.id,
+          nivel: 1,
+          userId: aprovador.id,
+        },
+      },
+      update: {},
+      create: {
+        plantaId: planta.id,
+        classeId: classe.id,
+        nivel: 1,
+        userId: aprovador.id,
+      },
+    })
+
+    await prisma.alcadaAprovacao.upsert({
+      where: {
+        plantaId_classeId_nivel_userId: {
+          plantaId: planta.id,
+          classeId: classe.id,
+          nivel: 2,
+          userId: admin.id,
+        },
+      },
+      update: {},
+      create: {
+        plantaId: planta.id,
+        classeId: classe.id,
+        nivel: 2,
+        userId: admin.id,
+      },
+    })
+  }
+
+  console.log('Seed completo! Credenciais: 000001 (admin/final aprovador), 000002 (solicitante), 000003 (executante), 000004 (aprovador) / senha suzano123')
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect())

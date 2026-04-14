@@ -3,6 +3,7 @@ import { StatusBadge } from '@/components/sgi/StatusBadge'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { StatusSolicitacao, ClasseNum } from '@/lib/tokens'
 import Link from 'next/link'
+import { PageBreadcrumb } from '@/components/sgi/PageBreadcrumb'
 
 async function getSolicitacoesExecucao() {
   return prisma.solicitacao.findMany({
@@ -23,13 +24,20 @@ export default async function ExecucaoPage() {
 
   return (
     <div className="p-6">
+      <PageBreadcrumb
+        items={[
+          { label: 'Início', href: '/dashboard' },
+          { label: 'Execução' },
+        ]}
+      />
       <div className="mb-6">
         <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Execução em Campo</h1>
         <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Desabilitações autorizadas e em andamento</p>
       </div>
 
       {solicitacoes.length === 0 ? (
-        <div className="bg-white border text-center py-12" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+        <div className="bg-white border text-center py-12 flex flex-col items-center gap-2" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+          <span style={{ fontSize: '20px' }}>🧭</span>
           <p className="text-sm" style={{ color: '#94A3B8' }}>Nenhuma solicitação pendente de execução.</p>
         </div>
       ) : (
@@ -45,6 +53,11 @@ export default async function ExecucaoPage() {
                     {s.prazoMaximoAtingido && (
                       <span className="text-xs px-2 py-0.5 font-medium" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
                         ⚠ Prazo máximo atingido
+                      </span>
+                    )}
+                    {s.prazoPrevitoAtingido && !s.prazoMaximoAtingido && (
+                      <span className="text-xs px-2 py-0.5 font-medium" style={{ background: '#FEF3C7', color: '#B45309', borderRadius: '4px' }}>
+                        ⏱ Prazo previsto atingido
                       </span>
                     )}
                   </div>

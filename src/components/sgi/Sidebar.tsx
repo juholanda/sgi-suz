@@ -1,7 +1,8 @@
 'use client'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { signOut } from 'next-auth/react'
+import { signIn, signOut } from 'next-auth/react'
+import { useState } from 'react'
 
 interface NavItem {
   href: string
@@ -10,22 +11,92 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: '/dashboard',    label: 'Dashboard',    icon: '⊞' },
-  { href: '/solicitacoes', label: 'Solicitações', icon: '📋' },
-  { href: '/aprovacoes',   label: 'Aprovações',   icon: '✓' },
-  { href: '/execucao',     label: 'Execução',     icon: '⚙' },
-  { href: '/relatorios',   label: 'Relatórios',   icon: '📊' },
+  { href: '/dashboard', label: 'Início', icon: '⌂' },
+  { href: '/solicitacoes', label: 'Solicitações', icon: '☰' },
+  { href: '/relatorios', label: 'Métricas', icon: '◔' },
+  { href: '/perfil', label: 'Perfil', icon: '◉' },
 ]
 
-// Link separado para o admin — exibido apenas para administradores
-const adminLink: NavItem = { href: '/admin', label: 'Backoffice', icon: '🔧' }
+const adminLink: NavItem = { href: '/admin', label: 'Backoffice', icon: '⚙' }
+
+const DEMO_USERS = [
+  { matricula: '000001', nome: 'Administrador SGI', perfil: 'ADMINISTRADOR' },
+  { matricula: '000002', nome: 'João Silva', perfil: 'SOLICITANTE' },
+  { matricula: '000003', nome: 'Maria Executante', perfil: 'EXECUTANTE' },
+  { matricula: '000004', nome: 'Carlos Aprovador', perfil: 'APROVADOR' },
+] as const
 
 interface Props {
-  user: { name?: string | null; email?: string | null }
+  user: {
+    name?: string | null
+    email?: string | null
+    perfis?: string[]
+    plantas?: Array<{ id: string; nome: string }>
+    plantaAtivaNome?: string
+    perfilAtivoNome?: string
+    matricula?: string
+  }
 }
 
 export default function Sidebar({ user }: Props) {
   const pathname = usePathname()
+  const isNonProd = process.env.NODE_ENV !== 'production'
+  const perfis = user.perfis ?? []
+  const plantas = user.plantas ?? []
+  const canAccessBackoffice = perfis.includes('ADMINISTRADOR')
+  const initialPlantaId =
+    plantas.find(planta => planta.nome === user.plantaAtivaNome)?.id ??
+    plantas[0]?.id ??
+    'planta-default'
+  const [activePlantaId, setActivePlantaId] = useState(initialPlantaId)
+  const [activePerfil, setActivePerfil] = useState(user.perfilAtivoNome ?? perfis[0] ?? 'SOLICITANTE')
+  const [savingContext, setSavingContext] = useState(false)
+  const [switchingDemoUser, setSwitchingDemoUser] = useState(false)
+  const [activeDemoMatricula, setActiveDemoMatricula] = useState(user.matricula ?? '')
+
+  const perfilOptions = perfis.length > 0 ? perfis : ['SOLICITANTE']
+  const plantaOptions = plantas.length > 0 ? plantas : [{ id: 'planta-default', nome: 'Planta 1' }]
+
+  async function updateContext(input: { perfil?: string; plantaId?: string }) {
+    setSavingContext(true)
+    try {
+      const response = await fetch('/api/contexto', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      })
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar contexto ativo.')
+      }
+      window.location.reload()
+    } catch (err) {
+      console.error(err)
+      alert('Não foi possível atualizar o contexto ativo. Tente novamente.')
+    } finally {
+      setSavingContext(false)
+    }
+  }
+
+  async function switchDemoUser(matricula: string) {
+    setSwitchingDemoUser(true)
+    try {
+      const result = await signIn('credentials', {
+        matricula,
+        senha: 'suzano123',
+        redirect: false,
+      })
+      if (result?.error) {
+        throw new Error('Falha ao trocar usuário de demonstração.')
+      }
+      window.location.href = '/dashboard'
+    } catch (err) {
+      console.error(err)
+      alert('Não foi possível trocar o usuário de demonstração. Verifique se o seed foi executado.')
+      setActiveDemoMatricula(user.matricula ?? '')
+    } finally {
+      setSwitchingDemoUser(false)
+    }
+  }
 
   return (
     <aside
@@ -50,10 +121,103 @@ export default function Sidebar({ user }: Props) {
         </div>
       </div>
 
+      {/* Context switchers */}
+      <div className="px-4 py-4 border-b space-y-2" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
+        <div>
+          <label className="block text-[11px] mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
+            Planta ativa
+          </label>
+          <select
+            className="w-full text-left text-xs px-3 py-2"
+            value={activePlantaId}
+            onChange={e => {
+              const nextPlantaId = e.target.value
+              setActivePlantaId(nextPlantaId)
+              void updateContext({ plantaId: nextPlantaId })
+            }}
+            disabled={savingContext}
+            style={{
+              background: 'rgba(255,255,255,0.12)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '4px',
+              width: '100%',
+            }}
+          >
+            {plantaOptions.map(planta => (
+              <option key={planta.id} value={planta.id} style={{ color: '#0F172A' }}>
+                {planta.nome}
+              </option>
+            ))}
+          </select>
+        </div>
+        {isNonProd && (
+          <div>
+            <label className="block text-[11px] mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              Perfil ativo
+            </label>
+            <select
+              className="w-full text-left text-xs px-3 py-2"
+              value={activePerfil}
+              onChange={e => {
+                const nextPerfil = e.target.value
+                setActivePerfil(nextPerfil)
+                void updateContext({ perfil: nextPerfil })
+              }}
+              disabled={savingContext}
+              style={{
+                background: 'rgba(255,255,255,0.12)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                width: '100%',
+              }}
+            >
+              {perfilOptions.map(perfil => (
+                <option key={perfil} value={perfil} style={{ color: '#0F172A' }}>
+                  {perfil}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+        {isNonProd && (
+          <div>
+            <label className="block text-[11px] mb-1" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              Entrar como (demo)
+            </label>
+            <select
+              className="w-full text-left text-xs px-3 py-2"
+              value={activeDemoMatricula}
+              onChange={e => {
+                const nextMatricula = e.target.value
+                setActiveDemoMatricula(nextMatricula)
+                void switchDemoUser(nextMatricula)
+              }}
+              disabled={switchingDemoUser}
+              style={{
+                background: 'rgba(255,255,255,0.12)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                width: '100%',
+              }}
+            >
+              {DEMO_USERS.map(demoUser => (
+                <option key={demoUser.matricula} value={demoUser.matricula} style={{ color: '#0F172A' }}>
+                  {demoUser.nome} · {demoUser.perfil}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+      </div>
+
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5">
         {navItems.map(item => {
-          const active = pathname.startsWith(item.href)
+          const active =
+            item.href === '/dashboard' ? pathname === '/dashboard' : pathname.startsWith(item.href)
           return (
             <Link
               key={item.href}
@@ -72,20 +236,22 @@ export default function Sidebar({ user }: Props) {
           )
         })}
 
-        {/* Divisor + link admin */}
         <div className="pt-3 mt-3 border-t" style={{ borderColor: 'rgba(255,255,255,0.12)' }}>
-          <Link
-            href="/admin"
-            className="flex items-center gap-3 px-3 py-2 text-sm transition-colors"
-            style={{
-              borderRadius: '4px',
-              color: 'rgba(255,255,255,0.45)',
-              fontWeight: 400,
-            }}
-          >
-            <span className="text-base w-5 text-center">{adminLink.icon}</span>
-            {adminLink.label}
-          </Link>
+          {canAccessBackoffice ? (
+            <Link
+              href="/admin"
+              className="flex items-center gap-3 px-3 py-2 text-sm transition-colors"
+              style={{
+                borderRadius: '4px',
+                color: pathname.startsWith('/admin') ? 'white' : 'rgba(255,255,255,0.7)',
+                background: pathname.startsWith('/admin') ? 'rgba(255,255,255,0.15)' : 'transparent',
+                fontWeight: pathname.startsWith('/admin') ? 500 : 400,
+              }}
+            >
+              <span className="text-base w-5 text-center">{adminLink.icon}</span>
+              {adminLink.label}
+            </Link>
+          ) : null}
         </div>
       </nav>
 
