@@ -108,7 +108,10 @@ export default function AcoesButtons({ solicitacaoId, status, tipo }: Props) {
         </div>
       )}
 
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div
+        className="fixed bottom-[60px] left-0 right-0 z-40 flex flex-wrap gap-2 border-t bg-white p-3 md:static md:mb-6 md:border-0 md:bg-transparent md:p-0"
+        style={{ borderColor: '#E2E8F0' }}
+      >
         {status === 'EM_APROVACAO' && (
           <>
             <button

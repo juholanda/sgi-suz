@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client'
 import { prisma } from '@/lib/db'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { PageBreadcrumb } from '@/components/sgi/PageBreadcrumb'
+import { SolicitacaoCard } from '@/components/sgi/SolicitacaoCard'
 import { StatusBadge } from '@/components/sgi/StatusBadge'
 import { ClasseNum, STATUS_LABELS, StatusSolicitacao } from '@/lib/tokens'
 
@@ -20,6 +21,21 @@ type SortBy =
 type SortOrder = 'asc' | 'desc'
 
 type SearchParams = Record<string, string | string[] | undefined>
+
+type QuickFilter = 'all' | 'andamento' | 'rascunhos'
+
+const QUICK_STATUS: Record<Exclude<QuickFilter, 'all'>, StatusSolicitacao[]> = {
+  andamento: [
+    'EM_APROVACAO',
+    'EXECUCAO_AUTORIZADA',
+    'EM_EXECUCAO',
+    'DESABILITADO',
+    'EM_REABILITACAO',
+    'EM_VALIDACAO_DA_REABILITACAO',
+    'EXTENSAO_EM_ANALISE',
+  ],
+  rascunhos: ['RASCUNHO'],
+}
 
 const STATUS_OPTIONS = Object.entries(STATUS_LABELS).map(([value, label]) => ({
   value: value as StatusSolicitacao,
@@ -50,6 +66,11 @@ function parseSortBy(value: string): SortBy {
 
 function parseSortOrder(value: string): SortOrder {
   return value === 'asc' ? 'asc' : 'desc'
+}
+
+function parseQuick(value: string): QuickFilter {
+  if (value === 'andamento' || value === 'rascunhos') return value
+  return 'all'
 }
 
 function buildOrderBy(sortBy: SortBy, sortOrder: SortOrder): Prisma.SolicitacaoOrderByWithRelationInput {
@@ -94,19 +115,32 @@ export default async function SolicitacoesPage({
 }: {
   searchParams?: SearchParams
 }) {
+  const quick = parseQuick(pickParam(searchParams?.quick))
   const status = pickParam(searchParams?.status)
   const classe = pickParam(searchParams?.classe)
   const areaId = pickParam(searchParams?.areaId)
   const sortBy = parseSortBy(pickParam(searchParams?.sortBy))
   const sortOrder = parseSortOrder(pickParam(searchParams?.sortOrder))
 
+  const quickStatuses =
+    !status && quick !== 'all' ? QUICK_STATUS[quick as Exclude<QuickFilter, 'all'>] : undefined
+
   const where: Prisma.SolicitacaoWhereInput = {
-    ...(status ? { status } : {}),
+    ...(status
+      ? { status }
+      : quickStatuses
+      ? { status: { in: quickStatuses } }
+      : {}),
     ...(classe ? { classe: { numero: Number(classe) } } : {}),
     ...(areaId ? { areaId } : {}),
   }
 
-  const [items, total, areas] = await Promise.all([
+  const baseWhere: Prisma.SolicitacaoWhereInput = {
+    ...(classe ? { classe: { numero: Number(classe) } } : {}),
+    ...(areaId ? { areaId } : {}),
+  }
+
+  const [items, total, areas, allCount, andamentoCount, rascunhosCount] = await Promise.all([
     prisma.solicitacao.findMany({
       where,
       include: {
@@ -125,6 +159,13 @@ export default async function SolicitacoesPage({
       include: { planta: { select: { nome: true } } },
       orderBy: [{ planta: { nome: 'asc' } }, { nome: 'asc' }],
     }),
+    prisma.solicitacao.count({ where: baseWhere }),
+    prisma.solicitacao.count({
+      where: { ...baseWhere, status: { in: QUICK_STATUS.andamento } },
+    }),
+    prisma.solicitacao.count({
+      where: { ...baseWhere, status: { in: QUICK_STATUS.rascunhos } },
+    }),
   ])
 
   const filterInputStyle: React.CSSProperties = {
@@ -141,10 +182,25 @@ export default async function SolicitacoesPage({
 
   const query = new URLSearchParams()
   if (status) query.set('status', status)
+  if (quick !== 'all') query.set('quick', quick)
   if (classe) query.set('classe', classe)
   if (areaId) query.set('areaId', areaId)
   if (sortBy) query.set('sortBy', sortBy)
   if (sortOrder) query.set('sortOrder', sortOrder)
+
+  const quickChips: Array<{ key: QuickFilter; label: string; count: number }> = [
+    { key: 'all', label: 'Todas', count: allCount },
+    { key: 'andamento', label: 'Em andamento', count: andamentoCount },
+    { key: 'rascunhos', label: 'Rascunhos', count: rascunhosCount },
+  ]
+
+  const mobileCardAction = (statusValue: StatusSolicitacao) => {
+    if (statusValue === 'EXECUCAO_AUTORIZADA') return 'Executar desabilitação →'
+    if (statusValue === 'EM_APROVACAO') return 'Analisar'
+    if (statusValue === 'DESABILITADO') return 'Reabilitar'
+    if (statusValue === 'EM_VALIDACAO_DA_REABILITACAO') return 'Validar'
+    return undefined
+  }
 
   return (
     <div className="p-6">
@@ -176,7 +232,7 @@ export default async function SolicitacoesPage({
 
       <form
         method="get"
-        className="mb-4 grid gap-3 border bg-white p-4 md:grid-cols-4"
+        className="mb-4 hidden grid gap-3 border bg-white p-4 md:grid md:grid-cols-4"
         style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
       >
         <div>
@@ -243,6 +299,96 @@ export default async function SolicitacoesPage({
         {total} solicitação(ões) encontrada(s)
       </div>
 
+      <div className="mb-4 md:hidden">
+        <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+          {quickChips.map(chip => {
+            const href = `/solicitacoes?${buildQueryString(query, {
+              quick: chip.key === 'all' ? '' : chip.key,
+              status: '',
+            })}`
+            const active = quick === chip.key && !status
+            return (
+              <Link
+                key={chip.key}
+                href={href}
+                className="whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium"
+                style={{
+                  borderColor: active ? '#0038A8' : '#CBD5E1',
+                  background: active ? '#1E40AF' : '#F8FAFC',
+                  color: active ? '#FFFFFF' : '#475569',
+                }}
+              >
+                {chip.label} ({chip.count})
+              </Link>
+            )
+          })}
+        </div>
+
+        <details className="rounded border bg-white" style={{ borderColor: '#E2E8F0' }}>
+          <summary className="cursor-pointer px-4 py-3 text-sm font-medium" style={{ color: '#334155' }}>
+            Filtros avançados
+          </summary>
+          <form method="get" className="grid gap-3 border-t p-4" style={{ borderColor: '#E2E8F0' }}>
+            {quick !== 'all' && <input type="hidden" name="quick" value={quick} />}
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: '#475569' }}>
+                Status
+              </label>
+              <select name="status" defaultValue={status} style={filterInputStyle}>
+                <option value="">Todos os status</option>
+                {STATUS_OPTIONS.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: '#475569' }}>
+                Classe
+              </label>
+              <select name="classe" defaultValue={classe} style={filterInputStyle}>
+                <option value="">Todas as classes</option>
+                {[1, 2, 3, 4, 5].map(numero => (
+                  <option key={numero} value={numero}>
+                    Classe {numero}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium" style={{ color: '#475569' }}>
+                Área
+              </label>
+              <select name="areaId" defaultValue={areaId} style={filterInputStyle}>
+                <option value="">Todas as áreas</option>
+                {areas.map(area => (
+                  <option key={area.id} value={area.id}>
+                    {area.planta.nome} · {area.nome}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="submit"
+                className="h-[38px] px-4 text-sm font-medium text-white"
+                style={{ background: '#0038A8', borderRadius: '4px' }}
+              >
+                Aplicar
+              </button>
+              <Link
+                href="/solicitacoes"
+                className="h-[38px] inline-flex items-center justify-center border px-4 text-sm font-medium"
+                style={{ borderColor: '#E2E8F0', color: '#475569', borderRadius: '4px' }}
+              >
+                Limpar
+              </Link>
+            </div>
+          </form>
+        </details>
+      </div>
+
       {items.length === 0 ? (
         <div
           className="flex flex-col items-center gap-2 border bg-white px-4 py-10 text-sm"
@@ -255,7 +401,34 @@ export default async function SolicitacoesPage({
           </Link>
         </div>
       ) : (
-        <div className="overflow-x-auto border bg-white" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+        <>
+          <div className="space-y-3 md:hidden">
+            {items.map(item => (
+              <SolicitacaoCard
+                key={item.id}
+                data={{
+                  id: item.id,
+                  protocolo: item.protocolo,
+                  status: item.status as StatusSolicitacao,
+                  equipamento: { tag: item.equipamento.tag, descricao: item.equipamento.descricao },
+                  area: { nome: item.area.nome, planta: { nome: item.area.planta.nome } },
+                  classe: item.classe ? { numero: item.classe.numero } : null,
+                  periodoInicio: item.periodoInicio,
+                  periodoFim: item.periodoFim,
+                  dataEnvio: item.dataEnvio,
+                  dataAprovacaoFinal: item.dataAprovacaoFinal,
+                  dataDesabilitacao: item.dataDesabilitacao,
+                  dataReabilitacao: item.dataReabilitacao,
+                  prazoPrevitoAtingido: item.prazoPrevitoAtingido,
+                  prazoMaximoAtingido: item.prazoMaximoAtingido,
+                }}
+                actionHref={`/solicitacoes/${item.id}`}
+                actionLabel={mobileCardAction(item.status as StatusSolicitacao)}
+              />
+            ))}
+          </div>
+
+          <div className="hidden overflow-x-auto border bg-white md:block" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
           <table className="min-w-full text-sm">
             <thead style={{ background: '#F8FAFC' }}>
               <tr>
@@ -326,7 +499,8 @@ export default async function SolicitacoesPage({
               ))}
             </tbody>
           </table>
-        </div>
+          </div>
+        </>
       )}
     </div>
   )
