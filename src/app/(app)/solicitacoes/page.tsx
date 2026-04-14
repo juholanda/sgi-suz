@@ -170,9 +170,10 @@ export default async function SolicitacoesPage({
 
   const filterInputStyle: React.CSSProperties = {
     width: '100%',
+    height: '40px',
     padding: '8px 12px',
-    border: '1px solid #E2E8F0',
-    borderRadius: '4px',
+    border: '1px solid #D9E2EF',
+    borderRadius: '10px',
     fontSize: '14px',
     color: '#0F172A',
     outline: 'none',
@@ -203,7 +204,7 @@ export default async function SolicitacoesPage({
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6">
       <PageBreadcrumb
         backHref="/dashboard"
         items={[
@@ -212,19 +213,19 @@ export default async function SolicitacoesPage({
         ]}
       />
 
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-5 flex items-center justify-between md:mb-6">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>
+          <h1 className="text-[22px] font-semibold tracking-[-0.01em] md:text-xl md:font-bold" style={{ color: '#0F172A' }}>
             Solicitações
           </h1>
-          <p className="mt-0.5 text-sm" style={{ color: '#475569' }}>
+          <p className="mt-1 text-[13px] leading-[1.4] md:mt-0.5 md:text-sm" style={{ color: '#5B6B80' }}>
             Consulta com filtros e ordenação por coluna
           </p>
         </div>
         <Link
           href="/solicitacoes/nova"
-          className="px-4 py-2 text-sm font-medium text-white"
-          style={{ background: '#0038A8', borderRadius: '4px' }}
+          className="inline-flex h-10 items-center rounded-[10px] px-4 text-[13px] font-semibold text-white md:h-auto md:rounded-md md:px-4 md:py-2 md:text-sm md:font-medium"
+          style={{ background: '#0038A8' }}
         >
           + Nova Solicitação
         </Link>
@@ -233,7 +234,7 @@ export default async function SolicitacoesPage({
       <form
         method="get"
         className="mb-4 hidden grid gap-3 border bg-white p-4 md:grid md:grid-cols-4"
-        style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
+        style={{ borderColor: '#E6ECF5', borderRadius: '12px' }}
       >
         <div>
           <label className="mb-1 block text-xs font-medium" style={{ color: '#475569' }}>
@@ -280,22 +281,22 @@ export default async function SolicitacoesPage({
         <div className="flex items-end gap-2">
           <button
             type="submit"
-            className="h-[38px] px-4 text-sm font-medium text-white"
-            style={{ background: '#0038A8', borderRadius: '4px' }}
+            className="h-10 rounded-[10px] px-4 text-sm font-semibold text-white"
+            style={{ background: '#0038A8' }}
           >
             Aplicar filtros
           </button>
           <Link
             href="/solicitacoes"
-            className="h-[38px] px-4 text-sm font-medium inline-flex items-center justify-center border"
-            style={{ borderColor: '#E2E8F0', color: '#475569', borderRadius: '4px' }}
+            className="inline-flex h-10 items-center justify-center rounded-[10px] border px-4 text-sm font-semibold"
+            style={{ borderColor: '#D9E2EF', color: '#4B5D74' }}
           >
             Limpar
           </Link>
         </div>
       </form>
 
-      <div className="mb-3 text-sm" style={{ color: '#64748B' }}>
+      <div className="mb-3 text-[13px] md:text-sm" style={{ color: '#64748B' }}>
         {total} solicitação(ões) encontrada(s)
       </div>
 
@@ -311,11 +312,11 @@ export default async function SolicitacoesPage({
               <Link
                 key={chip.key}
                 href={href}
-                className="whitespace-nowrap rounded-full border px-4 py-1.5 text-sm font-medium"
+                className="inline-flex h-9 whitespace-nowrap items-center rounded-full border px-4 text-[12px] font-semibold"
                 style={{
-                  borderColor: active ? '#0038A8' : '#CBD5E1',
+                  borderColor: active ? '#1E40AF' : '#CCD7E5',
                   background: active ? '#1E40AF' : '#F8FAFC',
-                  color: active ? '#FFFFFF' : '#475569',
+                  color: active ? '#FFFFFF' : '#4E6077',
                 }}
               >
                 {chip.label} ({chip.count})
@@ -324,11 +325,11 @@ export default async function SolicitacoesPage({
           })}
         </div>
 
-        <details className="rounded border bg-white" style={{ borderColor: '#E2E8F0' }}>
-          <summary className="cursor-pointer px-4 py-3 text-sm font-medium" style={{ color: '#334155' }}>
+        <details className="rounded-[12px] border bg-white" style={{ borderColor: '#E6ECF5' }}>
+          <summary className="cursor-pointer px-4 py-3 text-[13px] font-semibold" style={{ color: '#334155' }}>
             Filtros avançados
           </summary>
-          <form method="get" className="grid gap-3 border-t p-4" style={{ borderColor: '#E2E8F0' }}>
+          <form method="get" className="grid gap-3 border-t p-4" style={{ borderColor: '#E6ECF5' }}>
             {quick !== 'all' && <input type="hidden" name="quick" value={quick} />}
             <div>
               <label className="mb-1 block text-xs font-medium" style={{ color: '#475569' }}>
@@ -372,15 +373,15 @@ export default async function SolicitacoesPage({
             <div className="flex gap-2">
               <button
                 type="submit"
-                className="h-[38px] px-4 text-sm font-medium text-white"
-                style={{ background: '#0038A8', borderRadius: '4px' }}
+                className="h-10 rounded-[10px] px-4 text-sm font-semibold text-white"
+                style={{ background: '#0038A8' }}
               >
                 Aplicar
               </button>
               <Link
                 href="/solicitacoes"
-                className="h-[38px] inline-flex items-center justify-center border px-4 text-sm font-medium"
-                style={{ borderColor: '#E2E8F0', color: '#475569', borderRadius: '4px' }}
+                className="inline-flex h-10 items-center justify-center rounded-[10px] border px-4 text-sm font-semibold"
+                style={{ borderColor: '#D9E2EF', color: '#4B5D74' }}
               >
                 Limpar
               </Link>
@@ -392,7 +393,7 @@ export default async function SolicitacoesPage({
       {items.length === 0 ? (
         <div
           className="flex flex-col items-center gap-2 border bg-white px-4 py-10 text-sm"
-          style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#94A3B8' }}
+          style={{ borderColor: '#E6ECF5', borderRadius: '12px', color: '#94A3B8' }}
         >
           <span style={{ fontSize: '20px' }}>🗂️</span>
           <span>Nenhuma solicitação encontrada</span>
@@ -402,7 +403,7 @@ export default async function SolicitacoesPage({
         </div>
       ) : (
         <>
-          <div className="space-y-3 md:hidden">
+          <div className="space-y-2.5 md:hidden">
             {items.map(item => (
               <SolicitacaoCard
                 key={item.id}
@@ -428,7 +429,7 @@ export default async function SolicitacoesPage({
             ))}
           </div>
 
-          <div className="hidden overflow-x-auto border bg-white md:block" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+          <div className="hidden overflow-x-auto border bg-white md:block" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
           <table className="min-w-full text-sm">
             <thead style={{ background: '#F8FAFC' }}>
               <tr>

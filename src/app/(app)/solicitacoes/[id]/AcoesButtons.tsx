@@ -40,6 +40,9 @@ const CHECKLIST_REAB_LABELS: Record<number, string> = {
   2: 'Foram verificadas as condições de funcionamento do intertravamento/dispositivo de segurança?',
 }
 
+const BTN_PRIMARY = 'inline-flex h-10 items-center justify-center rounded-[10px] px-4 text-[13px] font-semibold text-white'
+const BTN_SECONDARY = 'inline-flex h-10 items-center justify-center rounded-[10px] border px-4 text-[13px] font-semibold'
+
 export default function AcoesButtons({ solicitacaoId, status, tipo }: Props) {
   const router = useRouter()
   const { showToast } = useAppToast()
@@ -103,28 +106,28 @@ export default function AcoesButtons({ solicitacaoId, status, tipo }: Props) {
   return (
     <>
       {error && (
-        <div className="mb-4 px-3 py-2 text-sm" style={{ background: '#FEE2E2', color: '#B91C1C', borderRadius: '4px' }}>
+        <div className="mb-4 rounded-[10px] px-3 py-2 text-[13px]" style={{ background: '#FEE2E2', color: '#B91C1C' }}>
           {error}
         </div>
       )}
 
       <div
-        className="fixed bottom-[60px] left-0 right-0 z-40 flex flex-wrap gap-2 border-t bg-white p-3 md:static md:mb-6 md:border-0 md:bg-transparent md:p-0"
-        style={{ borderColor: '#E2E8F0' }}
+        className="fixed bottom-[60px] left-0 right-0 z-40 flex flex-wrap gap-2 border-t bg-white/95 p-3.5 shadow-[0_-6px_16px_rgba(15,23,42,0.08)] backdrop-blur md:static md:mb-6 md:border-0 md:bg-transparent md:p-0 md:shadow-none"
+        style={{ borderColor: '#E6ECF5' }}
       >
         {status === 'EM_APROVACAO' && (
           <>
             <button
               onClick={() => setShowAprovarModal(true)}
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#16A34A', borderRadius: '4px' }}
+              className={BTN_PRIMARY}
+              style={{ background: '#16A34A' }}
             >
               ✓ Aprovar
             </button>
             <button
               onClick={() => setShowRejeitarModal(true)}
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#DC2626', borderRadius: '4px' }}
+              className={BTN_PRIMARY}
+              style={{ background: '#DC2626' }}
             >
               ✕ Rejeitar
             </button>
@@ -136,15 +139,15 @@ export default function AcoesButtons({ solicitacaoId, status, tipo }: Props) {
             <button
               onClick={() => acao('INICIAR_EXECUCAO')}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#0038A8', borderRadius: '4px' }}
+              className={BTN_PRIMARY}
+              style={{ background: '#0038A8' }}
             >
               Iniciar Execução em Campo
             </button>
             <button
               onClick={() => setShowCancelarModal(true)}
-              className="px-4 py-2 text-sm border"
-              style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#DC2626' }}
+              className={BTN_SECONDARY}
+              style={{ borderColor: '#D9E2EF', color: '#DC2626' }}
             >
               Cancelar solicitação
             </button>
@@ -155,8 +158,8 @@ export default function AcoesButtons({ solicitacaoId, status, tipo }: Props) {
           <button
             onClick={() => setShowChecklistDesabModal(true)}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-white"
-            style={{ background: '#EA580C', borderRadius: '4px' }}
+            className={BTN_PRIMARY}
+            style={{ background: '#EA580C' }}
           >
             Confirmar Desabilitação
           </button>
@@ -167,16 +170,16 @@ export default function AcoesButtons({ solicitacaoId, status, tipo }: Props) {
             <button
               onClick={() => setShowExtensaoModal(true)}
               disabled={loading}
-              className="px-4 py-2 text-sm border"
-              style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#B45309' }}
+              className={BTN_SECONDARY}
+              style={{ borderColor: '#D9E2EF', color: '#B45309' }}
             >
               Solicitar extensão
             </button>
             <button
               onClick={() => acao('INICIAR_REABILITACAO')}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#8B5CF6', borderRadius: '4px' }}
+              className={BTN_PRIMARY}
+              style={{ background: '#8B5CF6' }}
             >
               Iniciar Reabilitação
             </button>
@@ -187,15 +190,15 @@ export default function AcoesButtons({ solicitacaoId, status, tipo }: Props) {
           <>
             <button
               onClick={() => setShowAprovarExtensaoModal(true)}
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#16A34A', borderRadius: '4px' }}
+              className={BTN_PRIMARY}
+              style={{ background: '#16A34A' }}
             >
               Aprovar extensão
             </button>
             <button
               onClick={() => setShowRejeitarExtensaoModal(true)}
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#DC2626', borderRadius: '4px' }}
+              className={BTN_PRIMARY}
+              style={{ background: '#DC2626' }}
             >
               Rejeitar extensão
             </button>
@@ -206,8 +209,8 @@ export default function AcoesButtons({ solicitacaoId, status, tipo }: Props) {
           <button
             onClick={() => setShowChecklistReabModal(true)}
             disabled={loading}
-            className="px-4 py-2 text-sm font-medium text-white"
-            style={{ background: '#6366F1', borderRadius: '4px' }}
+            className={BTN_PRIMARY}
+            style={{ background: '#6366F1' }}
           >
             Concluir Reabilitação
           </button>
@@ -218,16 +221,16 @@ export default function AcoesButtons({ solicitacaoId, status, tipo }: Props) {
             <button
               onClick={() => setShowRejeitarReabModal(true)}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#DC2626', borderRadius: '4px' }}
+              className={BTN_PRIMARY}
+              style={{ background: '#DC2626' }}
             >
               Rejeitar reabilitação
             </button>
             <button
               onClick={() => setShowValidarReabModal(true)}
               disabled={loading}
-              className="px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#10B981', borderRadius: '4px' }}
+              className={BTN_PRIMARY}
+              style={{ background: '#10B981' }}
             >
               ✓ Validar Reabilitação — Encerrar
             </button>
@@ -237,8 +240,8 @@ export default function AcoesButtons({ solicitacaoId, status, tipo }: Props) {
         {['RASCUNHO', 'EM_APROVACAO'].includes(status) && (
           <button
             onClick={() => setShowCancelarModal(true)}
-            className="px-4 py-2 text-sm border"
-            style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#DC2626' }}
+            className={BTN_SECONDARY}
+            style={{ borderColor: '#D9E2EF', color: '#DC2626' }}
           >
             Cancelar solicitação
           </button>
@@ -671,8 +674,8 @@ function ChecklistPergunta({
 
 function Modal({ title, children, onClose }: { title: string; children: React.ReactNode; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.4)' }}>
-      <div className="bg-white w-full max-w-md p-6" style={{ borderRadius: '4px' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(15,23,42,0.48)' }}>
+      <div className="bg-white w-full max-w-md p-5" style={{ borderRadius: '12px' }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold" style={{ color: '#0F172A' }}>{title}</h3>
           <button onClick={onClose} className="text-sm" style={{ color: '#94A3B8' }}>✕</button>

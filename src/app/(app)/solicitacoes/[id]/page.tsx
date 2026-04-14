@@ -80,7 +80,7 @@ export default async function SolicitacaoDetailPage({
   const aprovReab  = s.aprovacoes.filter(a => a.tipo === 'REABILITACAO')
 
   return (
-    <div className="max-w-4xl p-6 pb-40 md:pb-28">
+    <div className="max-w-4xl p-4 pb-40 md:p-6 md:pb-28">
       <PageBreadcrumb
         backHref="/solicitacoes"
         items={[
@@ -90,14 +90,14 @@ export default async function SolicitacaoDetailPage({
         ]}
       />
       {/* Header */}
-      <div className="flex items-start gap-4 mb-6">
+      <div className="mb-5 flex items-start gap-4 md:mb-6">
         <div className="flex-1">
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-xl font-bold font-mono" style={{ color: '#0F172A' }}>{s.protocolo}</h1>
+          <div className="mb-1 flex items-center gap-2.5">
+            <h1 className="font-mono text-[21px] font-semibold tracking-[-0.01em] md:text-xl md:font-bold" style={{ color: '#0F172A' }}>{s.protocolo}</h1>
             <StatusBadge status={s.status as StatusSolicitacao} />
             {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} showPrazo />}
           </div>
-          <div className="flex items-center gap-3 text-sm" style={{ color: '#475569' }}>
+          <div className="flex items-center gap-2.5 text-[12px] font-medium md:text-sm" style={{ color: '#5D6E85' }}>
             <span>{s.area.planta.nome} › {s.area.nome}</span>
             <span>·</span>
             <span className="font-mono font-medium" style={{ color: '#0038A8' }}>{s.equipamento.tag}</span>
@@ -142,12 +142,11 @@ export default async function SolicitacaoDetailPage({
               <a
                 key={tab.key}
                 href={`/solicitacoes/${s.id}?aba=${tab.key}`}
-                className="whitespace-nowrap border px-4 py-1.5 text-sm font-medium"
+                className="inline-flex h-9 items-center whitespace-nowrap rounded-full border px-4 text-[12px] font-semibold"
                 style={{
-                  borderColor: active ? '#0038A8' : '#CBD5E1',
-                  background: active ? '#EBF0FB' : '#F8FAFC',
-                  color: active ? '#0038A8' : '#64748B',
-                  borderRadius: '999px',
+                  borderColor: active ? '#1E40AF' : '#CCD7E5',
+                  background: active ? '#E9F0FD' : '#F8FAFC',
+                  color: active ? '#1E3A8A' : '#556982',
                 }}
               >
                 {tab.label}
@@ -158,9 +157,9 @@ export default async function SolicitacaoDetailPage({
       </div>
 
       {abaAtiva === 'detalhes' && (
-        <div className="grid grid-cols-1 gap-4 mb-4 md:hidden">
-          <div className="bg-white border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-            <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#6B7280' }}>Intertravamento</h3>
+        <div className="mb-4 grid grid-cols-1 gap-3 md:hidden">
+          <div className="border bg-white p-4" style={{ borderColor: '#E6ECF5', borderRadius: '12px' }}>
+            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.02em]" style={{ color: '#677A92' }}>Intertravamento</h3>
             <dl className="space-y-2">
               <DetailRow label="TAG" value={s.equipamento.tag} mono />
               <DetailRow label="Tipo" value={s.tipo ? TIPO_LABELS[s.tipo] : '—'} />
@@ -168,17 +167,17 @@ export default async function SolicitacaoDetailPage({
               <DetailRow label="Motivo" value={s.motivoDesabilitacao} />
             </dl>
           </div>
-          <div className="bg-white border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-            <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#6B7280' }}>Período e SLA</h3>
+          <div className="border bg-white p-4" style={{ borderColor: '#E6ECF5', borderRadius: '12px' }}>
+            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.02em]" style={{ color: '#677A92' }}>Período e SLA</h3>
             <dl className="space-y-2">
               <DetailRow label="Início previsto" value={fmt(s.periodoInicio)} />
               <DetailRow label="Fim previsto" value={fmt(s.periodoFim)} />
               <DetailRow label="Prazo máximo" value={s.classe?.prazoMaximoDias ? `${s.classe.prazoMaximoDias} dia(s)` : 'NÃO FORÇÁVEL'} />
             </dl>
           </div>
-          <div className="bg-white border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-            <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#6B7280' }}>Medidas contingenciais</h3>
-            <p className="text-sm" style={{ color: '#374151', lineHeight: '1.6' }}>
+          <div className="border bg-white p-4" style={{ borderColor: '#E6ECF5', borderRadius: '12px' }}>
+            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.02em]" style={{ color: '#677A92' }}>Medidas contingenciais</h3>
+            <p className="text-[13px]" style={{ color: '#374151', lineHeight: '1.55' }}>
               {s.medidasContingenciais || <span style={{ color: '#94A3B8' }}>Não informadas</span>}
             </p>
           </div>
@@ -186,36 +185,36 @@ export default async function SolicitacaoDetailPage({
       )}
 
       {abaAtiva === 'aprovacoes' && (
-        <div className="space-y-4 mb-4 md:hidden">
-          <div className="bg-white border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-            <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#6B7280' }}>
+        <div className="mb-4 space-y-3 md:hidden">
+          <div className="border bg-white p-4" style={{ borderColor: '#E6ECF5', borderRadius: '12px' }}>
+            <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.02em]" style={{ color: '#677A92' }}>
               Aprovações — Desabilitação
             </h3>
             {aprovDesab.length === 0 ? (
-              <p className="text-sm" style={{ color: '#94A3B8' }}>Sem aprovações de desabilitação.</p>
+              <p className="text-[13px]" style={{ color: '#94A3B8' }}>Sem aprovações de desabilitação.</p>
             ) : (
               <div className="flex flex-col gap-2">
                 {aprovDesab.map(a => (
-                  <div key={a.id} className="p-3" style={{ background: '#F8FAFC', borderRadius: '4px' }}>
-                    <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{a.aprovador.nome}</p>
-                    <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>{a.status}</p>
-                    {a.respondidaEm && <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>{fmt(a.respondidaEm)}</p>}
+                  <div key={a.id} className="rounded-[10px] p-3" style={{ background: '#F7FAFE' }}>
+                    <p className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>{a.aprovador.nome}</p>
+                    <p className="mt-0.5 text-[11px] font-medium" style={{ color: '#60738B' }}>{a.status}</p>
+                    {a.respondidaEm && <p className="mt-1 text-[11px]" style={{ color: '#8CA0B8' }}>{fmt(a.respondidaEm)}</p>}
                   </div>
                 ))}
               </div>
             )}
           </div>
           {aprovReab.length > 0 && (
-            <div className="bg-white border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-              <h3 className="text-xs font-semibold uppercase tracking-wide mb-3" style={{ color: '#6B7280' }}>
+            <div className="border bg-white p-4" style={{ borderColor: '#E6ECF5', borderRadius: '12px' }}>
+              <h3 className="mb-3 text-[11px] font-semibold uppercase tracking-[0.02em]" style={{ color: '#677A92' }}>
                 Aprovações — Reabilitação
               </h3>
               <div className="flex flex-col gap-2">
                 {aprovReab.map(a => (
-                  <div key={a.id} className="p-3" style={{ background: '#F8FAFC', borderRadius: '4px' }}>
-                    <p className="text-sm font-medium" style={{ color: '#0F172A' }}>{a.aprovador.nome}</p>
-                    <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>{a.status}</p>
-                    {a.respondidaEm && <p className="text-xs mt-1" style={{ color: '#94A3B8' }}>{fmt(a.respondidaEm)}</p>}
+                  <div key={a.id} className="rounded-[10px] p-3" style={{ background: '#F7FAFE' }}>
+                    <p className="text-[13px] font-semibold" style={{ color: '#0F172A' }}>{a.aprovador.nome}</p>
+                    <p className="mt-0.5 text-[11px] font-medium" style={{ color: '#60738B' }}>{a.status}</p>
+                    {a.respondidaEm && <p className="mt-1 text-[11px]" style={{ color: '#8CA0B8' }}>{fmt(a.respondidaEm)}</p>}
                   </div>
                 ))}
               </div>
@@ -225,29 +224,29 @@ export default async function SolicitacaoDetailPage({
       )}
 
       {abaAtiva === 'timeline' && (
-        <div className="bg-white border p-4 mb-4 md:hidden" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-          <h3 className="text-xs font-semibold uppercase tracking-wide mb-4" style={{ color: '#6B7280' }}>
+        <div className="mb-4 border bg-white p-4 md:hidden" style={{ borderColor: '#E6ECF5', borderRadius: '12px' }}>
+          <h3 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.02em]" style={{ color: '#677A92' }}>
             Linha do Tempo
           </h3>
           {s.eventos.length === 0 ? (
-            <p className="text-sm" style={{ color: '#94A3B8' }}>Nenhum evento registrado.</p>
+            <p className="text-[13px]" style={{ color: '#94A3B8' }}>Nenhum evento registrado.</p>
           ) : (
             <div className="relative">
-              <div className="absolute left-3 top-0 bottom-0 w-px" style={{ background: '#E2E8F0' }} />
-              <div className="space-y-4">
+              <div className="absolute bottom-0 left-3 top-0 w-px" style={{ background: '#E2E8F0' }} />
+              <div className="space-y-3.5">
                 {s.eventos.map((ev, i) => (
                   <div key={ev.id} className="flex gap-4 relative">
                     <div
-                      className="w-6 h-6 flex items-center justify-center text-xs font-bold flex-shrink-0 relative z-10"
-                      style={{ background: '#0038A8', color: 'white', borderRadius: '50%' }}
+                      className="relative z-10 flex h-6 w-6 flex-shrink-0 items-center justify-center text-[11px] font-semibold"
+                      style={{ background: '#1E40AF', color: 'white', borderRadius: '50%' }}
                     >
                       {i + 1}
                     </div>
                     <div className="flex-1 pt-0.5">
-                      <div className="text-sm font-medium" style={{ color: '#0F172A' }}>
+                      <div className="text-[13px] font-semibold leading-[1.4]" style={{ color: '#0F172A' }}>
                         {ACAO_LABELS[ev.acao] ?? ev.acao}
                       </div>
-                      <div className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>{fmt(ev.createdAt)}</div>
+                      <div className="mt-0.5 text-[11px]" style={{ color: '#8CA0B8' }}>{fmt(ev.createdAt)}</div>
                     </div>
                   </div>
                 ))}
@@ -426,8 +425,8 @@ export default async function SolicitacaoDetailPage({
 function DetailRow({ label, value, mono }: { label: string; value?: string | null; mono?: boolean }) {
   return (
     <div className="flex gap-3">
-      <dt className="text-xs w-28 shrink-0 font-medium" style={{ color: '#6B7280' }}>{label}</dt>
-      <dd className={`text-xs flex-1 ${mono ? 'font-mono font-semibold' : ''}`} style={{ color: mono ? '#0038A8' : '#0F172A' }}>
+      <dt className="w-28 shrink-0 text-[11px] font-semibold uppercase tracking-[0.02em]" style={{ color: '#7A8CA2' }}>{label}</dt>
+      <dd className={`flex-1 text-[12px] leading-[1.45] ${mono ? 'font-mono font-semibold' : 'font-medium'}`} style={{ color: mono ? '#1E3A8A' : '#0F172A' }}>
         {value || <span style={{ color: '#94A3B8' }}>—</span>}
       </dd>
     </div>

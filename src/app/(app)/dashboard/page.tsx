@@ -59,46 +59,46 @@ export default async function DashboardPage() {
   ]
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6">
       <PageBreadcrumb
         items={[{ label: 'Início' }, { label: 'Worklist' }]}
         backHref="/solicitacoes"
       />
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-5 flex items-center justify-between md:mb-6">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Dashboard</h1>
-          <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
+          <h1 className="text-[22px] font-semibold tracking-[-0.01em] md:text-xl md:font-bold" style={{ color: '#0F172A' }}>Dashboard</h1>
+          <p className="mt-1 text-[13px] leading-[1.4] md:mt-0.5 md:text-sm" style={{ color: '#5B6B80' }}>
             Bom dia, {session?.user?.name?.split(' ')[0]}. Visão geral dos intertravamentos.
           </p>
         </div>
         <Link
           href="/solicitacoes/nova"
-          className="px-4 py-2 text-sm font-medium text-white flex items-center gap-2"
-          style={{ background: '#0038A8', borderRadius: '4px' }}
+          className="inline-flex h-10 items-center gap-2 rounded-[10px] px-4 text-[13px] font-semibold text-white md:h-auto md:rounded-md md:px-4 md:py-2 md:text-sm md:font-medium"
+          style={{ background: '#0038A8' }}
         >
           + Nova Solicitação
         </Link>
       </div>
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="mb-5 grid grid-cols-2 gap-3 md:mb-6 md:gap-4 lg:grid-cols-4">
         {cards.map(card => {
           const colors = tokens.colors.status[card.status]
           return (
             <Link key={card.status} href={card.href}>
               <div
-                className="bg-white p-4 border cursor-pointer transition-shadow hover:shadow-md"
-                style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
+                className="cursor-pointer border bg-white p-3.5 transition-shadow hover:shadow-md md:p-4"
+                style={{ borderColor: '#E6ECF5', borderRadius: '12px' }}
               >
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium" style={{ color: '#475569' }}>{card.label}</span>
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[11px] font-semibold uppercase tracking-[0.02em] md:text-xs md:normal-case md:tracking-normal" style={{ color: '#5F7088' }}>{card.label}</span>
                   <span
                     className="w-2 h-2 rounded-full"
                     style={{ background: colors.dot }}
                   />
                 </div>
-                <div className="text-3xl font-bold" style={{ color: colors.text }}>{card.value}</div>
+                <div className="text-[30px] font-semibold leading-8 tracking-[-0.02em] md:text-3xl md:font-bold" style={{ color: colors.text }}>{card.value}</div>
               </div>
             </Link>
           )
@@ -106,36 +106,36 @@ export default async function DashboardPage() {
       </div>
 
       {/* Alert Cards */}
-      <div className="grid grid-cols-2 gap-4 mb-6">
-        <div className="bg-white p-4 border" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-          <p className="text-xs font-medium mb-1" style={{ color: '#475569' }}>Encerradas este mês</p>
-          <p className="text-2xl font-bold" style={{ color: '#10B981' }}>{metrics.encerradasMes}</p>
+      <div className="mb-5 grid grid-cols-2 gap-3 md:mb-6 md:gap-4">
+        <div className="border bg-white p-3.5 md:p-4" style={{ borderColor: '#E6ECF5', borderRadius: '12px' }}>
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.02em] md:text-xs md:normal-case md:tracking-normal" style={{ color: '#5F7088' }}>Encerradas este mês</p>
+          <p className="text-[26px] font-semibold leading-7 md:text-2xl md:font-bold" style={{ color: '#10B981' }}>{metrics.encerradasMes}</p>
         </div>
         <div
-          className="p-4 border"
+          className="border p-3.5 md:p-4"
           style={{
             background: metrics.violacoesSla > 0 ? '#FEE2E2' : 'white',
-            borderColor: metrics.violacoesSla > 0 ? '#FECACA' : '#E2E8F0',
-            borderRadius: '4px',
+            borderColor: metrics.violacoesSla > 0 ? '#FECACA' : '#E6ECF5',
+            borderRadius: '12px',
           }}
         >
-          <p className="text-xs font-medium mb-1" style={{ color: metrics.violacoesSla > 0 ? '#B91C1C' : '#475569' }}>
+          <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.02em] md:text-xs md:normal-case md:tracking-normal" style={{ color: metrics.violacoesSla > 0 ? '#B91C1C' : '#5F7088' }}>
             Violações de SLA
           </p>
-          <p className="text-2xl font-bold" style={{ color: metrics.violacoesSla > 0 ? '#B91C1C' : '#10B981' }}>
+          <p className="text-[26px] font-semibold leading-7 md:text-2xl md:font-bold" style={{ color: metrics.violacoesSla > 0 ? '#B91C1C' : '#10B981' }}>
             {metrics.violacoesSla}
           </p>
         </div>
       </div>
 
       {/* Recent Solicitacoes */}
-      <div className="bg-white border" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
-        <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: '#E2E8F0' }}>
-          <h2 className="text-sm font-semibold" style={{ color: '#0F172A' }}>Solicitações Ativas</h2>
-          <Link href="/solicitacoes" className="text-xs" style={{ color: '#0038A8' }}>Ver todas →</Link>
+      <div className="border bg-white" style={{ borderColor: '#E6ECF5', borderRadius: '12px' }}>
+        <div className="flex items-center justify-between border-b px-4 py-3.5 md:px-5 md:py-4" style={{ borderColor: '#E6ECF5' }}>
+          <h2 className="text-[13px] font-semibold md:text-sm" style={{ color: '#0F172A' }}>Solicitações Ativas</h2>
+          <Link href="/solicitacoes" className="text-[12px] font-medium" style={{ color: '#1E40AF' }}>Ver todas →</Link>
         </div>
 
-        <div className="space-y-3 p-4 md:hidden">
+        <div className="space-y-2.5 p-3.5 md:hidden">
           {solicitacoes.length === 0 ? (
             <div className="flex flex-col items-center gap-2 py-6 text-sm" style={{ color: '#94A3B8' }}>
               <span style={{ fontSize: '20px' }}>📭</span>

@@ -104,22 +104,22 @@ export function SolicitacaoCard({
       style={{ maxWidth: '100%' }}
     >
       <div
-        className="bg-white border shadow-sm hover:shadow-md transition-shadow p-4 md:p-5"
+        className="bg-white border shadow-sm transition-shadow hover:shadow-md p-3.5 md:p-5"
         style={{
-          borderColor: '#E2E8F0',
-          borderRadius: '10px',
+          borderColor: '#E6ECF5',
+          borderRadius: '12px',
           borderLeft: `4px solid ${classAccent(data.classe?.numero)}`,
           width: '100%',
         }}
       >
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center justify-between gap-2.5 flex-wrap">
+          <div className="flex items-center gap-1.5 flex-wrap">
             {classeNumero && <ClasseBadge classe={classeNumero} size="sm" />}
-            <span className="text-xs font-mono font-medium" style={{ color: '#475569' }}>
+            <span className="text-[11px] font-mono font-semibold tracking-[0.01em]" style={{ color: '#52637A' }}>
               #{data.protocolo}
             </span>
             {data.aprovacoesCount && data.aprovacoesCount.total > 0 && (
-              <span className="text-xs font-semibold" style={{ color: '#475569' }}>
+              <span className="text-[11px] font-semibold" style={{ color: '#5B6B80' }}>
                 {data.aprovacoesCount.aprovadas}/{data.aprovacoesCount.total}
               </span>
             )}
@@ -127,24 +127,23 @@ export function SolicitacaoCard({
           <StatusBadge status={data.status} size="sm" />
         </div>
 
-        <p className="text-xl font-bold mt-2" style={{ color: '#0F172A' }}>
+        <p className="mt-2 text-[18px] font-semibold leading-6 tracking-[-0.01em]" style={{ color: '#0F172A' }}>
           {data.equipamento.tag}
         </p>
-        <p className="text-sm mt-1" style={{ color: '#64748B' }}>
+        <p className="mt-1 text-[13px] leading-[1.45]" style={{ color: '#5E7087' }}>
           {data.equipamento.descricao}
         </p>
-        <p className="text-sm mt-1" style={{ color: '#64748B' }}>
+        <p className="mt-1.5 text-[12px] leading-[1.45] font-medium" style={{ color: '#63768F' }}>
           {`📍 ${areaLinha}`}
         </p>
 
         {contextual && (
           <div
-            className="mt-3 px-3 py-2 text-sm"
+            className="mt-3 rounded-lg border px-3 py-2 text-[12px] leading-[1.4] font-medium"
             style={{
-              background: '#F8FAFC',
-              color: '#64748B',
-              borderRadius: '8px',
-              border: '1px solid #E2E8F0',
+              background: '#F6F9FD',
+              color: '#5A6B83',
+              border: '1px solid #DFE7F1',
             }}
           >
             {contextual}
@@ -152,15 +151,14 @@ export function SolicitacaoCard({
         )}
 
         {(actionLabel || secondaryActionLabel) && (
-          <div className="mt-4 flex gap-2 flex-wrap" onClick={e => e.preventDefault()}>
+          <div className="mt-3.5 flex gap-2 flex-wrap" onClick={e => e.preventDefault()}>
             {secondaryActionLabel && secondaryActionHref && (
               <Link
                 href={secondaryActionHref}
-                className="px-4 py-2 text-sm font-medium border"
+                className="inline-flex h-10 items-center justify-center rounded-[10px] border px-4 text-[13px] font-semibold"
                 style={{
-                  borderColor: '#CBD5E1',
+                  borderColor: '#CFD9E6',
                   color: '#334155',
-                  borderRadius: '8px',
                 }}
               >
                 {secondaryActionLabel}
@@ -169,8 +167,8 @@ export function SolicitacaoCard({
             {actionLabel && actionHref && (
               <Link
                 href={actionHref}
-                className="px-4 py-2 text-sm font-semibold text-white"
-                style={{ background: primaryColor, borderRadius: '8px' }}
+                className="inline-flex h-10 items-center justify-center rounded-[10px] px-4 text-[13px] font-semibold text-white"
+                style={{ background: primaryColor }}
               >
                 {actionLabel}
               </Link>
