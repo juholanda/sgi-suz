@@ -20,33 +20,32 @@ interface DetalheHeaderProps {
 export default function DetalheHeader({ s }: DetalheHeaderProps) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Protocol + badges row */}
+      {/* TAG + badges row */}
       <div>
         <div className="flex flex-wrap items-center gap-3" style={{ marginBottom: 4 }}>
           <h1
             style={{
               fontSize: 20,
               fontWeight: 700,
-              fontFamily: 'inherit',
               color: '#0F172A',
               margin: 0,
               lineHeight: 1.3,
             }}
           >
-            {s.protocolo}
+            {s.equipamento.tag}
           </h1>
           <StatusBadge status={s.status as StatusSolicitacao} />
           {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} showPrazo />}
         </div>
 
-        {/* Subtitle: Planta > Area | TAG | Tipo */}
+        {/* Subtitle: Protocolo · Planta > Área · Tipo */}
         <div
           className="flex flex-wrap items-center gap-2"
           style={{ fontSize: 13, color: '#475569' }}
         >
-          <span>{s.area.planta.nome} {'\u203A'} {s.area.nome}</span>
+          <span style={{ fontWeight: 500, color: '#0038A8' }}>#{s.protocolo}</span>
           <span style={{ color: '#CBD5E1' }}>{'\u00B7'}</span>
-          <span style={{ fontFamily: 'inherit', fontWeight: 600, color: '#0038A8' }}>{s.equipamento.tag}</span>
+          <span>{s.area.planta.nome} {'\u203A'} {s.area.nome}</span>
           {s.tipo && (
             <>
               <span style={{ color: '#CBD5E1' }}>{'\u00B7'}</span>
