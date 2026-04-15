@@ -1,6 +1,8 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { Input, Select } from '@/components/design-system/Input'
+import { Button } from '@/components/design-system/Button'
 import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 
 interface Area {
@@ -82,80 +84,78 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
   const currentView = searchParams.get('view') ?? 'table'
 
   return (
-    <div className="mb-4 space-y-3">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {/* Top bar: search + filters (left) / sort + view toggle (right) */}
-      <div className="flex items-center gap-2 flex-wrap">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         {/* Left: search + filters */}
-        <form onSubmit={handleSearchSubmit} className="flex gap-2 flex-1" style={{ minWidth: '280px' }}>
-          <div className="relative" style={{ maxWidth: '320px', flex: '1 1 auto' }}>
-            <span
-              className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
-              style={{ fontSize: 18, color: '#94A3B8', lineHeight: 1 }}
-            >
-              search
-            </span>
-            <input
-              type="text"
+        <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, flex: 1, minWidth: 280 }}>
+          <div style={{ maxWidth: 320, flex: '1 1 auto' }}>
+            <Input
+              leadingIcon="search"
+              size="sm"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Buscar por TAG, protocolo ou solicitante..."
-              className="w-full pl-9 pr-3 py-2 text-sm border outline-none"
-              style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#0F172A', background: 'white' }}
             />
           </div>
           {search && (
-            <button
+            <Button
+              variant="outline"
+              size="sm"
               type="button"
               onClick={() => { setSearch(''); navigate({ search: null }) }}
-              className="px-3 py-2 text-sm border"
-              style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#64748B' }}
-            >
-              ✕
-            </button>
+              leadingIcon="close"
+              aria-label="Limpar busca"
+            />
           )}
-          <button
+          <Button
+            variant={open || hasActiveFilters ? 'secondary' : 'outline'}
+            size="sm"
             type="button"
             onClick={() => setOpen(v => !v)}
-            className="flex items-center gap-1.5 px-3 py-2 text-sm border"
-            style={{
-              borderColor: open || hasActiveFilters ? '#0038A8' : '#E2E8F0',
-              borderRadius: '4px',
-              background: open || hasActiveFilters ? '#EBF0FB' : 'white',
-              color: open || hasActiveFilters ? '#0038A8' : '#64748B',
-            }}
+            leadingIcon="tune"
           >
-            <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>tune</span>
             Filtros
             {hasActiveFilters && (
               <span
-                className="w-4 h-4 flex items-center justify-center text-xs font-bold text-white"
-                style={{ background: '#0038A8', borderRadius: '50%' }}
+                style={{
+                  width: 16,
+                  height: 16,
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: '#FFFFFF',
+                  background: '#0038A8',
+                  borderRadius: '50%',
+                  marginLeft: 4,
+                }}
               >
                 {[currentClasse.length > 0, !!currentAreaId, !!currentSearch, !!currentTipo, !!currentStatus].filter(Boolean).length}
               </span>
             )}
-          </button>
+          </Button>
         </form>
 
         {/* Right: sort + view toggle */}
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:flex items-center gap-1.5">
-            <span className="text-xs" style={{ color: '#64748B', whiteSpace: 'nowrap' }}>Ordenar por</span>
-            <select
+        <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <span style={{ fontSize: 12, color: '#64748B', whiteSpace: 'nowrap' }}>Ordenar por</span>
+            <Select
+              size="sm"
               value={currentSort}
               onChange={e => navigate({ sort: e.target.value })}
-              className="px-2 py-2 text-sm border outline-none"
-              style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#374151', background: 'white' }}
+              style={{ minWidth: 140 }}
             >
               <option value="recentes">Mais recentes</option>
               <option value="antigas">Mais antigas</option>
               <option value="prazo">Por prazo</option>
-            </select>
+            </Select>
           </div>
 
           {showViewToggle && (
             <ViewToggle
-              className="hidden sm:inline-flex"
               value={currentView as ViewMode}
               onChange={(mode) => navigate({ view: mode === 'table' ? null : mode })}
             />
@@ -167,17 +167,23 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
       {open && (
         <div
           ref={ref}
-          className="p-4 space-y-4 border"
-          style={{ borderColor: '#E2E8F0', borderRadius: '4px', background: '#F8FAFC' }}
+          style={{
+            padding: 16,
+            border: '1px solid #E2E8F0',
+            borderRadius: 8,
+            background: '#F8FAFC',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 16,
+          }}
         >
           {/* Área */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#374151' }}>Área</label>
+            <label className="field-label">Área</label>
             <select
               value={currentAreaId}
               onChange={e => navigate({ areaId: e.target.value || null })}
-              className="w-full px-3 py-2 text-sm border outline-none"
-              style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#374151', background: 'white' }}
+              className="field-input"
             >
               <option value="">Todas as áreas</option>
               {areas.map(a => (
@@ -188,8 +194,8 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
 
           {/* Classe */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#374151' }}>Classe</label>
-            <div className="flex gap-2">
+            <label className="field-label">Classe</label>
+            <div style={{ display: 'flex', gap: 8 }}>
               {['1', '2', '3', '4'].map(c => {
                 const active = currentClasse.includes(c)
                 const colors: Record<string, string> = { '1': '#1D4ED8', '2': '#0D9488', '3': '#EA580C', '4': '#DC2626' }
@@ -199,12 +205,13 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
                     key={c}
                     type="button"
                     onClick={() => toggleClasse(c)}
-                    className="px-3 py-1.5 text-xs font-semibold border transition-all"
+                    className="btn btn-sm"
                     style={{
-                      borderRadius: '4px',
-                      borderColor: active ? color : '#E2E8F0',
+                      borderRadius: 6,
+                      border: `1.5px solid ${active ? color : '#E2E8F0'}`,
                       background: active ? `${color}18` : 'white',
                       color: active ? color : '#6B7280',
+                      fontWeight: 600,
                     }}
                   >
                     CL{c}
@@ -216,8 +223,8 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
 
           {/* Tipo de intertravamento */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#374151' }}>Tipo de Intertravamento</label>
-            <div className="flex flex-wrap gap-2">
+            <label className="field-label">Tipo de Intertravamento</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {[
                 { value: 'LOGICO', label: 'Lógico' },
                 { value: 'FISICO', label: 'Físico' },
@@ -225,11 +232,11 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
               ].map(t => {
                 const active = currentTipo === t.value
                 return (
-                  <button key={t.value} type="button" onClick={() => navigate({ tipo: active ? null : t.value })}
-                    className="px-3 py-1.5 text-xs font-medium border transition-all"
-                    style={{ borderRadius: '4px', borderColor: active ? '#0038A8' : '#E2E8F0', background: active ? '#EBF0FB' : 'white', color: active ? '#0038A8' : '#6B7280' }}>
+                  <Button key={t.value} type="button" size="sm"
+                    variant={active ? 'secondary' : 'outline'}
+                    onClick={() => navigate({ tipo: active ? null : t.value })}>
                     {t.label}
-                  </button>
+                  </Button>
                 )
               })}
             </div>
@@ -237,16 +244,16 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
 
           {/* Status */}
           <div>
-            <label className="block text-xs font-medium mb-1.5" style={{ color: '#374151' }}>Status</label>
-            <div className="flex flex-wrap gap-2">
+            <label className="field-label">Status</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
               {STATUS_OPTIONS.map(opt => {
                 const active = currentStatus === opt.value
                 return (
-                  <button key={opt.value} type="button" onClick={() => navigate({ statusFiltro: active ? null : opt.value })}
-                    className="px-3 py-1.5 text-xs font-medium border transition-all"
-                    style={{ borderRadius: '4px', borderColor: active ? '#0038A8' : '#E2E8F0', background: active ? '#EBF0FB' : 'white', color: active ? '#0038A8' : '#6B7280' }}>
+                  <Button key={opt.value} type="button" size="sm"
+                    variant={active ? 'secondary' : 'outline'}
+                    onClick={() => navigate({ statusFiltro: active ? null : opt.value })}>
                     {opt.label}
-                  </button>
+                  </Button>
                 )
               })}
             </div>
@@ -254,17 +261,18 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
 
           {/* Limpar */}
           {hasActiveFilters && (
-            <button
+            <Button
+              variant="danger-outline"
+              size="sm"
               type="button"
+              leadingIcon="filter_list_off"
               onClick={() => {
                 setSearch('')
                 navigate({ search: null, classe: null, areaId: null, tipo: null, statusFiltro: null })
               }}
-              className="text-xs font-medium"
-              style={{ color: '#DC2626' }}
             >
               Limpar filtros
-            </button>
+            </Button>
           )}
         </div>
       )}

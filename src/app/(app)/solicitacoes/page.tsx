@@ -223,62 +223,75 @@ export default async function SolicitacoesPage({
         )}
       </div>
 
-      {/* Tabs */}
+      {/* Tabs + filtros (bloco branco) */}
       <div
-        className="flex gap-0 overflow-x-auto mb-4"
-        style={{ borderBottom: '1px solid #E2E8F0', scrollbarWidth: 'none' }}
+        style={{
+          background: '#FFFFFF',
+          border: '1px solid #E2E8F0',
+          borderRadius: 10,
+          padding: '0 20px 16px',
+          marginBottom: 16,
+        }}
       >
-        {TABS.map(t => {
-          const isActive = activeTab === t.key
-          const count = tabCounts[t.key]
-          const params = new URLSearchParams(searchParams as any)
-          if (t.key === 'todas') params.delete('tab')
-          else params.set('tab', t.key)
-          return (
-            <Link
-              key={t.key}
-              href={`/solicitacoes?${params.toString()}`}
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '10px 16px',
-                fontSize: 13,
-                fontWeight: isActive ? 600 : 400,
-                color: isActive ? '#0038A8' : '#64748B',
-                background: 'none',
-                borderBottom: isActive ? '2px solid #0038A8' : '2px solid transparent',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.15s',
-                textDecoration: 'none',
-              }}
-            >
-              <span className="material-symbols-outlined" style={{ fontSize: 15, lineHeight: 1 }}>
-                {t.icon}
-              </span>
-              {t.label}
-              {count > 0 && (
-                <span
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 600,
-                    padding: '1px 6px',
-                    borderRadius: 10,
-                    background: isActive ? '#EBF0FB' : '#F1F5F9',
-                    color: isActive ? '#0038A8' : '#94A3B8',
-                    lineHeight: '16px',
-                  }}
-                >
-                  {count}
+        {/* Tabs */}
+        <div
+          className="flex gap-0 overflow-x-auto"
+          style={{ borderBottom: '1px solid #E2E8F0', scrollbarWidth: 'none' }}
+        >
+          {TABS.map(t => {
+            const isActive = activeTab === t.key
+            const count = tabCounts[t.key]
+            const params = new URLSearchParams(searchParams as any)
+            if (t.key === 'todas') params.delete('tab')
+            else params.set('tab', t.key)
+            return (
+              <Link
+                key={t.key}
+                href={`/solicitacoes?${params.toString()}`}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '12px 16px',
+                  fontSize: 13,
+                  fontWeight: isActive ? 600 : 400,
+                  color: isActive ? '#0038A8' : '#64748B',
+                  background: 'none',
+                  borderBottom: isActive ? '2px solid #0038A8' : '2px solid transparent',
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s',
+                  textDecoration: 'none',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 15, lineHeight: 1 }}>
+                  {t.icon}
                 </span>
-              )}
-            </Link>
-          )
-        })}
-      </div>
+                {t.label}
+                {count > 0 && (
+                  <span
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 600,
+                      padding: '1px 6px',
+                      borderRadius: 10,
+                      background: isActive ? '#EBF0FB' : '#F1F5F9',
+                      color: isActive ? '#0038A8' : '#94A3B8',
+                      lineHeight: '16px',
+                    }}
+                  >
+                    {count}
+                  </span>
+                )}
+              </Link>
+            )
+          })}
+        </div>
 
-      {/* Search + filters + view toggle */}
-      <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} showViewToggle />
+        {/* Search + filters + view toggle */}
+        <div style={{ paddingTop: 16 }}>
+          <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} showViewToggle />
+        </div>
+      </div>
 
       {/* Results */}
       {solicitacoes.length === 0 ? (
