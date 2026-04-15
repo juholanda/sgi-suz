@@ -128,7 +128,7 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
             <tr
               key={s.id}
               className="border-b hover:bg-slate-50 transition-colors"
-              style={{ borderColor: '#F1F5F9', cursor: 'pointer' }}
+              style={{ borderColor: '#F1F5F9', cursor: 'pointer', background: '#FFFFFF' }}
               onClick={() => router.push(`/solicitacoes/${s.id}`)}
             >
               <td className="px-4 py-3 font-sans text-xs font-semibold whitespace-nowrap" style={{ color: '#374151' }}>
