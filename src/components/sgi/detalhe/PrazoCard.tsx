@@ -13,6 +13,8 @@ interface PrazoCardProps {
   prazoPrevitoAtingido: boolean
   prazoMaximoAtingido: boolean
   createdAt: Date | string
+  /** When true, renders without the outer card border (for embedding inside another section) */
+  embedded?: boolean
 }
 
 function toDate(value: Date | string | null | undefined): Date | null {
@@ -69,6 +71,17 @@ const cardStyle: React.CSSProperties = {
   fontFamily: 'Inter, sans-serif',
 }
 
+const embeddedStyle: React.CSSProperties = {
+  backgroundColor: '#F8FAFC',
+  borderRadius: 6,
+  padding: '10px 12px',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 12,
+  fontFamily: 'Inter, sans-serif',
+}
+
 const leftStyle: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
@@ -107,8 +120,10 @@ export default function PrazoCard(props: PrazoCardProps) {
     prazoPrevitoAtingido,
     prazoMaximoAtingido,
     createdAt,
+    embedded = false,
   } = props
 
+  const wrapStyle = embedded ? embeddedStyle : cardStyle
   const now = new Date()
 
   // Don't render for terminal statuses
@@ -120,7 +135,7 @@ export default function PrazoCard(props: PrazoCardProps) {
   if (status === 'RASCUNHO') {
     const created = toDate(createdAt)!
     return (
-      <div style={cardStyle}>
+      <div style={wrapStyle}>
         <div style={leftStyle}>
           <span className="material-symbols-outlined" style={iconStyle}>
             draft
@@ -140,7 +155,7 @@ export default function PrazoCard(props: PrazoCardProps) {
     const semaforo: SemaforoColor = dias > 5 ? 'red' : dias >= 3 ? 'yellow' : 'green'
 
     return (
-      <div style={cardStyle}>
+      <div style={wrapStyle}>
         <div style={leftStyle}>
           <span className="material-symbols-outlined" style={iconStyle}>
             schedule
@@ -171,7 +186,7 @@ export default function PrazoCard(props: PrazoCardProps) {
       }
 
       return (
-        <div style={cardStyle}>
+        <div style={wrapStyle}>
           <div style={leftStyle}>
             <span className="material-symbols-outlined" style={iconStyle}>
               event
@@ -200,7 +215,7 @@ export default function PrazoCard(props: PrazoCardProps) {
 
     // No periodoFim, just show authorization
     return (
-      <div style={cardStyle}>
+      <div style={wrapStyle}>
         <div style={leftStyle}>
           <span className="material-symbols-outlined" style={iconStyle}>
             event
@@ -215,7 +230,7 @@ export default function PrazoCard(props: PrazoCardProps) {
   if (status === 'EM_EXECUCAO') {
     const inicio = toDate(periodoInicio) ?? toDate(dataAprovacaoFinal) ?? now
     return (
-      <div style={cardStyle}>
+      <div style={wrapStyle}>
         <div style={leftStyle}>
           <span className="material-symbols-outlined" style={iconStyle}>
             engineering
@@ -245,7 +260,7 @@ export default function PrazoCard(props: PrazoCardProps) {
     }
 
     return (
-      <div style={cardStyle}>
+      <div style={wrapStyle}>
         <div style={{ ...leftStyle, flex: 1 }}>
           <span className="material-symbols-outlined" style={iconStyle}>
             lock_open
@@ -293,7 +308,7 @@ export default function PrazoCard(props: PrazoCardProps) {
   if (status === 'EM_REABILITACAO') {
     const ref = toDate(dataDesabilitacao) ?? now
     return (
-      <div style={cardStyle}>
+      <div style={wrapStyle}>
         <div style={leftStyle}>
           <span className="material-symbols-outlined" style={iconStyle}>
             replay
@@ -312,7 +327,7 @@ export default function PrazoCard(props: PrazoCardProps) {
     const semaforo: SemaforoColor = dias > 5 ? 'red' : dias >= 3 ? 'yellow' : 'green'
 
     return (
-      <div style={cardStyle}>
+      <div style={wrapStyle}>
         <div style={leftStyle}>
           <span className="material-symbols-outlined" style={iconStyle}>
             verified

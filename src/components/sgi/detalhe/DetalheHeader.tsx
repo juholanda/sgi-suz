@@ -4,7 +4,6 @@ import { StatusBadge } from '@/components/sgi/StatusBadge'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import type { StatusSolicitacao, ClasseNum } from '@/lib/tokens'
 import WorkflowStepper from './WorkflowStepper'
-import PrazoCard from './PrazoCard'
 import AlertaBanner from './AlertaBanner'
 import type { SolicitacaoDetalhe } from './types'
 
@@ -68,20 +67,6 @@ export default function DetalheHeader({ s }: DetalheHeaderProps) {
       >
         <WorkflowStepper status={s.status} />
       </div>
-
-      {/* Prazo card */}
-      <PrazoCard
-        status={s.status}
-        periodoInicio={s.periodoInicio}
-        periodoFim={s.periodoFim}
-        dataEnvio={s.dataEnvioAprovacao}
-        dataDesabilitacao={s.dataDesabilitacao}
-        dataAprovacaoFinal={null}
-        prazoMaximoDias={s.classe?.prazoMaximoDias ?? null}
-        prazoPrevitoAtingido={s.prazoPrevitoAtingido}
-        prazoMaximoAtingido={s.prazoMaximoAtingido}
-        createdAt={s.createdAt}
-      />
 
       {/* Alert banners */}
       <AlertaBanner

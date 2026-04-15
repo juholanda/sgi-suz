@@ -2,6 +2,7 @@
 
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import PrazoCard from '../PrazoCard'
 import type { SolicitacaoDetalhe } from '../types'
 
 const TIPO_LABELS: Record<string, string> = {
@@ -166,17 +167,33 @@ export default function TabDetalhes({ s }: TabDetalhesProps) {
 
         {/* Periodo e SLA */}
         <Section title="Periodo e SLA" icon="schedule">
-          <dl style={{ display: 'flex', flexDirection: 'column' }}>
-            <Row label="Inicio previsto" value={fmt(s.periodoInicio)} />
-            <Row label="Fim previsto" value={fmt(s.periodoFim)} />
-            <Row
-              label="Prazo maximo"
-              value={s.classe?.prazoMaximoDias ? `${s.classe.prazoMaximoDias} dia(s)` : 'NAO FORCAVEL'}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {/* Status de prazo dinâmico */}
+            <PrazoCard
+              status={s.status}
+              periodoInicio={s.periodoInicio}
+              periodoFim={s.periodoFim}
+              dataEnvio={s.dataEnvioAprovacao}
+              dataDesabilitacao={s.dataDesabilitacao}
+              dataAprovacaoFinal={null}
+              prazoMaximoDias={s.classe?.prazoMaximoDias ?? null}
+              prazoPrevitoAtingido={s.prazoPrevitoAtingido}
+              prazoMaximoAtingido={s.prazoMaximoAtingido}
+              createdAt={s.createdAt}
+              embedded
             />
-            <Row label="Desabilitado em" value={fmt(s.dataDesabilitacao)} />
-            <Row label="Reabilitado em" value={fmt(s.dataReabilitacao)} />
-            <Row label="Encerrado em" value={fmt(s.dataEncerramento)} />
-          </dl>
+            <dl style={{ display: 'flex', flexDirection: 'column' }}>
+              <Row label="Inicio previsto" value={fmt(s.periodoInicio)} />
+              <Row label="Fim previsto" value={fmt(s.periodoFim)} />
+              <Row
+                label="Prazo maximo"
+                value={s.classe?.prazoMaximoDias ? `${s.classe.prazoMaximoDias} dia(s)` : 'NAO FORCAVEL'}
+              />
+              <Row label="Desabilitado em" value={fmt(s.dataDesabilitacao)} />
+              <Row label="Reabilitado em" value={fmt(s.dataReabilitacao)} />
+              <Row label="Encerrado em" value={fmt(s.dataEncerramento)} />
+            </dl>
+          </div>
         </Section>
 
         {/* Responsaveis */}
