@@ -1732,6 +1732,243 @@ async function main() {
 
   console.log('✓ 12 solicitações de ciclo de vida criadas (C1-C4 × 2-3, com tempos significativos entre etapas)')
 
+  // ── Solicitações extras Ribas — 2×C2, 4×C3, 2×C4 com prazos estourados ───
+
+  const ribasExtras = [
+    // C2 × 2 — prazo estourado (prazo max 5 dias, desabilitados há mais)
+    {
+      id: 'seed-rrp-extra-c2-01',
+      protocolo: 'SGI-20260320-RX2001',
+      status: 'DESABILITADO',
+      areaId: areaRecuperacao.id,
+      equipamentoId: eqRec1.id,
+      classeId: classe2.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO' as const,
+      funcaoIntertravamento: 'Trip de nível alto do tanque de licor branco',
+      motivoDesabilitacao: 'Sensor fora de range, aguardando peça de reposição importada',
+      medidasContingenciais: 'Medição manual a cada 30min, alarme sonoro local ativado',
+      periodoInicio: daysAgo(30),
+      periodoFim: daysAgo(25),
+      dataEnvio: daysAgo(31),
+      dataAprovacaoFinal: daysAgo(30),
+      dataDesabilitacao: daysAgo(29),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(32),
+    },
+    {
+      id: 'seed-rrp-extra-c2-02',
+      protocolo: 'SGI-20260325-RX2002',
+      status: 'EM_REABILITACAO',
+      areaId: areaCelulose.id,
+      equipamentoId: eqCel1.id,
+      classeId: classe2.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'FISICO' as const,
+      funcaoIntertravamento: 'Proteção térmica do motor do lavador',
+      motivoDesabilitacao: 'Relé térmico com defeito, desarmando indevidamente',
+      medidasContingenciais: 'Monitoramento de temperatura com pirômetro a cada 15min',
+      periodoInicio: daysAgo(22),
+      periodoFim: daysAgo(17),
+      dataEnvio: daysAgo(23),
+      dataAprovacaoFinal: daysAgo(22),
+      dataDesabilitacao: daysAgo(21),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(24),
+    },
+
+    // C3 × 4 — prazo estourado (prazo max 3 dias)
+    {
+      id: 'seed-rrp-extra-c3-01',
+      protocolo: 'SGI-20260318-RX3001',
+      status: 'DESABILITADO',
+      areaId: areaRecuperacao.id,
+      equipamentoId: eqRec2.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO' as const,
+      funcaoIntertravamento: 'Alarme de pressão alta do evaporador',
+      motivoDesabilitacao: 'Transmissor de pressão com drift, calibração necessária',
+      medidasContingenciais: 'Manômetro local verificado a cada 20min, limite reduzido',
+      periodoInicio: daysAgo(28),
+      periodoFim: daysAgo(25),
+      dataEnvio: daysAgo(29),
+      dataAprovacaoFinal: daysAgo(28),
+      dataDesabilitacao: daysAgo(27),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(30),
+    },
+    {
+      id: 'seed-rrp-extra-c3-02',
+      protocolo: 'SGI-20260322-RX3002',
+      status: 'EM_EXECUCAO',
+      areaId: areaCelulose.id,
+      equipamentoId: eqCel2.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'DISPOSITIVO_SEGURANCA' as const,
+      funcaoIntertravamento: 'Trip de alta vibração do agitador do digestor',
+      motivoDesabilitacao: 'Acelerômetro danificado por condensação',
+      medidasContingenciais: 'Monitoramento portátil de vibração, inspeção visual contínua',
+      periodoInicio: daysAgo(20),
+      periodoFim: daysAgo(17),
+      dataEnvio: daysAgo(21),
+      dataAprovacaoFinal: daysAgo(20),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(22),
+    },
+    {
+      id: 'seed-rrp-extra-c3-03',
+      protocolo: 'SGI-20260328-RX3003',
+      status: 'EM_VALIDACAO_DA_REABILITACAO',
+      areaId: areaRecuperacao.id,
+      equipamentoId: eqRec3.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO' as const,
+      funcaoIntertravamento: 'Bloqueio por detecção de gás H2S na caldeira',
+      motivoDesabilitacao: 'Detector de gás em manutenção preventiva programada',
+      medidasContingenciais: 'Detector portátil com operador dedicado, ventilação forçada',
+      periodoInicio: daysAgo(18),
+      periodoFim: daysAgo(15),
+      dataEnvio: daysAgo(19),
+      dataAprovacaoFinal: daysAgo(18),
+      dataDesabilitacao: daysAgo(17),
+      dataReabilitacao: daysAgo(12),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(20),
+    },
+    {
+      id: 'seed-rrp-extra-c3-04',
+      protocolo: 'SGI-20260401-RX3004',
+      status: 'ENCERRADA',
+      areaId: areaCelulose.id,
+      equipamentoId: eqCel3.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'FISICO' as const,
+      funcaoIntertravamento: 'Válvula de alívio do digestor — sobrepressão',
+      motivoDesabilitacao: 'Vazamento pela sede, necessidade de retífica',
+      medidasContingenciais: 'Pressão operacional reduzida em 20%, disco de ruptura como backup',
+      periodoInicio: daysAgo(15),
+      periodoFim: daysAgo(12),
+      dataEnvio: daysAgo(16),
+      dataAprovacaoFinal: daysAgo(15),
+      dataDesabilitacao: daysAgo(14),
+      dataReabilitacao: daysAgo(8),
+      dataEncerramento: daysAgo(7),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(17),
+    },
+
+    // C4 × 2 — prazo estourado (prazo max 1 dia)
+    {
+      id: 'seed-rrp-extra-c4-01',
+      protocolo: 'SGI-20260405-RX4001',
+      status: 'DESABILITADO',
+      areaId: areaRecuperacao.id,
+      equipamentoId: eqRec1.id,
+      classeId: classe4.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO' as const,
+      funcaoIntertravamento: 'ESD caldeira de recuperação — alta pressão',
+      motivoDesabilitacao: 'Falha no controlador lógico, bypass necessário para continuidade',
+      medidasContingenciais: 'Operador exclusivo monitorando pressão, trip manual preparado',
+      periodoInicio: daysAgo(10),
+      periodoFim: daysAgo(9),
+      dataEnvio: daysAgo(11),
+      dataAprovacaoFinal: daysAgo(10),
+      dataDesabilitacao: daysAgo(9),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(12),
+    },
+    {
+      id: 'seed-rrp-extra-c4-02',
+      protocolo: 'SGI-20260408-RX4002',
+      status: 'EM_REABILITACAO',
+      areaId: areaCelulose.id,
+      equipamentoId: eqCel1.id,
+      classeId: classe4.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'DISPOSITIVO_SEGURANCA' as const,
+      funcaoIntertravamento: 'Shutdown de emergência do digestor — sobretemperatura',
+      motivoDesabilitacao: 'Termopar queimado, sem leitura de temperatura do topo',
+      medidasContingenciais: 'Termopar portátil instalado, leitura manual a cada 10min, limite operacional reduzido',
+      periodoInicio: daysAgo(7),
+      periodoFim: daysAgo(6),
+      dataEnvio: daysAgo(8),
+      dataAprovacaoFinal: daysAgo(7),
+      dataDesabilitacao: daysAgo(6),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(9),
+    },
+  ]
+
+  for (const sol of ribasExtras) {
+    await prisma.solicitacao.upsert({
+      where: { id: sol.id },
+      update: {},
+      create: sol,
+    })
+  }
+
+  // Aprovações para extras Ribas
+  const extrasAprovacoes: any[] = []
+  const extrasEventos: any[] = []
+  for (const sol of ribasExtras) {
+    const classeNumero = sol.classeId === classe2.id ? 2 : sol.classeId === classe3.id ? 3 : 4
+
+    extrasAprovacoes.push({ solicitacaoId: sol.id, aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: sol.dataAprovacaoFinal })
+    if (classeNumero >= 2) {
+      extrasAprovacoes.push({ solicitacaoId: sol.id, aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: sol.dataAprovacaoFinal })
+    }
+    if (classeNumero >= 4) {
+      extrasAprovacoes.push({ solicitacaoId: sol.id, aprovadorId: gestor.id, nivel: 3, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: sol.dataAprovacaoFinal })
+    }
+
+    extrasEventos.push(
+      { solicitacaoId: sol.id, userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: sol.dataEnvio },
+      { solicitacaoId: sol.id, userId: aprovador1.id, acao: 'APROVACAO_COMPLETA', detalhes: 'Aprovação completa — execução autorizada', createdAt: sol.dataAprovacaoFinal },
+    )
+    if (sol.dataDesabilitacao) {
+      extrasEventos.push({ solicitacaoId: sol.id, userId: executante.id, acao: 'DESABILITACAO_CONFIRMADA', createdAt: sol.dataDesabilitacao })
+    }
+    if (sol.dataReabilitacao) {
+      extrasEventos.push({ solicitacaoId: sol.id, userId: executante.id, acao: 'REABILITACAO_CONCLUIDA_EXECUTANTE', createdAt: sol.dataReabilitacao })
+    }
+    if (sol.dataEncerramento) {
+      extrasEventos.push({ solicitacaoId: sol.id, userId: aprovador1.id, acao: 'REABILITACAO_VALIDADA', createdAt: sol.dataEncerramento })
+    }
+  }
+
+  for (const aprov of extrasAprovacoes) {
+    const existing = await prisma.aprovacao.findFirst({
+      where: { solicitacaoId: aprov.solicitacaoId, aprovadorId: aprov.aprovadorId, nivel: aprov.nivel },
+    })
+    if (!existing) {
+      await prisma.aprovacao.create({ data: aprov })
+    }
+  }
+
+  for (const evt of extrasEventos) {
+    const existing = await prisma.eventoAuditoria.findFirst({
+      where: { solicitacaoId: evt.solicitacaoId, acao: evt.acao, userId: evt.userId },
+    })
+    if (!existing) {
+      await prisma.eventoAuditoria.create({ data: evt })
+    }
+  }
+
+  console.log('✓ 8 solicitações extras Ribas com prazos estourados (C2×2, C3×4, C4×2)')
+
   console.log(`
 ✅ Seed completo!
 

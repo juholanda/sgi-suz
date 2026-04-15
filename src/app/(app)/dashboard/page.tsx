@@ -148,6 +148,7 @@ export default async function DashboardPage({
     statusFiltro?: string
     sortCol?: string
     sortDir?: string
+    view?: string
   }
 }) {
   const session = await auth()
@@ -184,6 +185,7 @@ export default async function DashboardPage({
   const validTabs = TABS.map(t => t.key)
   const activeTab: TabKey = validTabs.includes(searchParams.tab as TabKey)
     ? (searchParams.tab as TabKey) : 'todas'
+  const viewMode = (searchParams as any).view === 'cards' ? 'cards' : 'table'
 
   const baseWhere = getBaseWhere(perfilAtivo || undefined, userId, plantaId)
 
@@ -228,7 +230,7 @@ export default async function DashboardPage({
       </div>
 
       {/* ─── Bloco 2: Situação atual da planta ─── */}
-      <div style={{ marginBottom: 32 }}>
+      <div style={{ marginBottom: 40 }}>
         <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
           <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A', flexShrink: 0 }} />
           <h2 style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', margin: 0 }}>Situação atual da planta</h2>
@@ -276,12 +278,7 @@ export default async function DashboardPage({
         </div>
       </div>
 
-      {/* ─── Bloco 3: Solicitações (tabs + filtros + tabela) ─── */}
-      <div style={{ marginBottom: 12 }}>
-        <h2 style={{ fontWeight: 500, fontSize: 16, color: '#0F172A', margin: '0 0 12px 0' }}>
-          Solicitações
-        </h2>
-      </div>
+      {/* ─── Bloco 3: Tabs + filtros + tabela ─── */}
 
       {/* Tabs */}
       <div
@@ -337,8 +334,8 @@ export default async function DashboardPage({
         })}
       </div>
 
-      {/* Search + filters */}
-      <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} />
+      {/* Search + filters + view toggle */}
+      <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} showViewToggle />
 
       {/* Results */}
       {solicitacoes.length === 0 ? (
@@ -358,9 +355,9 @@ export default async function DashboardPage({
         </div>
       ) : (
         <>
-          <SolicitacoesTable solicitacoes={solicitacoes} />
-          {/* Mobile cards */}
-          <div className="sm:hidden flex flex-col gap-2">
+          {viewMode === 'table' && <SolicitacoesTable solicitacoes={solicitacoes} />}
+          {/* Cards view (mobile always, desktop when toggled) */}
+          <div className={viewMode === 'cards' ? 'flex flex-col gap-2' : 'sm:hidden flex flex-col gap-2'}>
             {solicitacoes.map(s => (
               <SolicitacaoCard
                 key={s.id}
