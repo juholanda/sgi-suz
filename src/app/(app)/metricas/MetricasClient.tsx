@@ -247,7 +247,7 @@ export default function MetricasClient({ data, periodo }: Props) {
       <div className="max-w-7xl mx-auto w-full px-4 md:px-6 py-4 md:py-6">
 
         {/* ── Header ───────────────────────────────────────────────── */}
-        <div style={{ marginBottom: 16 }}>
+        <div style={{ marginBottom: 32 }}>
           <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', margin: 0 }}>
             Métricas
           </h1>
@@ -257,7 +257,7 @@ export default function MetricasClient({ data, periodo }: Props) {
         </div>
 
         {/* ── BLOCO: Situação atual da planta (hoje) ─────────────────────────── */}
-        <div style={{ marginBottom: 36, marginTop: 8 }}>
+        <div style={{ marginBottom: 36 }}>
           <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
             <span
               style={{

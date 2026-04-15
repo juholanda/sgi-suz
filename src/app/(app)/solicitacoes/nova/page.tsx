@@ -748,56 +748,45 @@ export default function NovaSolicitacaoPage() {
                   </div>
                 )}
 
-                {/* A — Tipo de intertravamento: cards instead of select */}
-                {autoFilledTipo ? (
-                  <div>
-                    <label className="field-label">Tipo de intertravamento</label>
-                    <div
-                      className="px-3 py-2 text-sm flex items-center gap-2"
-                      style={{ background: '#F0F4F8', borderRadius: '4px', border: '1px solid #E2E8F0', color: '#374151' }}
-                    >
-                      <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#0038A8', lineHeight: 1 }}>lock</span>
-                      {form.tipo === 'FISICO' ? 'Físico' : form.tipo === 'LOGICO' ? 'Lógico' : form.tipo === 'DISPOSITIVO_SEGURANCA' ? 'Dispositivo de segurança' : form.tipo}
-                      <span className="ml-auto text-xs" style={{ color: '#0038A8' }}>pré-preenchido</span>
-                    </div>
-                  </div>
-                ) : (
-                  <Field label="Tipo de intertravamento *" error={errors.tipo}>
-                    <div className="flex gap-3">
-                      {TIPO_OPTIONS.map(opt => {
-                        const isSelected = form.tipo === opt.value
-                        return (
-                          <button
-                            key={opt.value}
-                            type="button"
-                            onClick={() => set('tipo', opt.value)}
-                            className="flex-1 text-left p-3 border transition-all"
-                            style={{
-                              borderRadius: '8px',
-                              borderColor: isSelected ? '#0038A8' : errors.tipo ? '#DC2626' : '#E2E8F0',
-                              borderWidth: isSelected ? '2px' : '1.5px',
-                              background: isSelected ? '#EBF0FB' : 'white',
-                              cursor: 'pointer',
-                            }}
+                {/* A — Tipo de intertravamento: cards */}
+                <Field label="Tipo de intertravamento *" error={errors.tipo}>
+                  <div className="flex gap-3">
+                    {TIPO_OPTIONS.map(opt => {
+                      const isSelected = form.tipo === opt.value
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => set('tipo', opt.value)}
+                          className="flex-1 text-left p-3 border transition-all"
+                          style={{
+                            borderRadius: '8px',
+                            borderColor: isSelected ? '#0038A8' : errors.tipo ? '#DC2626' : '#E2E8F0',
+                            borderWidth: isSelected ? '2px' : '1.5px',
+                            background: isSelected ? '#EBF0FB' : 'white',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          <div
+                            className="font-semibold text-sm mb-0.5"
+                            style={{ color: isSelected ? '#0038A8' : '#0F172A' }}
                           >
-                            <div
-                              className="font-semibold text-sm mb-0.5"
-                              style={{ color: isSelected ? '#0038A8' : '#0F172A' }}
-                            >
-                              {opt.label}
-                            </div>
-                            <div
-                              className="text-xs"
-                              style={{ color: isSelected ? '#3B82F6' : '#6B7280' }}
-                            >
-                              {opt.description}
-                            </div>
-                          </button>
-                        )
-                      })}
-                    </div>
-                  </Field>
-                )}
+                            {opt.label}
+                          </div>
+                          <div
+                            className="text-xs"
+                            style={{ color: isSelected ? '#3B82F6' : '#6B7280' }}
+                          >
+                            {opt.description}
+                          </div>
+                          {autoFilledTipo && isSelected && (
+                            <div className="text-xs mt-1" style={{ color: '#0038A8' }}>pré-preenchido</div>
+                          )}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </Field>
 
                 <Select
                   label="Executante *"
@@ -828,16 +817,14 @@ export default function NovaSolicitacaoPage() {
                       <button
                         key={c}
                         type="button"
-                        onClick={() => !autoFilledClasse && set('classeNumero', String(c))}
-                        disabled={autoFilledClasse}
+                        onClick={() => set('classeNumero', String(c))}
                         className="flex-1 py-2.5 text-sm font-medium border transition-all"
                         style={{
                           borderRadius: '6px',
                           borderColor: form.classeNumero === String(c) ? COR_CLASSE[String(c)] : '#E2E8F0',
                           background: form.classeNumero === String(c) ? `${COR_CLASSE[String(c)]}18` : 'white',
                           color: form.classeNumero === String(c) ? COR_CLASSE[String(c)] : '#6B7280',
-                          cursor: autoFilledClasse ? 'default' : 'pointer',
-                          opacity: autoFilledClasse && form.classeNumero !== String(c) ? 0.4 : 1,
+                          cursor: 'pointer',
                         }}
                       >
                         <div className="font-semibold">Classe {c}</div>
