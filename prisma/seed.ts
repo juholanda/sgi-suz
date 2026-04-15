@@ -283,6 +283,228 @@ async function main() {
     console.log('✓ 16 medidas contingenciais criadas')
   }
 
+  // ── Solicitações de demonstração — classes 2, 3, 4 com status variados ────
+
+  const classe3 = await prisma.classe.findUniqueOrThrow({ where: { numero: 3 } })
+  const classe4 = await prisma.classe.findUniqueOrThrow({ where: { numero: 4 } })
+
+  const equipFib1 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'FIB-ABC-001' } })
+  const equipFib2 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'FIB-BOM-032' } })
+  const equipFib3 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'FIB-VAL-107' } })
+  const equipFib4 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'FIB-SEN-044' } })
+  const equipFib5 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'FIB-MOT-015' } })
+  const equipCal1 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'CAL-VLV-001' } })
+
+  const now = new Date()
+  const daysAgo = (d: number) => new Date(now.getTime() - d * 86400000)
+
+  const seedSolicitacoes = [
+    // ── CLASSE 2 (1 solicitação) — EM_APROVACAO
+    {
+      id: 'seed-sol-c2-01',
+      protocolo: 'SGI-20260410-2001',
+      status: 'EM_APROVACAO',
+      areaId: areaFibras.id,
+      equipamentoId: equipFib1.id,
+      classeId: classe2.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'Proteção contra sobrepressão',
+      motivoDesabilitacao: 'Manutenção preventiva do sensor de pressão',
+      medidasContingenciais: 'Monitoramento manual a cada 2h, operador de plantão na área',
+      periodoInicio: daysAgo(2),
+      periodoFim: daysAgo(-3),
+      dataEnvio: daysAgo(2),
+      createdAt: daysAgo(3),
+    },
+
+    // ── CLASSE 3 (3 solicitações) — DESABILITADO, ENCERRADA, EM_VALIDACAO_DA_REABILITACAO
+    {
+      id: 'seed-sol-c3-01',
+      protocolo: 'SGI-20260405-3001',
+      status: 'DESABILITADO',
+      areaId: areaFibras.id,
+      equipamentoId: equipFib2.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'FISICO',
+      funcaoIntertravamento: 'Proteção térmica do motor',
+      motivoDesabilitacao: 'Substituição de relé térmico queimado',
+      medidasContingenciais: 'Redução de carga do motor para 70%, inspeção a cada 1h',
+      periodoInicio: daysAgo(10),
+      periodoFim: daysAgo(7),
+      dataEnvio: daysAgo(11),
+      dataAprovacaoFinal: daysAgo(10),
+      dataDesabilitacao: daysAgo(9),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(12),
+    },
+    {
+      id: 'seed-sol-c3-02',
+      protocolo: 'SGI-20260401-3002',
+      status: 'ENCERRADA',
+      areaId: areaCaldeira.id,
+      equipamentoId: equipCal1.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'Trip de alta temperatura da caldeira',
+      motivoDesabilitacao: 'Calibração do transmissor de temperatura',
+      medidasContingenciais: 'Monitoramento contínuo via termopar portátil',
+      periodoInicio: daysAgo(20),
+      periodoFim: daysAgo(17),
+      dataEnvio: daysAgo(21),
+      dataAprovacaoFinal: daysAgo(20),
+      dataDesabilitacao: daysAgo(19),
+      dataReabilitacao: daysAgo(17),
+      dataEncerramento: daysAgo(16),
+      createdAt: daysAgo(22),
+    },
+    {
+      id: 'seed-sol-c3-03',
+      protocolo: 'SGI-20260408-3003',
+      status: 'EM_VALIDACAO_DA_REABILITACAO',
+      areaId: areaFibras.id,
+      equipamentoId: equipFib3.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'DISPOSITIVO_SEGURANCA',
+      funcaoIntertravamento: 'Bloqueio de válvula de emergência',
+      motivoDesabilitacao: 'Troca de atuador pneumático da válvula',
+      medidasContingenciais: 'Válvula manual operada, operador dedicado',
+      periodoInicio: daysAgo(7),
+      periodoFim: daysAgo(4),
+      dataEnvio: daysAgo(8),
+      dataAprovacaoFinal: daysAgo(7),
+      dataDesabilitacao: daysAgo(6),
+      dataReabilitacao: daysAgo(4),
+      createdAt: daysAgo(9),
+    },
+
+    // ── CLASSE 4 (2 solicitações) — EXECUCAO_AUTORIZADA, REJEITADA
+    {
+      id: 'seed-sol-c4-01',
+      protocolo: 'SGI-20260412-4001',
+      status: 'EXECUCAO_AUTORIZADA',
+      areaId: areaFibras.id,
+      equipamentoId: equipFib4.id,
+      classeId: classe4.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'Shutdown de emergência do digestor',
+      motivoDesabilitacao: 'Falha intermitente no módulo de entrada do CLP',
+      medidasContingenciais: 'Operação em modo manual, supervisor presente, redução de carga',
+      periodoInicio: daysAgo(1),
+      periodoFim: now,
+      dataEnvio: daysAgo(2),
+      dataAprovacaoFinal: daysAgo(1),
+      createdAt: daysAgo(3),
+    },
+    {
+      id: 'seed-sol-c4-02',
+      protocolo: 'SGI-20260409-4002',
+      status: 'REJEITADA',
+      areaId: areaFibras.id,
+      equipamentoId: equipFib5.id,
+      classeId: classe4.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'FISICO',
+      funcaoIntertravamento: 'Proteção contra sobrevelocidade do motor',
+      motivoDesabilitacao: 'Teste de performance do motor sem proteção',
+      medidasContingenciais: 'Operação com carga reduzida',
+      periodoInicio: daysAgo(5),
+      periodoFim: daysAgo(4),
+      dataEnvio: daysAgo(6),
+      createdAt: daysAgo(7),
+    },
+  ]
+
+  for (const sol of seedSolicitacoes) {
+    await prisma.solicitacao.upsert({
+      where: { id: sol.id },
+      update: {},
+      create: sol,
+    })
+  }
+
+  // Criar aprovações para cada solicitação seed
+  const seedAprovacoes = [
+    // C2-01 (EM_APROVACAO): Ana pendente nível 1, Roberto aguardando nível 2
+    { solicitacaoId: 'seed-sol-c2-01', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'PENDENTE' },
+    { solicitacaoId: 'seed-sol-c2-01', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'AGUARDANDO' },
+
+    // C3-01 (DESABILITADO): Ambos aprovaram
+    { solicitacaoId: 'seed-sol-c3-01', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(10) },
+    { solicitacaoId: 'seed-sol-c3-01', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(10) },
+
+    // C3-02 (ENCERRADA): Ambos aprovaram
+    { solicitacaoId: 'seed-sol-c3-02', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(20) },
+    { solicitacaoId: 'seed-sol-c3-02', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(20) },
+
+    // C3-03 (EM_VALIDACAO_DA_REABILITACAO): Ambos aprovaram desabilitação, aguardando validação
+    { solicitacaoId: 'seed-sol-c3-03', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(7) },
+    { solicitacaoId: 'seed-sol-c3-03', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(7) },
+
+    // C4-01 (EXECUCAO_AUTORIZADA): Todos aprovaram (Ana, Roberto, Maria)
+    { solicitacaoId: 'seed-sol-c4-01', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(2) },
+    { solicitacaoId: 'seed-sol-c4-01', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(1) },
+    { solicitacaoId: 'seed-sol-c4-01', aprovadorId: gestor.id, nivel: 3, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(1) },
+
+    // C4-02 (REJEITADA): Ana rejeitou no nível 1
+    { solicitacaoId: 'seed-sol-c4-02', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'REJEITADO', respondidaEm: daysAgo(5), motivoRejeicao: 'Motivo insuficiente para desabilitar proteção de sobrevelocidade. Risco operacional inaceitável sem justificativa técnica detalhada.' },
+    { solicitacaoId: 'seed-sol-c4-02', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'AGUARDANDO' },
+    { solicitacaoId: 'seed-sol-c4-02', aprovadorId: gestor.id, nivel: 3, tipo: 'DESABILITACAO', status: 'AGUARDANDO' },
+  ]
+
+  for (const aprov of seedAprovacoes) {
+    const existing = await prisma.aprovacao.findFirst({
+      where: { solicitacaoId: aprov.solicitacaoId, aprovadorId: aprov.aprovadorId, nivel: aprov.nivel },
+    })
+    if (!existing) {
+      await prisma.aprovacao.create({ data: aprov })
+    }
+  }
+
+  // Eventos de auditoria para as solicitações seed
+  const seedEventos = [
+    { solicitacaoId: 'seed-sol-c2-01', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(2) },
+    { solicitacaoId: 'seed-sol-c3-01', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(11) },
+    { solicitacaoId: 'seed-sol-c3-01', userId: aprovador1.id, acao: 'APROVADO', createdAt: daysAgo(10) },
+    { solicitacaoId: 'seed-sol-c3-01', userId: executante.id, acao: 'DESABILITACAO_CONFIRMADA', createdAt: daysAgo(9) },
+    { solicitacaoId: 'seed-sol-c3-02', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(21) },
+    { solicitacaoId: 'seed-sol-c3-02', userId: aprovador1.id, acao: 'APROVADO', createdAt: daysAgo(20) },
+    { solicitacaoId: 'seed-sol-c3-02', userId: executante.id, acao: 'DESABILITACAO_CONFIRMADA', createdAt: daysAgo(19) },
+    { solicitacaoId: 'seed-sol-c3-02', userId: executante.id, acao: 'REABILITACAO_CONCLUIDA', createdAt: daysAgo(17) },
+    { solicitacaoId: 'seed-sol-c3-02', userId: aprovador1.id, acao: 'REABILITACAO_VALIDADA', createdAt: daysAgo(16) },
+    { solicitacaoId: 'seed-sol-c3-03', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(8) },
+    { solicitacaoId: 'seed-sol-c3-03', userId: aprovador1.id, acao: 'APROVADO', createdAt: daysAgo(7) },
+    { solicitacaoId: 'seed-sol-c3-03', userId: executante.id, acao: 'DESABILITACAO_CONFIRMADA', createdAt: daysAgo(6) },
+    { solicitacaoId: 'seed-sol-c3-03', userId: executante.id, acao: 'REABILITACAO_CONCLUIDA', createdAt: daysAgo(4) },
+    { solicitacaoId: 'seed-sol-c4-01', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(2) },
+    { solicitacaoId: 'seed-sol-c4-01', userId: aprovador1.id, acao: 'APROVADO', createdAt: daysAgo(2) },
+    { solicitacaoId: 'seed-sol-c4-01', userId: aprovador2.id, acao: 'APROVADO', createdAt: daysAgo(1) },
+    { solicitacaoId: 'seed-sol-c4-01', userId: gestor.id, acao: 'APROVADO', createdAt: daysAgo(1) },
+    { solicitacaoId: 'seed-sol-c4-02', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(6) },
+    { solicitacaoId: 'seed-sol-c4-02', userId: aprovador1.id, acao: 'REJEITADO', detalhes: 'Motivo insuficiente', createdAt: daysAgo(5) },
+  ]
+
+  for (const evt of seedEventos) {
+    const existing = await prisma.eventoAuditoria.findFirst({
+      where: { solicitacaoId: evt.solicitacaoId, acao: evt.acao, userId: evt.userId },
+    })
+    if (!existing) {
+      await prisma.eventoAuditoria.create({ data: evt })
+    }
+  }
+
+  console.log('✓ 6 solicitações de demonstração criadas (C2×1, C3×3, C4×2)')
+
   console.log(`
 ✅ Seed completo!
 

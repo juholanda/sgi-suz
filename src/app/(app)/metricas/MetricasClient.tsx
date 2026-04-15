@@ -258,7 +258,7 @@ export default function MetricasClient({ data, periodo }: Props) {
         </div>
 
         {/* ── BLOCO: Situação atual (hoje) ─────────────────────────── */}
-        <div style={{ marginBottom: 36 }}>
+        <div style={{ marginBottom: 36, marginTop: 8 }}>
           <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
             <span
               style={{
