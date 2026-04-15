@@ -78,7 +78,7 @@ export default function TabAuditoria({ eventos, protocolo }: TabAuditoriaProps) 
           <span style={{ fontSize: 11, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
             Protocolo
           </span>
-          <p style={{ fontSize: 13, fontWeight: 600, fontFamily: 'monospace', color: '#0F172A', margin: '2px 0 0' }}>
+          <p style={{ fontSize: 13, fontWeight: 600, fontFamily: 'inherit', color: '#0F172A', margin: '2px 0 0' }}>
             {protocolo}
           </p>
         </div>
@@ -100,7 +100,7 @@ export default function TabAuditoria({ eventos, protocolo }: TabAuditoriaProps) 
         </div>
         <div>
           <span style={{ fontSize: 11, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-            Ultimo evento
+            Último evento
           </span>
           <p style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', margin: '2px 0 0' }}>
             {fmt(eventos[eventos.length - 1].createdAt)}
@@ -168,7 +168,7 @@ export default function TabAuditoria({ eventos, protocolo }: TabAuditoriaProps) 
             {/* Index */}
             <span
               className="hidden md:block"
-              style={{ width: 40, fontSize: 12, fontFamily: 'monospace', color: '#94A3B8', flexShrink: 0 }}
+              style={{ width: 40, fontSize: 12, fontFamily: 'inherit', color: '#94A3B8', flexShrink: 0 }}
             >
               {String(i + 1).padStart(3, '0')}
             </span>
@@ -184,7 +184,7 @@ export default function TabAuditoria({ eventos, protocolo }: TabAuditoriaProps) 
             {/* Time */}
             <span
               className="hidden md:block"
-              style={{ width: 50, fontSize: 12, fontFamily: 'monospace', color: '#475569', flexShrink: 0 }}
+              style={{ width: 50, fontSize: 12, fontFamily: 'inherit', color: '#475569', flexShrink: 0 }}
             >
               {fmtTime(ev.createdAt)}
             </span>

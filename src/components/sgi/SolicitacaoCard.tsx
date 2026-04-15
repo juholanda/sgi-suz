@@ -113,12 +113,12 @@ export function SolicitacaoCard({
     >
       {/* ── Body ── */}
       <div style={{ padding: '12px 16px 0' }}>
-        {/* Line 1: Classe badge · Identificador · progress pill · Status badge */}
+        {/* Line 1: Classe badge · Protocolo · progress pill · Status badge */}
         <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 4 }}>
           {classe && (
             <ClasseBadge classe={classe.numero as ClasseNum} size="sm" />
           )}
-          <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#0038A8' }}>
+          <span style={{ fontSize: 12, fontWeight: 600, color: '#0038A8' }}>
             #{protocolo}
           </span>
           {status === 'EM_APROVACAO' && totalAprovacoes > 0 && (
@@ -142,12 +142,12 @@ export function SolicitacaoCard({
 
         {/* Line 2: TAG */}
         <div style={{ marginBottom: 2 }}>
-          <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 14, color: '#0F172A' }}>
+          <span style={{ fontWeight: 700, fontSize: 14, color: '#0F172A' }}>
             {equipamento.tag}
           </span>
         </div>
 
-        {/* Line 3: equipamento.descricao · tipo */}
+        {/* Line 3: descricao · tipo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#374151', marginBottom: 4 }}>
           <span>{equipamento.descricao}</span>
           {tipo && TIPO_LABEL[tipo] && (
@@ -233,6 +233,7 @@ export function SolicitacaoCard({
             <Link
               href={`/solicitacoes/nova?editar=${id}`}
               style={{
+                flex: 1,
                 padding: '6px 12px',
                 fontSize: 12,
                 fontWeight: 600,
@@ -240,9 +241,10 @@ export function SolicitacaoCard({
                 background: '#0038A8',
                 borderRadius: 4,
                 textDecoration: 'none',
+                textAlign: 'center',
               }}
             >
-              Editar
+              Continuar
             </Link>
           )}
 
@@ -250,6 +252,7 @@ export function SolicitacaoCard({
             <Link
               href={detailHref}
               style={{
+                flex: 1,
                 padding: '6px 12px',
                 fontSize: 12,
                 fontWeight: 600,
@@ -257,6 +260,7 @@ export function SolicitacaoCard({
                 background: '#0038A8',
                 borderRadius: 4,
                 textDecoration: 'none',
+                textAlign: 'center',
               }}
             >
               Analisar
@@ -267,6 +271,7 @@ export function SolicitacaoCard({
             <Link
               href={detailHref}
               style={{
+                flex: 1,
                 padding: '6px 12px',
                 fontSize: 12,
                 fontWeight: 600,
@@ -274,6 +279,7 @@ export function SolicitacaoCard({
                 background: '#0038A8',
                 borderRadius: 4,
                 textDecoration: 'none',
+                textAlign: 'center',
               }}
             >
               Executar desabilitação →
@@ -285,6 +291,7 @@ export function SolicitacaoCard({
               <Link
                 href={`/solicitacoes/${id}?acao=extensao`}
                 style={{
+                  flex: 1,
                   padding: '6px 12px',
                   fontSize: 12,
                   fontWeight: 600,
@@ -293,6 +300,7 @@ export function SolicitacaoCard({
                   border: '1px solid #D8E4F8',
                   borderRadius: 4,
                   textDecoration: 'none',
+                  textAlign: 'center',
                 }}
               >
                 Solicitar extensão
@@ -300,6 +308,7 @@ export function SolicitacaoCard({
               <Link
                 href={`/solicitacoes/${id}?acao=reabilitar`}
                 style={{
+                  flex: 1,
                   padding: '6px 12px',
                   fontSize: 12,
                   fontWeight: 600,
@@ -307,6 +316,7 @@ export function SolicitacaoCard({
                   background: '#16A34A',
                   borderRadius: 4,
                   textDecoration: 'none',
+                  textAlign: 'center',
                 }}
               >
                 Reabilitar
@@ -318,6 +328,7 @@ export function SolicitacaoCard({
             <Link
               href={detailHref}
               style={{
+                flex: 1,
                 padding: '6px 12px',
                 fontSize: 12,
                 fontWeight: 600,
@@ -325,6 +336,7 @@ export function SolicitacaoCard({
                 background: '#16A34A',
                 borderRadius: 4,
                 textDecoration: 'none',
+                textAlign: 'center',
               }}
             >
               Validar

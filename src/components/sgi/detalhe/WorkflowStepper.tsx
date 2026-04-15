@@ -13,11 +13,11 @@ interface Step {
 
 const STEPS: Step[] = [
   { label: 'Rascunho', icon: 'edit_note' },
-  { label: 'Aprovacao', icon: 'approval' },
-  { label: 'Execucao', icon: 'engineering' },
+  { label: 'Aprovação', icon: 'approval' },
+  { label: 'Execução', icon: 'engineering' },
   { label: 'Desabilitado', icon: 'lock_open' },
-  { label: 'Reabilitacao', icon: 'replay' },
-  { label: 'Validacao', icon: 'verified' },
+  { label: 'Reabilitação', icon: 'replay' },
+  { label: 'Validação', icon: 'verified' },
   { label: 'Encerrada', icon: 'check_circle' },
 ]
 

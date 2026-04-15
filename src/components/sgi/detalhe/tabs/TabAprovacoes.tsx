@@ -101,7 +101,7 @@ export default function TabAprovacoes({ aprovacoes, status }: TabAprovacoesProps
               task_alt
             </span>
             <h3 style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#475569', margin: 0 }}>
-              Aprovadores {'\u2014'} Desabilitacao
+              Aprovadores {'\u2014'} Desabilitação
             </h3>
           </div>
           {totalNiveis > 0 && (
@@ -156,7 +156,7 @@ export default function TabAprovacoes({ aprovacoes, status }: TabAprovacoesProps
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 6 }}>
                       <span style={{ fontSize: 13, fontWeight: 500, color: '#0F172A' }}>{a.aprovador.nome}</span>
-                      <span style={{ fontSize: 11, fontFamily: 'monospace', color: '#94A3B8' }}>{a.aprovador.matricula}</span>
+                      <span style={{ fontSize: 11, color: '#94A3B8' }}>{a.aprovador.matricula}</span>
                       {perfil && (
                         <span
                           style={{

@@ -33,7 +33,7 @@ export default function AlertaBanner({
       borderColor: '#DC2626',
       textColor: '#7F1D1D',
       icon: 'warning',
-      message: 'Prazo maximo atingido — acao imediata necessaria',
+      message: 'Prazo máximo atingido — ação imediata necessária',
     })
   }
 
@@ -44,7 +44,7 @@ export default function AlertaBanner({
       borderColor: '#D97706',
       textColor: '#78350F',
       icon: 'warning',
-      message: 'Prazo previsto atingido — risco de violacao SLA',
+      message: 'Prazo previsto atingido — risco de violação SLA',
     })
   }
 
@@ -55,7 +55,7 @@ export default function AlertaBanner({
       borderColor: '#EA580C',
       textColor: '#7C2D12',
       icon: 'priority_high',
-      message: 'Classe 4 — criticidade maxima',
+      message: 'Classe 4 — criticidade máxima',
     })
   }
 

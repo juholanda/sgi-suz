@@ -44,11 +44,10 @@ const PENDENCIA_INCLUDE = {
   equipamento: true,
   area: { include: { planta: true } },
   classe: { select: { numero: true, prazoMaximoDias: true } },
-  solicitante: { select: { nome: true } },
   aprovacoes: {
     where: { tipo: 'DESABILITACAO' as const },
     orderBy: { nivel: 'asc' as const },
-    select: { nivel: true, status: true, aprovador: { select: { nome: true } } },
+    select: { nivel: true, status: true },
   },
 } as const
 
@@ -56,38 +55,43 @@ type SolicitacaoPendencia = Awaited<
   ReturnType<typeof prisma.solicitacao.findMany<{ include: typeof PENDENCIA_INCLUDE }>>
 >[number]
 
-function serializePendencia(
-  s: SolicitacaoPendencia,
-  flags: { isAprovador: boolean; isSolicitante: boolean; isExecutante: boolean }
-): PendenciaItem {
+function getCta(status: string): PendenciaItem['cta'] {
+  switch (status) {
+    case 'RASCUNHO':
+      return { label: 'Continuar', bg: '#0038A8', color: '#FFFFFF' }
+    case 'EXECUCAO_AUTORIZADA':
+      return { label: 'Executar', bg: '#0038A8', color: '#FFFFFF' }
+    case 'EM_APROVACAO':
+      return { label: 'Analisar', bg: '#0038A8', color: '#FFFFFF' }
+    case 'EM_VALIDACAO_DA_REABILITACAO':
+      return { label: 'Validar', bg: '#16A34A', color: '#FFFFFF' }
+    case 'DESABILITADO':
+      return { label: 'Ver agora', bg: '#DC2626', color: '#FFFFFF' }
+    default:
+      return null
+  }
+}
+
+function serializePendencia(s: SolicitacaoPendencia): PendenciaItem {
   return {
     id: s.id,
     protocolo: s.protocolo,
     status: s.status,
     tipo: s.tipo,
-    classe: s.classe ? { numero: s.classe.numero, prazoMaxDias: s.classe.prazoMaximoDias } : null,
+    classe: s.classe ? { numero: s.classe.numero, prazoMaximoDias: s.classe.prazoMaximoDias } : null,
     equipamento: { tag: s.equipamento.tag, descricao: s.equipamento.descricao },
     area: { nome: s.area.nome },
-    planta: { nome: (s.area as any).planta?.nome ?? '' },
-    solicitante: { nome: s.solicitante.nome },
+    aprovacoes: s.aprovacoes.map(a => ({ nivel: a.nivel, status: a.status })),
     periodoInicio: s.periodoInicio?.toISOString() ?? null,
     periodoFim: s.periodoFim?.toISOString() ?? null,
     dataDesabilitacao: s.dataDesabilitacao?.toISOString() ?? null,
     prazoMaximoAtingido: s.prazoMaximoAtingido,
     prazoPrevitoAtingido: s.prazoPrevitoAtingido,
-    aprovacoes: s.aprovacoes.map(a => ({ nivel: a.nivel, status: a.status, aprovador: { nome: a.aprovador.nome } })),
-    isAprovador: flags.isAprovador,
-    isSolicitante: flags.isSolicitante,
-    isExecutante: flags.isExecutante,
+    cta: getCta(s.status),
   }
 }
 
-async function getTarefasPendentes(
-  userId: string,
-  perfil: string,
-  plantaId: string,
-  flags: { isAprovador: boolean; isSolicitante: boolean; isExecutante: boolean }
-): Promise<PendenciaItem[]> {
+async function getTarefasPendentes(userId: string, perfil: string, plantaId: string): Promise<PendenciaItem[]> {
   const scope = buildPlantaScope(plantaId)
   const items: PendenciaItem[] = []
   const seenIds = new Set<string>()
@@ -96,7 +100,7 @@ async function getTarefasPendentes(
     for (const s of solicitacoes) {
       if (!seenIds.has(s.id)) {
         seenIds.add(s.id)
-        items.push(serializePendencia(s, flags))
+        items.push(serializePendencia(s))
       }
     }
   }
@@ -110,7 +114,7 @@ async function getTarefasPendentes(
     }))
   }
 
-  // Execucao autorizada (executante)
+  // Execução autorizada (executante)
   if (['EXECUTANTE', 'SOLICITANTE', 'ADMINISTRADOR'].includes(perfil)) {
     addItems(await prisma.solicitacao.findMany({
       where: {
@@ -123,7 +127,7 @@ async function getTarefasPendentes(
     }))
   }
 
-  // Aprovacoes pendentes (aprovador / gestor / admin)
+  // Aprovações pendentes (aprovador / gestor / admin)
   if (['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'].includes(perfil)) {
     addItems(await prisma.solicitacao.findMany({
       where: {
@@ -136,7 +140,7 @@ async function getTarefasPendentes(
     }))
   }
 
-  // Validacao de reabilitacao (aprovador / gestor / admin)
+  // Validação de reabilitação (aprovador / gestor / admin)
   if (['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'].includes(perfil)) {
     addItems(await prisma.solicitacao.findMany({
       where: {
@@ -258,9 +262,6 @@ export default async function DashboardPage() {
     ? ['SOLICITANTE', 'EXECUTANTE'].includes(perfilAtivo)
     : perfis.some(p => ['SOLICITANTE', 'EXECUTANTE'].includes(p.perfil))
 
-  const isExecutante = ['EXECUTANTE', 'ADMINISTRADOR'].includes(perfilAtivo)
-  const isAprovador = ['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'].includes(perfilAtivo)
-
   const plantaId = plantaIdCookie ?? ''
 
   // Determine effective profile for carrossel
@@ -268,15 +269,15 @@ export default async function DashboardPage() {
 
   const [metrics, pendencias, ultimasSolicitacoes] = await Promise.all([
     getMetrics(plantaId),
-    getTarefasPendentes(userId, effectivePerfil, plantaId, { isAprovador, isSolicitante, isExecutante }),
+    getTarefasPendentes(userId, effectivePerfil, plantaId),
     getUltimasSolicitacoes(plantaId),
   ])
 
   const metricCards = [
-    { label: 'Em Aprovacao', value: metrics.emAprovacao, status: 'EM_APROVACAO' as StatusSolicitacao, href: '/solicitacoes?tab=andamento', icon: 'pending_actions' },
+    { label: 'Em Aprovação', value: metrics.emAprovacao, status: 'EM_APROVACAO' as StatusSolicitacao, href: '/solicitacoes?tab=andamento', icon: 'pending_actions' },
     { label: 'Exec. Autorizada', value: metrics.execucaoAutorizada, status: 'EXECUCAO_AUTORIZADA' as StatusSolicitacao, href: '/solicitacoes?tab=andamento', icon: 'engineering' },
     { label: 'Desabilitados', value: metrics.desabilitados, status: 'DESABILITADO' as StatusSolicitacao, href: '/solicitacoes?tab=andamento', icon: 'lock_open' },
-    { label: 'Aguard. Validacao', value: metrics.aguardandoValidacao, status: 'EM_VALIDACAO_DA_REABILITACAO' as StatusSolicitacao, href: '/solicitacoes?tab=andamento', icon: 'fact_check' },
+    { label: 'Aguard. Validação', value: metrics.aguardandoValidacao, status: 'EM_VALIDACAO_DA_REABILITACAO' as StatusSolicitacao, href: '/solicitacoes?tab=andamento', icon: 'fact_check' },
   ]
 
   return (
@@ -287,7 +288,7 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Bem-vindo(a) a {plantaNome}</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
-            Ola, {session?.user?.name?.split(' ')[0]}. Veja o que precisa da sua atencao.
+            Olá, {session?.user?.name?.split(' ')[0]}. Veja o que precisa da sua atenção.
           </p>
         </div>
         {isSolicitante && (
@@ -296,7 +297,7 @@ export default async function DashboardPage() {
             className="px-4 py-2 text-sm font-medium text-white hidden sm:flex items-center gap-2"
             style={{ background: '#0038A8', borderRadius: '4px' }}
           >
-            + Nova Solicitacao
+            + Nova Solicitação
           </Link>
         )}
       </div>
@@ -341,7 +342,7 @@ export default async function DashboardPage() {
           <div className="bg-white border cursor-pointer transition-shadow hover:shadow-sm h-full flex items-center justify-between px-3 py-2.5 gap-2" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
             <div className="flex items-center gap-2 min-w-0">
               <span className="material-symbols-outlined shrink-0" style={{ fontSize: 15, color: '#10B981', lineHeight: 1, background: '#10B98114', borderRadius: '6px', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true">check_circle</span>
-              <div className="text-xs leading-tight" style={{ color: '#64748B' }}>Encerradas/mes</div>
+              <div className="text-xs leading-tight" style={{ color: '#64748B' }}>Encerradas/mês</div>
             </div>
             <div className="font-bold shrink-0" style={{ fontSize: 14, color: '#10B981' }}>{metrics.encerradasMes}</div>
           </div>
@@ -365,7 +366,7 @@ export default async function DashboardPage() {
       {/* ─── Minhas pendências ─── */}
       <div style={{ marginBottom: 32 }}>
         <h2 className="flex items-center gap-2" style={{ fontWeight: 600, fontSize: 16, color: '#0F172A', margin: '0 0 12px 0' }}>
-          Minhas pendencias
+          Minhas pendências
           {pendencias.length > 0 && (
             <span style={{ fontWeight: 400, fontSize: 13, color: '#64748B' }}>
               ({pendencias.length})
@@ -378,7 +379,7 @@ export default async function DashboardPage() {
       {/* ─── Últimas solicitações ─── */}
       <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
         <h2 style={{ fontWeight: 600, fontSize: 16, color: '#0F172A', margin: 0 }}>
-          Ultimas solicitacoes
+          Últimas solicitações
         </h2>
         <Link
           href="/solicitacoes"

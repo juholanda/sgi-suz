@@ -6,9 +6,9 @@ import PrazoCard from '../PrazoCard'
 import type { SolicitacaoDetalhe } from '../types'
 
 const TIPO_LABELS: Record<string, string> = {
-  LOGICO: 'Logico',
-  FISICO: 'Fisico',
-  DISPOSITIVO_SEGURANCA: 'Dispositivo de Seguranca',
+  LOGICO: 'Lógico',
+  FISICO: 'Físico',
+  DISPOSITIVO_SEGURANCA: 'Dispositivo de Segurança',
 }
 
 function fmt(d: string | null | undefined) {
@@ -54,7 +54,7 @@ function Row({ label, value, mono, highlight }: { label: string; value?: string 
           flex: 1,
           fontSize: 13,
           color: highlight ? '#0038A8' : '#0F172A',
-          fontFamily: mono ? 'monospace' : 'inherit',
+          fontFamily: 'inherit',
           fontWeight: mono ? 600 : 400,
           margin: 0,
         }}
@@ -68,7 +68,7 @@ function Row({ label, value, mono, highlight }: { label: string; value?: string 
 // ── Checklist display ────────────────────────────────────────────────────────
 
 function ChecklistSection({ tipo, items }: { tipo: string; items: SolicitacaoDetalhe['checklists'] }) {
-  const label = tipo === 'DESABILITACAO' ? 'Desabilitacao' : 'Reabilitacao'
+  const label = tipo === 'DESABILITACAO' ? 'Desabilitação' : 'Reabilitação'
   const accentColor = tipo === 'DESABILITACAO' ? '#EA580C' : '#0D9488'
 
   return (
@@ -158,15 +158,15 @@ export default function TabDetalhes({ s }: TabDetalhesProps) {
         <Section title="Intertravamento" icon="settings">
           <dl style={{ display: 'flex', flexDirection: 'column' }}>
             <Row label="TAG" value={s.equipamento.tag} mono highlight />
-            <Row label="Descricao" value={s.equipamento.descricao} />
+            <Row label="Descrição" value={s.equipamento.descricao} />
             <Row label="Tipo" value={s.tipo ? TIPO_LABELS[s.tipo] ?? s.tipo : null} />
-            <Row label="Funcao" value={s.funcaoIntertravamento} />
+            <Row label="Função" value={s.funcaoIntertravamento} />
             <Row label="Motivo" value={s.motivoDesabilitacao} />
           </dl>
         </Section>
 
         {/* Periodo e SLA */}
-        <Section title="Periodo e SLA" icon="schedule">
+        <Section title="Período e SLA" icon="schedule">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Status de prazo dinâmico */}
             <PrazoCard
@@ -183,11 +183,11 @@ export default function TabDetalhes({ s }: TabDetalhesProps) {
               embedded
             />
             <dl style={{ display: 'flex', flexDirection: 'column' }}>
-              <Row label="Inicio previsto" value={fmt(s.periodoInicio)} />
+              <Row label="Início previsto" value={fmt(s.periodoInicio)} />
               <Row label="Fim previsto" value={fmt(s.periodoFim)} />
               <Row
-                label="Prazo maximo"
-                value={s.classe?.prazoMaximoDias ? `${s.classe.prazoMaximoDias} dia(s)` : 'NAO FORCAVEL'}
+                label="Prazo máximo"
+                value={s.classe?.prazoMaximoDias ? `${s.classe.prazoMaximoDias} dia(s)` : 'Não forçável'}
               />
               <Row label="Desabilitado em" value={fmt(s.dataDesabilitacao)} />
               <Row label="Reabilitado em" value={fmt(s.dataReabilitacao)} />
@@ -197,7 +197,7 @@ export default function TabDetalhes({ s }: TabDetalhesProps) {
         </Section>
 
         {/* Responsaveis */}
-        <Section title="Responsaveis" icon="group">
+        <Section title="Responsáveis" icon="group">
           <dl style={{ display: 'flex', flexDirection: 'column' }}>
             <Row label="Solicitante" value={`${s.solicitante.nome} (${s.solicitante.matricula})`} />
             <Row label="E-mail" value={s.solicitante.email} />
@@ -216,7 +216,7 @@ export default function TabDetalhes({ s }: TabDetalhesProps) {
             </p>
           ) : (
             <p style={{ fontSize: 13, color: '#94A3B8', margin: 0, fontStyle: 'italic' }}>
-              Nao informadas
+              Não informadas
             </p>
           )}
         </Section>
@@ -232,7 +232,7 @@ export default function TabDetalhes({ s }: TabDetalhesProps) {
 
       {/* Extensoes de prazo */}
       {s.extensoes && s.extensoes.length > 0 && (
-        <Section title="Extensoes de Prazo" icon="event_repeat">
+        <Section title="Extensões de Prazo" icon="event_repeat">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {s.extensoes.map(ext => (
               <div

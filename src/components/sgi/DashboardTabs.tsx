@@ -122,7 +122,7 @@ export default function DashboardTabs({ todas, andamento, encerradas, rascunhos 
           <span className="material-symbols-outlined" style={{ fontSize: 18, lineHeight: 1 }}>
             inbox
           </span>
-          Nenhuma solicitacao nesta categoria.
+          Nenhuma solicitação nesta categoria.
         </div>
       ) : (
         <div style={{ overflowX: 'auto' }}>
@@ -146,13 +146,13 @@ export default function DashboardTabs({ todas, andamento, encerradas, rascunhos 
                   className="hover:bg-slate-50 transition-colors"
                 >
                   <td style={tdStyle}>
-                    <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0038A8', fontSize: 12 }}>
+                    <span style={{ fontFamily: 'inherit', fontWeight: 600, color: '#0038A8', fontSize: 12 }}>
                       {s.protocolo}
                     </span>
                   </td>
                   <td style={tdStyle}>
                     <div>
-                      <span style={{ fontFamily: 'monospace', fontWeight: 600, fontSize: 12, color: '#0F172A' }}>
+                      <span style={{ fontFamily: 'inherit', fontWeight: 600, fontSize: 12, color: '#0F172A' }}>
                         {s.tag}
                       </span>
                       <div style={{ fontSize: 11, color: '#94A3B8', marginTop: 1 }}>{s.descricao}</div>

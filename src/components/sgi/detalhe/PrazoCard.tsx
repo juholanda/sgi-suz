@@ -161,7 +161,7 @@ export default function PrazoCard(props: PrazoCardProps) {
             schedule
           </span>
           <span style={textPrimaryStyle}>
-            Em aprovacao ha {dias} dia{dias !== 1 ? 's' : ''}
+            Em aprovação há {dias} dia{dias !== 1 ? 's' : ''}
           </span>
         </div>
         <SemaforoDot color={semaforo} />
@@ -198,7 +198,7 @@ export default function PrazoCard(props: PrazoCardProps) {
                 </span>
               ) : (
                 <span style={textPrimaryStyle}>
-                  Executar ate {formatDate(fim)}
+                  Executar até {formatDate(fim)}
                 </span>
               )}
               {!atrasado && (
@@ -220,7 +220,7 @@ export default function PrazoCard(props: PrazoCardProps) {
           <span className="material-symbols-outlined" style={iconStyle}>
             event
           </span>
-          <span style={textPrimaryStyle}>Execucao autorizada</span>
+          <span style={textPrimaryStyle}>Execução autorizada</span>
         </div>
       </div>
     )
@@ -236,7 +236,7 @@ export default function PrazoCard(props: PrazoCardProps) {
             engineering
           </span>
           <span style={textPrimaryStyle}>
-            Em execucao desde {formatShort(inicio)}
+            Em execução desde {formatShort(inicio)}
           </span>
         </div>
       </div>
@@ -272,7 +272,7 @@ export default function PrazoCard(props: PrazoCardProps) {
             {maxDias > 0 && (
               <>
                 <div style={textSecondaryStyle}>
-                  Prazo maximo: {maxDias} dia{maxDias !== 1 ? 's' : ''}
+                  Prazo máximo: {maxDias} dia{maxDias !== 1 ? 's' : ''}
                 </div>
                 {/* Progress bar */}
                 <div
@@ -314,7 +314,7 @@ export default function PrazoCard(props: PrazoCardProps) {
             replay
           </span>
           <span style={textPrimaryStyle}>
-            Em reabilitacao desde {formatShort(ref)}
+            Em reabilitação desde {formatShort(ref)}
           </span>
         </div>
       </div>
@@ -333,7 +333,7 @@ export default function PrazoCard(props: PrazoCardProps) {
             verified
           </span>
           <span style={textPrimaryStyle}>
-            Aguardando validacao ha {dias} dia{dias !== 1 ? 's' : ''}
+            Aguardando validação há {dias} dia{dias !== 1 ? 's' : ''}
           </span>
         </div>
         <SemaforoDot color={semaforo} />

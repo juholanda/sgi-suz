@@ -1,26 +1,23 @@
 'use client'
 import { useRef } from 'react'
-import { SolicitacaoCard } from '@/components/sgi/SolicitacaoCard'
+import { SolicitacaoQuadranteCard } from '@/components/sgi/SolicitacaoQuadranteCard'
+import type { SolicitacaoQuadranteCardProps } from '@/components/sgi/SolicitacaoQuadranteCard'
 
 export interface PendenciaItem {
   id: string
   protocolo: string
   status: string
   tipo: string | null
-  classe: { numero: number; prazoMaxDias: number | null } | null
+  classe: { numero: number; prazoMaximoDias: number | null } | null
   equipamento: { tag: string; descricao: string }
   area: { nome: string }
-  planta: { nome: string }
-  solicitante: { nome: string }
+  aprovacoes: { nivel: number; status: string }[]
   periodoInicio: string | null
   periodoFim: string | null
   dataDesabilitacao: string | null
   prazoMaximoAtingido: boolean
   prazoPrevitoAtingido: boolean
-  aprovacoes: { nivel: number; status: string; aprovador: { nome: string } }[]
-  isAprovador: boolean
-  isSolicitante: boolean
-  isExecutante: boolean
+  cta: { label: string; bg: string; color: string } | null
 }
 
 interface Props {
@@ -79,25 +76,21 @@ export function TarefasCarrossel({ items }: Props) {
             className="shrink-0"
             style={{ width: 320, minWidth: 320 }}
           >
-            <SolicitacaoCard
+            <SolicitacaoQuadranteCard
               id={item.id}
-              protocolo={item.protocolo}
               status={item.status}
               tipo={item.tipo}
               classe={item.classe}
               equipamento={item.equipamento}
               area={item.area}
-              planta={item.planta}
-              solicitante={item.solicitante}
+              aprovacoes={item.aprovacoes}
               periodoInicio={item.periodoInicio ? new Date(item.periodoInicio) : null}
               periodoFim={item.periodoFim ? new Date(item.periodoFim) : null}
               dataDesabilitacao={item.dataDesabilitacao ? new Date(item.dataDesabilitacao) : null}
               prazoMaximoAtingido={item.prazoMaximoAtingido}
               prazoPrevitoAtingido={item.prazoPrevitoAtingido}
-              aprovacoes={item.aprovacoes}
-              isAprovador={item.isAprovador}
-              isSolicitante={item.isSolicitante}
-              isExecutante={item.isExecutante}
+              showRisk={item.prazoMaximoAtingido || item.prazoPrevitoAtingido}
+              cta={item.cta}
             />
           </div>
         ))}

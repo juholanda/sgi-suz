@@ -8,9 +8,9 @@ import AlertaBanner from './AlertaBanner'
 import type { SolicitacaoDetalhe } from './types'
 
 const TIPO_LABELS: Record<string, string> = {
-  LOGICO: 'Logico',
-  FISICO: 'Fisico',
-  DISPOSITIVO_SEGURANCA: 'Disp. Seguranca',
+  LOGICO: 'Lógico',
+  FISICO: 'Físico',
+  DISPOSITIVO_SEGURANCA: 'Disp. Segurança',
 }
 
 interface DetalheHeaderProps {
@@ -27,7 +27,7 @@ export default function DetalheHeader({ s }: DetalheHeaderProps) {
             style={{
               fontSize: 20,
               fontWeight: 700,
-              fontFamily: 'monospace',
+              fontFamily: 'inherit',
               color: '#0F172A',
               margin: 0,
               lineHeight: 1.3,
@@ -46,7 +46,7 @@ export default function DetalheHeader({ s }: DetalheHeaderProps) {
         >
           <span>{s.area.planta.nome} {'\u203A'} {s.area.nome}</span>
           <span style={{ color: '#CBD5E1' }}>{'\u00B7'}</span>
-          <span style={{ fontFamily: 'monospace', fontWeight: 600, color: '#0038A8' }}>{s.equipamento.tag}</span>
+          <span style={{ fontFamily: 'inherit', fontWeight: 600, color: '#0038A8' }}>{s.equipamento.tag}</span>
           {s.tipo && (
             <>
               <span style={{ color: '#CBD5E1' }}>{'\u00B7'}</span>
