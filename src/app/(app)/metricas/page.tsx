@@ -46,7 +46,7 @@ async function getMetricasData(plantaId: string, periodo: string) {
   ] = await Promise.all([
     prisma.solicitacao.count({ where: { status: 'DESABILITADO', ...scope } }),
     prisma.solicitacao.count({ where: { status: 'EM_APROVACAO', ...scope } }),
-    prisma.solicitacao.count({ where: { status: { in: ['EM_EXECUCAO', 'EXECUCAO_AUTORIZADA'] }, ...scope } }),
+    prisma.solicitacao.count({ where: { status: 'EXECUCAO_AUTORIZADA', ...scope } }),
     prisma.solicitacao.count({ where: { status: { in: ['EM_REABILITACAO', 'EM_VALIDACAO_DA_REABILITACAO'] }, ...scope } }),
     prisma.solicitacao.count({
       where: {

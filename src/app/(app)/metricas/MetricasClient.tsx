@@ -265,7 +265,7 @@ export default function MetricasClient({ data, periodo }: Props) {
         >
           <KpiCard label="Desabilitados agora" value={kpis.desabilitadosAgora} icon="warning" color="#EA580C" bgColor="#FFF7ED" />
           <KpiCard label="Em aprovação" value={kpis.emAprovacao} icon="hourglass_top" color="#AC6F00" bgColor="#FEF5E5" />
-          <KpiCard label="Em execução" value={kpis.emExecucao} icon="engineering" color="#1E40AF" bgColor="#EFF6FF" />
+          <KpiCard label="Execução autorizada" value={kpis.emExecucao} icon="engineering" color="#1E40AF" bgColor="#EFF6FF" />
           <KpiCard label="Aguardando reabilitação" value={kpis.aguardandoReab} icon="replay" color="#0D9488" bgColor="#F0FDFA" />
           <KpiCard label="Prazos excedidos" value={kpis.prazosExcedidosAgora} icon="alarm" color="#DC2626" bgColor="#FEF2F2" />
         </div>
