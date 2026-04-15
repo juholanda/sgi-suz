@@ -41,7 +41,7 @@ export default function AreasPage() {
               <tr key={a.id} className="border-t" style={{ borderColor: '#F1F5F9' }}>
                 <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>{a.planta.nome}</td>
                 <td className="px-4 py-3 text-sm font-medium" style={{ color: '#0F172A' }}>{a.nome}</td>
-                <td className="px-4 py-3 text-sm font-mono" style={{ color: '#475569' }}>{a.codigo || '—'}</td>
+                <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>{a.codigo || '—'}</td>
                 <td className="px-4 py-3">
                   <span className="text-xs px-2 py-1 font-medium" style={{ borderRadius: '4px', background: a.ativa ? '#D1FAE5' : '#F1F5F9', color: a.ativa ? '#065F46' : '#64748B' }}>
                     {a.ativa ? 'Ativa' : 'Inativa'}

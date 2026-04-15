@@ -36,7 +36,7 @@ export default async function PlantasPage() {
             {plantas.map(p => (
               <tr key={p.id} className="border-t" style={{ borderColor: '#F1F5F9' }}>
                 <td className="px-4 py-3 text-sm font-medium" style={{ color: '#0F172A' }}>{p.nome}</td>
-                <td className="px-4 py-3 text-sm font-mono" style={{ color: '#475569' }}>{p.codigo || '—'}</td>
+                <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>{p.codigo || '—'}</td>
                 <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>{p._count.areas}</td>
                 <td className="px-4 py-3">
                   <span

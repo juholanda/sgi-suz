@@ -49,7 +49,7 @@ export default async function EquipamentosPage() {
             ) : equipamentos.map(e => (
               <tr key={e.id} className="border-t" style={{ borderColor: '#F1F5F9' }}>
                 <td className="px-4 py-3">
-                  <span className="font-mono text-sm font-semibold px-2 py-1" style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}>
+                  <span className="text-sm font-semibold px-2 py-1" style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}>
                     {e.tag}
                   </span>
                 </td>

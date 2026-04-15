@@ -191,7 +191,7 @@ export default function UsuariosClient({ usuarios, plantas, areas }: Props) {
                     background: expandedUserId === u.id ? '#F8FAFF' : undefined,
                   }}
                 >
-                  <td className="px-4 py-3 text-sm font-mono font-medium" style={{ color: '#0038A8' }}>{u.matricula}</td>
+                  <td className="px-4 py-3 text-sm font-medium" style={{ color: '#0038A8' }}>{u.matricula}</td>
                   <td className="px-4 py-3 text-sm font-medium" style={{ color: '#0F172A' }}>{u.nome}</td>
                   <td className="px-4 py-3 text-xs" style={{ color: '#475569' }}>{u.email}</td>
                   <td className="px-4 py-3">

@@ -144,7 +144,7 @@ export default function EquipamentosPage() {
             ) : filtered.map(e => (
               <tr key={e.id} style={{ borderTop: '1px solid #F1F5F9' }}>
                 <td style={{ padding: '12px 16px' }}>
-                  <span style={{ fontFamily: 'monospace', fontSize: '14px', fontWeight: 600, padding: '2px 8px', background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}>
+                  <span style={{ fontFamily: 'Inter, sans-serif', fontSize: '14px', fontWeight: 600, padding: '2px 8px', background: '#EBF0FB', color: '#0038A8', borderRadius: '4px' }}>
                     {e.tag}
                   </span>
                 </td>
@@ -190,7 +190,7 @@ export default function EquipamentosPage() {
                 value={form.tag}
                 onChange={e => setForm(f => ({ ...f, tag: e.target.value.toUpperCase() }))}
                 className="field-input"
-                style={{ fontFamily: 'monospace' }}
+                style={{ fontFamily: 'Inter, sans-serif' }}
                 placeholder="Ex: FIC-1001"
                 autoFocus
               />

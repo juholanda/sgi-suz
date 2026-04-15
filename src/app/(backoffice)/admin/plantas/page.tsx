@@ -123,7 +123,7 @@ export default function PlantasPage() {
             ) : plantas.map(p => (
               <tr key={p.id} style={{ borderTop: '1px solid #F1F5F9' }}>
                 <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 500, color: '#0F172A' }}>{p.nome}</td>
-                <td style={{ padding: '12px 16px', fontSize: '14px', fontFamily: 'monospace', color: '#475569' }}>{p.codigo || '—'}</td>
+                <td style={{ padding: '12px 16px', fontSize: '14px', fontFamily: 'Inter, sans-serif', color: '#475569' }}>{p.codigo || '—'}</td>
                 <td style={{ padding: '12px 16px', fontSize: '14px', color: '#475569' }}>{p._count.areas}</td>
                 <td style={{ padding: '12px 16px' }}>
                   <span style={{ fontSize: '12px', padding: '2px 8px', fontWeight: 500, borderRadius: '4px', background: p.ativa ? '#D1FAE5' : '#F1F5F9', color: p.ativa ? '#065F46' : '#64748B' }}>

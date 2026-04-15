@@ -128,7 +128,7 @@ export default function AreasPage() {
               <tr key={a.id} style={{ borderTop: '1px solid #F1F5F9' }}>
                 <td style={{ padding: '12px 16px', fontSize: '14px', color: '#475569' }}>{a.planta.nome}</td>
                 <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 500, color: '#0F172A' }}>{a.nome}</td>
-                <td style={{ padding: '12px 16px', fontSize: '14px', fontFamily: 'monospace', color: '#475569' }}>{a.codigo || '—'}</td>
+                <td style={{ padding: '12px 16px', fontSize: '14px', fontFamily: 'Inter, sans-serif', color: '#475569' }}>{a.codigo || '—'}</td>
                 <td style={{ padding: '12px 16px' }}>
                   <span style={{ fontSize: '12px', padding: '2px 8px', fontWeight: 500, borderRadius: '4px', background: a.ativa ? '#D1FAE5' : '#F1F5F9', color: a.ativa ? '#065F46' : '#64748B' }}>
                     {a.ativa ? 'Ativa' : 'Inativa'}

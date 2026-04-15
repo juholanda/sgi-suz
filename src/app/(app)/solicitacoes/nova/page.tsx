@@ -449,7 +449,7 @@ export default function NovaSolicitacaoPage() {
         >
           <div>
             <p className="text-xs font-medium mb-0.5" style={{ color: '#475569' }}>Protocolo</p>
-            <p className="text-lg font-bold font-mono" style={{ color: '#0038A8' }}>{submitted.protocolo}</p>
+            <p className="text-lg font-bold" style={{ color: '#0038A8' }}>{submitted.protocolo}</p>
           </div>
           <span
             className="text-xs font-semibold px-3 py-1"
@@ -466,7 +466,7 @@ export default function NovaSolicitacaoPage() {
           </div>
           <div className="divide-y" style={{ borderColor: '#F1F5F9' }}>
             <DetailRow label="Equipamento / TAG">
-              <span className="font-mono font-semibold" style={{ color: '#0038A8' }}>{submitted.tag}</span>
+              <span className="font-semibold" style={{ color: '#0038A8' }}>{submitted.tag}</span>
               {submitted.tagDescricao && <span className="ml-2 text-sm" style={{ color: '#64748B' }}>{submitted.tagDescricao}</span>}
             </DetailRow>
             <DetailRow label="Área">{submitted.area || '—'}</DetailRow>
@@ -567,7 +567,7 @@ export default function NovaSolicitacaoPage() {
             {equipSelecionado && areaSelecionada && (
               <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>
                 {areaSelecionada.planta.nome} › {areaSelecionada.nome}
-                {equipSelecionado.tag && <> · <span className="font-mono font-semibold" style={{ color: '#0038A8' }}>{equipSelecionado.tag}</span></>}
+                {equipSelecionado.tag && <> · <span className="font-semibold" style={{ color: '#0038A8' }}>{equipSelecionado.tag}</span></>}
                 {form.tipo && <> · {form.tipo === 'FISICO' ? 'Físico' : form.tipo === 'LOGICO' ? 'Lógico' : 'Disp. Segurança'}</>}
               </p>
             )}
@@ -1371,7 +1371,7 @@ function InfoRow({ icon, label, value, mono }: { icon: string; label: string; va
   return (
     <div className="flex flex-col gap-0.5">
       <span className="text-xs" style={{ color: '#94A3B8' }}>{label}</span>
-      <span className={`text-sm font-medium ${mono ? 'font-mono' : ''}`} style={{ color: mono ? '#0038A8' : '#0F172A' }}>
+      <span className={`text-sm font-medium`} style={{ color: mono ? '#0038A8' : '#0F172A' }}>
         {value}
       </span>
     </div>
@@ -1385,7 +1385,7 @@ function ResumoRow({ label, value, mono, last }: { label: string; value: string;
       style={{ borderBottom: last ? 'none' : '1px solid #F1F5F9' }}
     >
       <span className="text-xs font-medium w-24 shrink-0" style={{ color: '#6B7280' }}>{label}</span>
-      <span className={`text-sm flex-1 ${mono ? 'font-mono font-semibold' : ''}`} style={{ color: mono ? '#0038A8' : '#0F172A' }}>
+      <span className={`text-sm flex-1 ${mono ? 'font-semibold' : ''}`} style={{ color: mono ? '#0038A8' : '#0F172A' }}>
         {value || <span style={{ color: '#94A3B8' }}>—</span>}
       </span>
     </div>

@@ -72,7 +72,7 @@ export default async function AlcadasPage() {
                       </span>
                       <div>
                         <div className="text-xs font-medium" style={{ color: colors.text }}>{n.user.nome}</div>
-                        <div className="text-xs font-mono" style={{ color: colors.text, opacity: 0.7 }}>{n.user.matricula}</div>
+                        <div className="text-xs" style={{ color: colors.text, opacity: 0.7 }}>{n.user.matricula}</div>
                       </div>
                     </div>
                   ))}

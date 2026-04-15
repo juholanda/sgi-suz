@@ -54,11 +54,11 @@ export default async function DelegacoesPage() {
                 <tr key={d.id} className="border-t" style={{ borderColor: '#F1F5F9' }}>
                   <td className="px-4 py-3 text-sm" style={{ color: '#0F172A' }}>
                     {d.delegadoPor.nome}
-                    <span className="ml-1 text-xs font-mono" style={{ color: '#94A3B8' }}>{d.delegadoPor.matricula}</span>
+                    <span className="ml-1 text-xs" style={{ color: '#94A3B8' }}>{d.delegadoPor.matricula}</span>
                   </td>
                   <td className="px-4 py-3 text-sm" style={{ color: '#0F172A' }}>
                     {d.delegadoPara.nome}
-                    <span className="ml-1 text-xs font-mono" style={{ color: '#94A3B8' }}>{d.delegadoPara.matricula}</span>
+                    <span className="ml-1 text-xs" style={{ color: '#94A3B8' }}>{d.delegadoPara.matricula}</span>
                   </td>
                   <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>
                     {format(d.dataInicio, 'dd/MM/yyyy', { locale: ptBR })}

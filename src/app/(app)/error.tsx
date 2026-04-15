@@ -20,7 +20,7 @@ export default function AppError({
           {error.message || 'Ocorreu um erro inesperado.'}
         </p>
         {error.digest && (
-          <p className="text-xs font-mono mb-4" style={{ color: '#94A3B8' }}>
+          <p className="text-xs mb-4" style={{ color: '#94A3B8' }}>
             Digest: {error.digest}
           </p>
         )}

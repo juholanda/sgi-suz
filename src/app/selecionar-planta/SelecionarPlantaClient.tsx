@@ -147,7 +147,7 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold truncate" style={{ color: '#0F172A' }}>{userName}</p>
           <p className="text-xs truncate" style={{ color: '#64748B' }}>{userEmail}</p>
-          <p className="text-xs font-mono mt-0.5" style={{ color: '#94A3B8' }}>Matrícula {userMatricula}</p>
+          <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>Matrícula {userMatricula}</p>
         </div>
         <span
           className="shrink-0 text-xs font-medium px-2 py-0.5"

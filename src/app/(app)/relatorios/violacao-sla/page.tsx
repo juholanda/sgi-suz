@@ -1,13 +1,17 @@
 import { prisma } from '@/lib/db'
+import { buildPlantaScope } from '@/lib/scope'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { ClasseNum } from '@/lib/tokens'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 
 async function getViolacoes() {
+  const cookieStore = await cookies()
+  const plantaId = cookieStore.get('sgi_planta_ativa')?.value ?? ''
   return prisma.solicitacao.findMany({
-    where: { prazoMaximoAtingido: true },
+    where: { prazoMaximoAtingido: true, ...buildPlantaScope(plantaId) },
     include: {
       equipamento: true,
       area: { include: { planta: true } },
@@ -79,7 +83,7 @@ export default async function ViolacaoSlaPage() {
             <Link key={v.id} href={`/solicitacoes/${v.id}`}>
               <div className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="font-mono text-sm font-bold" style={{ color: '#0038A8' }}>{v.equipamento.tag}</span>
+                  <span className="text-sm font-bold" style={{ color: '#0038A8' }}>{v.equipamento.tag}</span>
                   {v.classe && <ClasseBadge classe={v.classe.numero as ClasseNum} size="sm" />}
                 </div>
                 <div className="flex items-center justify-between">
@@ -108,11 +112,11 @@ export default async function ViolacaoSlaPage() {
             ) : violacoes.map(v => (
               <tr key={v.id} className="border-t hover:bg-gray-50" style={{ borderColor: '#F1F5F9' }}>
                 <td className="px-4 py-3">
-                  <Link href={`/solicitacoes/${v.id}`} className="text-sm font-mono font-medium" style={{ color: '#0038A8' }}>
+                  <Link href={`/solicitacoes/${v.id}`} className="text-sm font-medium" style={{ color: '#0038A8' }}>
                     {v.protocolo}
                   </Link>
                 </td>
-                <td className="px-4 py-3 font-mono text-sm font-semibold" style={{ color: '#0F172A' }}>{v.equipamento.tag}</td>
+                <td className="px-4 py-3 text-sm font-semibold" style={{ color: '#0F172A' }}>{v.equipamento.tag}</td>
                 <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>{v.area.planta.nome} · {v.area.nome}</td>
                 <td className="px-4 py-3">{v.classe && <ClasseBadge classe={v.classe.numero as ClasseNum} size="sm" />}</td>
                 <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>{fmt(v.dataDesabilitacao)}</td>

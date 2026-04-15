@@ -177,7 +177,7 @@ export default function UsuariosPage() {
               <tr><td colSpan={7} style={{ textAlign: 'center', padding: '32px', fontSize: '14px', color: '#94A3B8' }}>Nenhum usuário cadastrado</td></tr>
             ) : usuarios.map(u => (
               <tr key={u.id} style={{ borderTop: '1px solid #F1F5F9' }}>
-                <td style={{ padding: '12px 16px', fontSize: '14px', fontFamily: 'monospace', fontWeight: 500, color: '#0038A8' }}>{u.matricula}</td>
+                <td style={{ padding: '12px 16px', fontSize: '14px', fontFamily: 'Inter, sans-serif', fontWeight: 500, color: '#0038A8' }}>{u.matricula}</td>
                 <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 500, color: '#0F172A' }}>{u.nome}</td>
                 <td style={{ padding: '12px 16px', fontSize: '13px', color: '#475569' }}>{u.email}</td>
                 <td style={{ padding: '12px 16px', fontSize: '13px', color: '#475569' }}>{u.cargo?.nome || '—'}</td>

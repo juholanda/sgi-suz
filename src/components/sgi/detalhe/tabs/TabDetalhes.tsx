@@ -154,19 +154,29 @@ export default function TabDetalhes({ s }: TabDetalhesProps) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
       {/* Grid 2x2 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Intertravamento */}
-        <Section title="Intertravamento" icon="settings">
+        {/* Informações Básicas */}
+        <Section title="Informações Básicas" icon="info">
           <dl style={{ display: 'flex', flexDirection: 'column' }}>
             <Row label="TAG" value={s.equipamento.tag} mono highlight />
-            <Row label="Descrição" value={s.equipamento.descricao} />
+            <Row label="Nome" value={s.equipamento.descricao} />
             <Row label="Tipo" value={s.tipo ? TIPO_LABELS[s.tipo] ?? s.tipo : null} />
+            <Row label="Classe" value={s.classe ? `Classe ${s.classe.numero}` : null} />
+            <Row label="Planta" value={s.area?.planta?.nome} />
+            <Row label="Área" value={s.area?.nome} />
             <Row label="Função" value={s.funcaoIntertravamento} />
             <Row label="Motivo" value={s.motivoDesabilitacao} />
+            <Row label="Data da solicitação" value={fmt(s.createdAt)} />
+            <Row label="Solicitante" value={`${s.solicitante.nome} (${s.solicitante.matricula})`} />
+            <Row label="E-mail" value={s.solicitante.email} />
+            <Row
+              label="Executante"
+              value={s.executante ? `${s.executante.nome} (${s.executante.matricula})` : null}
+            />
           </dl>
         </Section>
 
-        {/* Periodo e SLA */}
-        <Section title="Período e SLA" icon="schedule">
+        {/* Período e Prazos */}
+        <Section title="Período e Prazos" icon="schedule">
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {/* Status de prazo dinâmico */}
             <PrazoCard
@@ -194,18 +204,6 @@ export default function TabDetalhes({ s }: TabDetalhesProps) {
               <Row label="Encerrado em" value={fmt(s.dataEncerramento)} />
             </dl>
           </div>
-        </Section>
-
-        {/* Responsaveis */}
-        <Section title="Responsáveis" icon="group">
-          <dl style={{ display: 'flex', flexDirection: 'column' }}>
-            <Row label="Solicitante" value={`${s.solicitante.nome} (${s.solicitante.matricula})`} />
-            <Row label="E-mail" value={s.solicitante.email} />
-            <Row
-              label="Executante"
-              value={s.executante ? `${s.executante.nome} (${s.executante.matricula})` : null}
-            />
-          </dl>
         </Section>
 
         {/* Medidas Contingenciais */}

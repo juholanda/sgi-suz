@@ -167,7 +167,7 @@ export default function AlcadasPage() {
                       </span>
                       <div>
                         <div style={{ fontSize: '13px', fontWeight: 500, color: colors.text }}>{n.user.nome}</div>
-                        <div style={{ fontSize: '11px', fontFamily: 'monospace', color: colors.text, opacity: 0.7 }}>{n.user.matricula}</div>
+                        <div style={{ fontSize: '11px', fontFamily: 'Inter, sans-serif', color: colors.text, opacity: 0.7 }}>{n.user.matricula}</div>
                       </div>
                       <div style={{ display: 'flex', gap: '6px', marginLeft: '8px' }}>
                         <button onClick={() => openEdit(n)} style={{ fontSize: '11px', color: '#0038A8', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Editar</button>

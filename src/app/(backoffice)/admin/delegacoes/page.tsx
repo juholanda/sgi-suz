@@ -183,11 +183,11 @@ export default function DelegacoesPage() {
                 <tr key={d.id} style={{ borderTop: '1px solid #F1F5F9' }}>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#0F172A' }}>
                     {d.delegadoPor.nome}
-                    <span style={{ marginLeft: '6px', fontSize: '12px', fontFamily: 'monospace', color: '#94A3B8' }}>{d.delegadoPor.matricula}</span>
+                    <span style={{ marginLeft: '6px', fontSize: '12px', fontFamily: 'Inter, sans-serif', color: '#94A3B8' }}>{d.delegadoPor.matricula}</span>
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#0F172A' }}>
                     {d.delegadoPara.nome}
-                    <span style={{ marginLeft: '6px', fontSize: '12px', fontFamily: 'monospace', color: '#94A3B8' }}>{d.delegadoPara.matricula}</span>
+                    <span style={{ marginLeft: '6px', fontSize: '12px', fontFamily: 'Inter, sans-serif', color: '#94A3B8' }}>{d.delegadoPara.matricula}</span>
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#475569' }}>{formatDate(d.dataInicio)}</td>
                   <td style={{ padding: '12px 16px', fontSize: '14px', color: '#475569' }}>{formatDate(d.dataFim)}</td>

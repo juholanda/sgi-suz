@@ -1,14 +1,18 @@
 import { prisma } from '@/lib/db'
+import { buildPlantaScope } from '@/lib/scope'
 import { StatusBadge } from '@/components/sgi/StatusBadge'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { StatusSolicitacao, ClasseNum } from '@/lib/tokens'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 
 async function getSolicitacoesAuditoria() {
+  const cookieStore = await cookies()
+  const plantaId = cookieStore.get('sgi_planta_ativa')?.value ?? ''
   return prisma.solicitacao.findMany({
-    where: { status: { in: ['ENCERRADA', 'REJEITADA', 'CANCELADA'] } },
+    where: { status: { in: ['ENCERRADA', 'REJEITADA', 'CANCELADA'] }, ...buildPlantaScope(plantaId) },
     include: {
       equipamento: true,
       area: { include: { planta: true } },
@@ -66,10 +70,10 @@ export default async function AuditoriaPage() {
           <details key={s.id} className="bg-white border" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
             <summary className="px-5 py-4 cursor-pointer list-none flex items-center justify-between">
               <div className="flex items-center gap-3 flex-wrap">
-                <span className="font-mono text-sm font-bold" style={{ color: '#0038A8' }}>{s.protocolo}</span>
+                <span className="text-sm font-bold" style={{ color: '#0038A8' }}>{s.protocolo}</span>
                 <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
                 {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
-                <span className="text-sm font-mono font-semibold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
+                <span className="text-sm font-semibold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
                 <span className="text-xs" style={{ color: '#6B7280' }}>{s.area.planta.nome} · {s.area.nome}</span>
               </div>
               <div className="flex items-center gap-4 shrink-0 ml-4">

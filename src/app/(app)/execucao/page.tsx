@@ -1,12 +1,16 @@
 import { prisma } from '@/lib/db'
+import { buildPlantaScope } from '@/lib/scope'
 import { StatusBadge } from '@/components/sgi/StatusBadge'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { StatusSolicitacao, ClasseNum } from '@/lib/tokens'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 
 async function getSolicitacoesExecucao() {
+  const cookieStore = await cookies()
+  const plantaId = cookieStore.get('sgi_planta_ativa')?.value ?? ''
   return prisma.solicitacao.findMany({
-    where: { status: { in: ['EXECUCAO_AUTORIZADA', 'EM_EXECUCAO', 'DESABILITADO', 'EM_REABILITACAO'] } },
+    where: { status: { in: ['EXECUCAO_AUTORIZADA', 'EM_EXECUCAO', 'DESABILITADO', 'EM_REABILITACAO'] }, ...buildPlantaScope(plantaId) },
     include: {
       equipamento: true,
       area: { include: { planta: true } },
@@ -39,7 +43,7 @@ export default async function ExecucaoPage() {
               <div className="bg-white border p-4 hover:shadow-sm transition-shadow" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <span className="font-mono text-sm font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
+                    <span className="text-sm font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
                     <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
                     {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
                     {s.prazoMaximoAtingido && (

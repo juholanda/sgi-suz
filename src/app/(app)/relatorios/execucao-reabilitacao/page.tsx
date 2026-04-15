@@ -1,15 +1,20 @@
 import { prisma } from '@/lib/db'
+import { buildPlantaScope } from '@/lib/scope'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { ClasseNum } from '@/lib/tokens'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 
 async function getRelatorio() {
+  const cookieStore = await cookies()
+  const plantaId = cookieStore.get('sgi_planta_ativa')?.value ?? ''
   return prisma.solicitacao.findMany({
     where: {
       status: { in: ['ENCERRADA', 'EM_REABILITACAO', 'EM_VALIDACAO_DA_REABILITACAO'] },
       dataDesabilitacao: { not: null },
+      ...buildPlantaScope(plantaId),
     },
     include: {
       equipamento: true,
@@ -75,11 +80,11 @@ export default async function ExecucaoReabilitacaoPage() {
               return (
                 <tr key={s.id} className="border-t hover:bg-gray-50" style={{ borderColor: '#F1F5F9' }}>
                   <td className="px-4 py-3">
-                    <Link href={`/solicitacoes/${s.id}`} className="text-xs font-mono font-medium" style={{ color: '#0038A8' }}>
+                    <Link href={`/solicitacoes/${s.id}`} className="text-xs font-medium" style={{ color: '#0038A8' }}>
                       {s.protocolo}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 font-mono text-sm font-semibold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</td>
+                  <td className="px-4 py-3 text-sm font-semibold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</td>
                   <td className="px-4 py-3">{s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}</td>
                   <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>{diff(s.dataAprovacaoFinal, s.dataDesabilitacao)}</td>
                   <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>{diff(s.dataDesabilitacao, s.dataReabilitacao)}</td>
