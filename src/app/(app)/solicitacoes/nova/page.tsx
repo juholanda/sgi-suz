@@ -1,12 +1,11 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { ClasseNum } from '@/lib/tokens'
 import { Input, Select, Textarea } from '@/components/design-system/Input'
 import { Checkbox } from '@/components/design-system/Checkbox'
 import { Button } from '@/components/design-system/Button'
-import { ActionFooter } from '@/components/design-system/ActionFooter'
 
 type Etapa = 1 | 2 | 3
 
@@ -42,6 +41,20 @@ interface MedidaContingencial {
   ordem: number
 }
 
+interface Aprovador {
+  id: string
+  nivel: number
+  user: { id: string; nome: string; matricula: string }
+}
+
+interface AlcadaRaw {
+  id: string
+  nivel: number
+  plantaId: string
+  classe: { numero: number }
+  user: { id: string; nome: string; matricula: string }
+}
+
 interface FormData {
   areaId: string
   equipamentoId: string
@@ -68,9 +81,9 @@ interface AnexoFile {
 }
 
 const ETAPAS = [
-  { num: 1, label: 'Identificação' },
-  { num: 2, label: 'Contingência' },
-  { num: 3, label: 'Revisão e Envio' },
+  { num: 1, label: 'Equipamento e contexto' },
+  { num: 2, label: 'Medidas e anexos' },
+  { num: 3, label: 'Revisão e envio' },
 ]
 
 const PRAZO_MAX: Record<string, string> = {
@@ -81,20 +94,10 @@ const COR_CLASSE: Record<string, string> = {
   '1': '#1D4ED8', '2': '#0D9488', '3': '#EA580C', '4': '#DC2626', '5': '#7F1D1D',
 }
 
-const FUNCOES_INTERTRAVAMENTO = [
-  'Desligamento de motor',
-  'Inibição de abertura de válvula',
-  'Bloqueio de partida',
-  'Parada de processo',
-  'Proteção contra sobrepressão',
-  'Proteção contra sobre-temperatura',
-  'Proteção contra sobrenível',
-  'Proteção contra baixo nível',
-  'Alarme e bloqueio',
-  'Intertravamento de segurança (SIL)',
-  'Proteção de equipamento rotativo',
-  'Bloqueio de fluxo',
-  'Outros',
+const TIPO_OPTIONS = [
+  { value: 'LOGICO', label: 'Lógico', description: 'Instrumento lógico de controle' },
+  { value: 'FISICO', label: 'Físico', description: 'Bloqueio físico / válvula' },
+  { value: 'DISPOSITIVO_SEGURANCA', label: 'Disp. Segurança', description: 'Dispositivo de segurança' },
 ]
 
 function Icon({ name, size = 20 }: { name: string; size?: number }) {
@@ -123,13 +126,25 @@ interface SubmittedData {
 
 export default function NovaSolicitacaoPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const editarId = searchParams.get('editar')
+  const isEditMode = !!editarId
+
   const [etapa, setEtapa] = useState<Etapa>(1)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<FieldError>({})
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const scrollRef    = useRef<HTMLDivElement>(null)
   const [submitted, setSubmitted] = useState<SubmittedData | null>(null)
+  const [loadingEdit, setLoadingEdit] = useState(isEditMode)
+  const [editProtocolo, setEditProtocolo] = useState<string | null>(null)
 
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
+  // Scroll ao topo da área de conteúdo sempre que a etapa mudar
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [etapa])
 
   // Dados externos
   const [areas, setAreas] = useState<Area[]>([])
@@ -140,6 +155,9 @@ export default function NovaSolicitacaoPage() {
   // Medidas contingenciais
   const [medidas, setMedidas] = useState<MedidaContingencial[]>([])
   const [novaMedida, setNovaMedida] = useState('')
+
+  // Aprovadores por classe
+  const [aprovadores, setAprovadores] = useState<Aprovador[]>([])
 
   // Anexos — RF-016
   const [anexos, setAnexos] = useState<AnexoFile[]>([])
@@ -195,6 +213,60 @@ export default function NovaSolicitacaoPage() {
       })
       .catch(() => {})
   }, [])
+
+  // ── Load draft data for edit mode ──
+  useEffect(() => {
+    if (!editarId) return
+    setLoadingEdit(true)
+    fetch(`/api/solicitacoes/${editarId}`)
+      .then(r => r.json())
+      .then((data: any) => {
+        if (data.error) return
+        setEditProtocolo(data.protocolo)
+        const fmtDate = (d: string | null) => d ? d.slice(0, 10) : ''
+        setForm({
+          areaId: data.areaId ?? '',
+          equipamentoId: data.equipamentoId ?? '',
+          executanteId: data.executanteId ?? '',
+          tipo: data.tipo ?? '',
+          classeNumero: data.classe?.numero != null ? String(data.classe.numero) : '',
+          funcaoIntertravamento: data.funcaoIntertravamento ?? '',
+          motivoDesabilitacao: data.motivoDesabilitacao ?? '',
+          periodoInicio: fmtDate(data.periodoInicio),
+          periodoFim: fmtDate(data.periodoFim),
+          medidasContingenciais: data.medidasContingenciais ?? '',
+          cienteRiscos: false,
+          medidasIds: [],
+          medidasCustom: data.medidasContingenciais
+            ? data.medidasContingenciais.split('\n• ').filter(Boolean)
+            : [],
+        })
+      })
+      .catch(() => {})
+      .finally(() => setLoadingEdit(false))
+  }, [editarId])
+
+  // Fetch approvers when class and area change
+  useEffect(() => {
+    if (!form.classeNumero || !form.areaId) {
+      setAprovadores([])
+      return
+    }
+    const plantaId = areas.find(a => a.id === form.areaId)?.planta.id
+    if (!plantaId) { setAprovadores([]); return }
+    fetch('/api/backoffice/alcadas')
+      .then(r => r.json())
+      .then((data: AlcadaRaw[]) => {
+        if (Array.isArray(data)) {
+          const filtered = data
+            .filter(a => a.plantaId === plantaId && String(a.classe.numero) === form.classeNumero)
+            .sort((a, b) => a.nivel - b.nivel)
+            .map(a => ({ id: a.id, nivel: a.nivel, user: a.user }))
+          setAprovadores(filtered)
+        }
+      })
+      .catch(() => setAprovadores([]))
+  }, [form.classeNumero, form.areaId, areas])
 
   function set(field: keyof FormData, value: string | boolean | string[]) {
     setErrors(prev => { const n = { ...prev }; delete n[field]; return n })
@@ -308,8 +380,9 @@ export default function NovaSolicitacaoPage() {
         medidasContingenciais: buildMedidasText(),
       }))
       anexos.forEach(a => formData.append('anexos', a.file))
-      const res = await fetch('/api/solicitacoes', {
-        method: 'POST',
+      const url = isEditMode ? `/api/solicitacoes/${editarId}` : '/api/solicitacoes'
+      const res = await fetch(url, {
+        method: isEditMode ? 'PUT' : 'POST',
         body: formData,
       })
       if (res.ok) router.push('/solicitacoes')
@@ -328,14 +401,15 @@ export default function NovaSolicitacaoPage() {
         medidasContingenciais: buildMedidasText(),
       }))
       anexos.forEach(a => formData.append('anexos', a.file))
-      const res = await fetch('/api/solicitacoes', {
-        method: 'POST',
+      const url = isEditMode ? `/api/solicitacoes/${editarId}` : '/api/solicitacoes'
+      const res = await fetch(url, {
+        method: isEditMode ? 'PUT' : 'POST',
         body: formData,
       })
       const data = await res.json()
       setSubmitted({
         id: data.id,
-        protocolo: data.protocolo,
+        protocolo: data.protocolo ?? editProtocolo ?? '',
         tag: equipSelecionado?.tag ?? '',
         tagDescricao: equipSelecionado?.descricao ?? '',
         area: areaSelecionada ? `${areaSelecionada.planta.nome} › ${areaSelecionada.nome}` : '',
@@ -467,600 +541,772 @@ export default function NovaSolicitacaoPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 w-full max-w-4xl mx-auto">
-      {/* Breadcrumb / back nav */}
-      <div className="flex items-center gap-2 mb-5">
-        <a
-          href="/solicitacoes"
-          className="flex items-center gap-1 text-sm"
-          style={{ color: '#64748B' }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>arrow_back</span>
-          <span className="hidden sm:inline">Solicitações</span>
-        </a>
-        <span className="hidden sm:inline text-sm" style={{ color: '#CBD5E1' }}>/</span>
-        <span className="hidden sm:inline text-sm font-medium" style={{ color: '#0F172A' }}>Nova solicitação</span>
-      </div>
+    // H — White background; G — flex column so sticky footer works
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#FFFFFF' }}>
 
-      <div className="mb-6">
-        <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Nova solicitação de desabilitação</h1>
-      </div>
+      {/* I — Structured header with protocol info and tabs */}
+      <div style={{ padding: '24px 24px 0 24px', background: '#FFFFFF' }}>
+        {/* Breadcrumb */}
+        <div className="flex items-center gap-2 mb-4">
+          <a
+            href="/solicitacoes"
+            className="flex items-center gap-1 text-sm"
+            style={{ color: '#64748B' }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>arrow_back</span>
+            <span className="hidden sm:inline">Solicitações</span>
+          </a>
+          <span className="hidden sm:inline text-sm" style={{ color: '#CBD5E1' }}>/</span>
+          <span className="hidden sm:inline text-sm font-medium" style={{ color: '#0F172A' }}>{isEditMode ? 'Editar rascunho' : 'Nova solicitação'}</span>
+        </div>
 
-      {/* Progress steps */}
-      <div className="flex items-center gap-0 mb-8">
-        {ETAPAS.map((e, i) => (
-          <div key={e.num} className="flex items-center">
-            <div className="flex items-center gap-2">
-              <div
-                className="w-7 h-7 flex items-center justify-center text-xs font-bold"
-                style={{
-                  borderRadius: '50%',
-                  background: etapa >= e.num ? '#0038A8' : '#E2E8F0',
-                  color: etapa >= e.num ? 'white' : '#94A3B8',
-                }}
-              >
-                {etapa > e.num ? '✓' : e.num}
-              </div>
-              <span className="text-sm" style={{ color: etapa === e.num ? '#0038A8' : '#94A3B8', fontWeight: etapa === e.num ? 600 : 400 }}>
-                {e.label}
-              </span>
-            </div>
-            {i < ETAPAS.length - 1 && (
-              <div className="w-12 h-px mx-3" style={{ background: etapa > e.num ? '#0038A8' : '#E2E8F0' }} />
+        {/* Protocol / title row */}
+        <div className="flex items-start justify-between mb-6">
+          <div>
+            <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>{isEditMode ? `Editar rascunho${editProtocolo ? ` #${editProtocolo}` : ''}` : 'Nova solicitação de desabilitação'}</h1>
+            {equipSelecionado && areaSelecionada && (
+              <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>
+                {areaSelecionada.planta.nome} › {areaSelecionada.nome}
+                {equipSelecionado.tag && <> · <span className="font-mono font-semibold" style={{ color: '#0038A8' }}>{equipSelecionado.tag}</span></>}
+                {form.tipo && <> · {form.tipo === 'FISICO' ? 'Físico' : form.tipo === 'LOGICO' ? 'Lógico' : 'Disp. Segurança'}</>}
+              </p>
             )}
           </div>
-        ))}
+          <span
+            className="text-xs font-semibold px-2.5 py-1 shrink-0"
+            style={{ background: '#F1F5F9', color: '#475569', borderRadius: '20px', border: '1px solid #E2E8F0' }}
+          >
+            Rascunho
+          </span>
+        </div>
+
       </div>
 
-      <div className="bg-white border p-6" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
+      {/* Scrollable content area */}
+      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '24px', minHeight: 0 }}>
+        <div className="w-full max-w-4xl mx-auto">
 
-        {/* ETAPA 1 — Identificação */}
-        {etapa === 1 && (
-          <div className="space-y-5">
-            <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 1 — Identificação</h2>
+          {/* ── Wizard stepper ── */}
+          <div
+            style={{
+              background: '#F0F4F8',
+              border: '1px solid #E2E8F0',
+              borderRadius: 12,
+              padding: '20px 32px',
+              marginBottom: 20,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+              {ETAPAS.map((e, idx) => {
+                const isActive = etapa === e.num
+                const isDone   = etapa > e.num
+                return (
+                  <div key={e.num} style={{ display: 'flex', alignItems: 'center' }}>
+                    {/* Step bubble + label */}
+                    <button
+                      type="button"
+                      onClick={() => { if (isDone) setEtapa(e.num as Etapa) }}
+                      style={{
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        gap: 6,
+                        background: '#EEF2F7',
+                        border: 'none',
+                        borderRadius: 10,
+                        padding: '12px 20px',
+                        cursor: isDone ? 'pointer' : 'default',
+                      }}
+                    >
+                      {/* Circle */}
+                      <div
+                        style={{
+                          width: 36,
+                          height: 36,
+                          borderRadius: '50%',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          background: isDone ? '#16A34A' : isActive ? '#0038A8' : '#FFFFFF',
+                          border: isDone ? '2px solid #16A34A' : isActive ? '2px solid #0038A8' : '2px solid #CBD5E1',
+                          transition: 'all 0.2s',
+                          flexShrink: 0,
+                        }}
+                      >
+                        {isDone ? (
+                          <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#FFFFFF', lineHeight: 1 }}>check</span>
+                        ) : (
+                          <span style={{ fontSize: 14, fontWeight: 700, color: isActive ? '#FFFFFF' : '#94A3B8', lineHeight: 1 }}>
+                            {e.num}
+                          </span>
+                        )}
+                      </div>
+                      {/* Label */}
+                      <span
+                        style={{
+                          fontSize: 12,
+                          fontWeight: isActive ? 600 : 400,
+                          color: isDone ? '#16A34A' : isActive ? '#0038A8' : '#94A3B8',
+                          whiteSpace: 'nowrap',
+                          lineHeight: 1.2,
+                          textAlign: 'center',
+                        }}
+                      >
+                        {e.label}
+                      </span>
+                    </button>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Select
-                label="Área *"
-                value={form.areaId}
-                onChange={e => set('areaId', e.target.value)}
-                disabled={loadingAreas}
-                variant={errors.areaId ? 'error' : 'default'}
-                errorMessage={errors.areaId}
-              >
-                <option value="">{loadingAreas ? 'Carregando...' : 'Selecione a área'}</option>
-                {areas.map(a => (
-                  <option key={a.id} value={a.id}>{a.nome}</option>
-                ))}
-              </Select>
-
-              <Select
-                label="TAG do intertravamento *"
-                value={form.equipamentoId}
-                onChange={e => set('equipamentoId', e.target.value)}
-                disabled={!form.areaId}
-                variant={errors.equipamentoId ? 'error' : 'default'}
-                errorMessage={errors.equipamentoId}
-              >
-                <option value="">{!form.areaId ? 'Selecione a área primeiro' : 'Selecione o equipamento'}</option>
-                {equipamentos.map(eq => (
-                  <option key={eq.id} value={eq.id}>{eq.tag}</option>
-                ))}
-              </Select>
+                    {/* Connector line between steps */}
+                    {idx < ETAPAS.length - 1 && (
+                      <div
+                        style={{
+                          width: 80,
+                          height: 2,
+                          marginBottom: 22, // align with circle center (label takes ~22px below)
+                          background: etapa > e.num ? '#16A34A' : '#CBD5E1',
+                          transition: 'background 0.2s',
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
+                  </div>
+                )
+              })}
             </div>
+          </div>
 
-            {/* Info block da TAG — logo abaixo da seleção */}
-            {equipSelecionado && (
-              <div
-                className="p-4 space-y-2"
-                style={{ background: '#F0F4F8', borderRadius: '6px', border: '1px solid #E2E8F0' }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Icon name="info" size={16} />
-                  <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#475569' }}>
-                    Informações do intertravamento
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-3">
-                  <InfoRow icon="description" label="Nome do equipamento" value={equipSelecionado.descricao} />
-                  <InfoRow icon="security" label="Função do intertravamento" value={equipSelecionado.funcaoProtegida ?? '—'} />
-                  <InfoRow icon="location_on" label="Área" value={equipSelecionado.area.nome} />
-                </div>
-                {(autoFilledTipo || autoFilledClasse) && (
-                  <div
-                    className="flex items-center gap-2 mt-2 px-3 py-2 text-xs"
-                    style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px', border: '1px solid #BFD0F0' }}
+          <div className="bg-white border p-6" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
+
+            {/* ETAPA 1 — Identificação */}
+            {etapa === 1 && (
+              <div className="space-y-5">
+                <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 1 — Equipamento e contexto</h2>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Select
+                    label="Área *"
+                    value={form.areaId}
+                    onChange={e => set('areaId', e.target.value)}
+                    disabled={loadingAreas}
+                    variant={errors.areaId ? 'error' : 'default'}
+                    errorMessage={errors.areaId}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 14, lineHeight: 1 }}>auto_fix_high</span>
-                    <span>
-                      Campos pré-preenchidos automaticamente:
-                      {autoFilledTipo && <strong className="ml-1">Tipo ({equipSelecionado.tipo})</strong>}
-                      {autoFilledTipo && autoFilledClasse && ' · '}
-                      {autoFilledClasse && <strong className="ml-1">Classe {equipSelecionado.classeNumero}</strong>}
-                    </span>
+                    <option value="">{loadingAreas ? 'Carregando...' : 'Selecione a área'}</option>
+                    {areas.map(a => (
+                      <option key={a.id} value={a.id}>{a.nome}</option>
+                    ))}
+                  </Select>
+
+                  <Select
+                    label="TAG do intertravamento *"
+                    value={form.equipamentoId}
+                    onChange={e => set('equipamentoId', e.target.value)}
+                    disabled={!form.areaId}
+                    variant={errors.equipamentoId ? 'error' : 'default'}
+                    errorMessage={errors.equipamentoId}
+                  >
+                    <option value="">{!form.areaId ? 'Selecione a área primeiro' : 'Selecione o equipamento'}</option>
+                    {equipamentos.map(eq => (
+                      <option key={eq.id} value={eq.id}>{eq.tag}</option>
+                    ))}
+                  </Select>
+                </div>
+
+                {/* Info block da TAG */}
+                {equipSelecionado && (
+                  <div
+                    className="p-4 space-y-2"
+                    style={{ background: '#F0F4F8', borderRadius: '6px', border: '1px solid #E2E8F0' }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon name="info" size={16} />
+                      <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: '#475569' }}>
+                        Informações do intertravamento
+                      </span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-3">
+                      <InfoRow icon="description" label="Nome do equipamento" value={equipSelecionado.descricao} />
+                      <InfoRow icon="security" label="Função do intertravamento" value={equipSelecionado.funcaoProtegida ?? '—'} />
+                      <InfoRow icon="location_on" label="Área" value={equipSelecionado.area.nome} />
+                    </div>
+                    {(autoFilledTipo || autoFilledClasse) && (
+                      <div
+                        className="flex items-center gap-2 mt-2 px-3 py-2 text-xs"
+                        style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px', border: '1px solid #BFD0F0' }}
+                      >
+                        <span className="material-symbols-outlined" style={{ fontSize: 14, lineHeight: 1 }}>auto_fix_high</span>
+                        <span>
+                          Campos pré-preenchidos automaticamente:
+                          {autoFilledTipo && <strong className="ml-1">Tipo ({equipSelecionado.tipo})</strong>}
+                          {autoFilledTipo && autoFilledClasse && ' · '}
+                          {autoFilledClasse && <strong className="ml-1">Classe {equipSelecionado.classeNumero}</strong>}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* A — Tipo de intertravamento: cards instead of select */}
+                {autoFilledTipo ? (
+                  <div>
+                    <label className="field-label">Tipo de intertravamento</label>
+                    <div
+                      className="px-3 py-2 text-sm flex items-center gap-2"
+                      style={{ background: '#F0F4F8', borderRadius: '4px', border: '1px solid #E2E8F0', color: '#374151' }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#0038A8', lineHeight: 1 }}>lock</span>
+                      {form.tipo === 'FISICO' ? 'Físico' : form.tipo === 'LOGICO' ? 'Lógico' : form.tipo === 'DISPOSITIVO_SEGURANCA' ? 'Dispositivo de segurança' : form.tipo}
+                      <span className="ml-auto text-xs" style={{ color: '#0038A8' }}>pré-preenchido</span>
+                    </div>
+                  </div>
+                ) : (
+                  <Field label="Tipo de intertravamento *" error={errors.tipo}>
+                    <div className="flex gap-3">
+                      {TIPO_OPTIONS.map(opt => {
+                        const isSelected = form.tipo === opt.value
+                        return (
+                          <button
+                            key={opt.value}
+                            type="button"
+                            onClick={() => set('tipo', opt.value)}
+                            className="flex-1 text-left p-3 border transition-all"
+                            style={{
+                              borderRadius: '8px',
+                              borderColor: isSelected ? '#0038A8' : errors.tipo ? '#DC2626' : '#E2E8F0',
+                              borderWidth: isSelected ? '2px' : '1.5px',
+                              background: isSelected ? '#EBF0FB' : 'white',
+                              cursor: 'pointer',
+                            }}
+                          >
+                            <div
+                              className="font-semibold text-sm mb-0.5"
+                              style={{ color: isSelected ? '#0038A8' : '#0F172A' }}
+                            >
+                              {opt.label}
+                            </div>
+                            <div
+                              className="text-xs"
+                              style={{ color: isSelected ? '#3B82F6' : '#6B7280' }}
+                            >
+                              {opt.description}
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </Field>
+                )}
+
+                <Select
+                  label="Executante *"
+                  value={form.executanteId}
+                  onChange={e => set('executanteId', e.target.value)}
+                  variant={errors.executanteId ? 'error' : 'default'}
+                  errorMessage={errors.executanteId}
+                >
+                  <option value="">Selecione o executante</option>
+                  {[...executantes]
+                    .sort((a, b) => {
+                      if (a.id === currentUserId) return -1
+                      if (b.id === currentUserId) return 1
+                      return 0
+                    })
+                    .map(u => (
+                      <option key={u.id} value={u.id}>
+                        {u.id === currentUserId ? `${u.nome} (${u.matricula}) (você)` : `${u.nome} (${u.matricula})${u.cargo ? ` — ${u.cargo.nome}` : ''}`}
+                      </option>
+                    ))
+                  }
+                </Select>
+
+                {/* Seletor de Classe — RF-012: Classe 5 desabilitada */}
+                <Field label="Classe *" error={errors.classeNumero}>
+                  <div className="flex gap-2">
+                    {([1, 2, 3, 4] as ClasseNum[]).map(c => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => !autoFilledClasse && set('classeNumero', String(c))}
+                        disabled={autoFilledClasse}
+                        className="flex-1 py-2.5 text-sm font-medium border transition-all"
+                        style={{
+                          borderRadius: '6px',
+                          borderColor: form.classeNumero === String(c) ? COR_CLASSE[String(c)] : '#E2E8F0',
+                          background: form.classeNumero === String(c) ? `${COR_CLASSE[String(c)]}18` : 'white',
+                          color: form.classeNumero === String(c) ? COR_CLASSE[String(c)] : '#6B7280',
+                          cursor: autoFilledClasse ? 'default' : 'pointer',
+                          opacity: autoFilledClasse && form.classeNumero !== String(c) ? 0.4 : 1,
+                        }}
+                      >
+                        <div className="font-semibold">Classe {c}</div>
+                        <div className="text-xs opacity-80">{PRAZO_MAX[String(c)]}</div>
+                        {autoFilledClasse && form.classeNumero === String(c) && (
+                          <div className="text-xs mt-0.5" style={{ color: '#0038A8' }}>pré-preenchido</div>
+                        )}
+                      </button>
+                    ))}
+                    {/* Classe 5 — desabilitada, RF-012 */}
+                    <div className="relative group flex-1">
+                      <button
+                        type="button"
+                        disabled
+                        className="w-full py-2.5 text-sm border cursor-not-allowed opacity-40"
+                        style={{ borderRadius: '6px', borderColor: '#E2E8F0', background: '#F8FAFC', color: '#94A3B8' }}
+                      >
+                        <div className="font-semibold">Classe 5</div>
+                        <div className="text-xs">NÃO FORÇÁVEL</div>
+                      </button>
+                      <div
+                        className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10 w-52 text-xs text-center text-white px-3 py-2"
+                        style={{ background: '#1E293B', borderRadius: '6px' }}
+                      >
+                        Classe 5 não pode ser desabilitada sob nenhuma circunstância
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent" style={{ borderTopColor: '#1E293B' }} />
+                      </div>
+                    </div>
+                  </div>
+                  {form.classeNumero && (
+                    <div
+                      className="mt-3 flex items-center gap-3 px-3 py-2 text-sm"
+                      style={{ background: `${COR_CLASSE[form.classeNumero]}10`, borderRadius: '6px', border: `1px solid ${COR_CLASSE[form.classeNumero]}40` }}
+                    >
+                      <ClasseBadge classe={parseInt(form.classeNumero) as ClasseNum} showPrazo />
+                      <span style={{ color: '#475569' }}>
+                        Prazo máximo: <strong>{PRAZO_MAX[form.classeNumero]}</strong> após execução
+                      </span>
+                    </div>
+                  )}
+                </Field>
+
+                <Textarea
+                  label="Motivo da desabilitação *"
+                  rows={3}
+                  placeholder="Descreva o motivo técnico da desabilitação..."
+                  value={form.motivoDesabilitacao}
+                  onChange={e => set('motivoDesabilitacao', e.target.value)}
+                  variant={errors.motivoDesabilitacao ? 'error' : 'default'}
+                  errorMessage={errors.motivoDesabilitacao}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    label="Período início *"
+                    type="datetime-local"
+                    value={form.periodoInicio}
+                    onChange={e => set('periodoInicio', e.target.value)}
+                    onClick={(e: React.MouseEvent<HTMLInputElement>) => {
+                      (e.target as HTMLInputElement).showPicker?.()
+                    }}
+                    variant={errors.periodoInicio ? 'error' : 'default'}
+                    errorMessage={errors.periodoInicio}
+                  />
+                  <Input
+                    label="Período fim *"
+                    type="datetime-local"
+                    value={form.periodoFim}
+                    onChange={e => set('periodoFim', e.target.value)}
+                    onClick={(e: React.MouseEvent<HTMLInputElement>) => {
+                      (e.target as HTMLInputElement).showPicker?.()
+                    }}
+                    variant={errors.periodoFim ? 'error' : 'default'}
+                    errorMessage={errors.periodoFim}
+                  />
+                </div>
+
+                {form.periodoInicio && form.periodoFim && new Date(form.periodoFim) > new Date(form.periodoInicio) && (
+                  <div className="flex items-center gap-2 px-3 py-2 text-sm" style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '6px' }}>
+                    <Icon name="schedule" size={16} />
+                    Duração prevista: <strong>{Math.ceil((new Date(form.periodoFim).getTime() - new Date(form.periodoInicio).getTime()) / 86400000)} dia(s)</strong>
                   </div>
                 )}
               </div>
             )}
 
-            {/* Tipo */}
-            {autoFilledTipo ? (
-              <div>
-                <label className="field-label">Tipo de intertravamento</label>
-                <div
-                  className="px-3 py-2 text-sm flex items-center gap-2"
-                  style={{ background: '#F0F4F8', borderRadius: '4px', border: '1px solid #E2E8F0', color: '#374151' }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#0038A8', lineHeight: 1 }}>lock</span>
-                  {form.tipo === 'FISICO' ? 'Físico' : form.tipo === 'LOGICO' ? 'Lógico' : form.tipo === 'DISPOSITIVO_SEGURANCA' ? 'Dispositivo de segurança' : form.tipo}
-                  <span className="ml-auto text-xs" style={{ color: '#0038A8' }}>pré-preenchido</span>
-                </div>
-              </div>
-            ) : (
-              <Select
-                label="Tipo de intertravamento *"
-                value={form.tipo}
-                onChange={e => set('tipo', e.target.value)}
-                variant={errors.tipo ? 'error' : 'default'}
-                errorMessage={errors.tipo}
-              >
-                <option value="">Selecione o tipo</option>
-                <option value="FISICO">Físico</option>
-                <option value="LOGICO">Lógico</option>
-                <option value="DISPOSITIVO_SEGURANCA">Dispositivo de segurança</option>
-              </Select>
-            )}
+            {/* ETAPA 2 — Contingência + Anexos */}
+            {etapa === 2 && (
+              <div className="space-y-4">
+                <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 2 — Medidas e anexos</h2>
 
-            <Select
-              label="Executante *"
-              value={form.executanteId}
-              onChange={e => set('executanteId', e.target.value)}
-              variant={errors.executanteId ? 'error' : 'default'}
-              errorMessage={errors.executanteId}
-            >
-              <option value="">Selecione o executante</option>
-              {[...executantes]
-                .sort((a, b) => {
-                  if (a.id === currentUserId) return -1
-                  if (b.id === currentUserId) return 1
-                  return 0
-                })
-                .map(u => (
-                  <option key={u.id} value={u.id}>
-                    {u.id === currentUserId ? `${u.nome} (${u.matricula}) (você)` : `${u.nome} (${u.matricula})${u.cargo ? ` — ${u.cargo.nome}` : ''}`}
-                  </option>
-                ))
-              }
-            </Select>
+                {/* ── Bloco 1: Medidas ── */}
+                <div className="border p-5" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
+                  {/* Medidas contingenciais — lista de checkboxes */}
+                  <div>
+                    <label className="field-label">
+                      Medidas Preventivas / Contingenciais <span style={{ color: '#DC2626' }}>*</span>
+                    </label>
+                    <p style={{ fontSize: 12, color: '#64748B', marginTop: 2, marginBottom: 12, lineHeight: '1.5' }}>
+                      Descreva as medidas que garantirão a segurança durante o período de desabilitação.
+                    </p>
 
-            {/* Seletor de Classe — RF-012: Classe 5 desabilitada */}
-            <Field label="Classe *" error={errors.classeNumero}>
-              <div className="flex gap-2">
-                {([1, 2, 3, 4] as ClasseNum[]).map(c => (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => !autoFilledClasse && set('classeNumero', String(c))}
-                    disabled={autoFilledClasse}
-                    className="flex-1 py-2.5 text-sm font-medium border transition-all"
-                    style={{
-                      borderRadius: '6px',
-                      borderColor: form.classeNumero === String(c) ? COR_CLASSE[String(c)] : '#E2E8F0',
-                      background: form.classeNumero === String(c) ? `${COR_CLASSE[String(c)]}18` : 'white',
-                      color: form.classeNumero === String(c) ? COR_CLASSE[String(c)] : '#6B7280',
-                      cursor: autoFilledClasse ? 'default' : 'pointer',
-                      opacity: autoFilledClasse && form.classeNumero !== String(c) ? 0.4 : 1,
-                    }}
-                  >
-                    <div className="font-semibold">Classe {c}</div>
-                    <div className="text-xs opacity-80">{PRAZO_MAX[String(c)]}</div>
-                    {autoFilledClasse && form.classeNumero === String(c) && (
-                      <div className="text-xs mt-0.5" style={{ color: '#0038A8' }}>pré-preenchido</div>
-                    )}
-                  </button>
-                ))}
-                {/* Classe 5 — desabilitada, RF-012 */}
-                <div className="relative group flex-1">
-                  <button
-                    type="button"
-                    disabled
-                    className="w-full py-2.5 text-sm border cursor-not-allowed opacity-40"
-                    style={{ borderRadius: '6px', borderColor: '#E2E8F0', background: '#F8FAFC', color: '#94A3B8' }}
-                  >
-                    <div className="font-semibold">Classe 5</div>
-                    <div className="text-xs">NÃO FORÇÁVEL</div>
-                  </button>
-                  <div
-                    className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block z-10 w-52 text-xs text-center text-white px-3 py-2"
-                    style={{ background: '#1E293B', borderRadius: '6px' }}
-                  >
-                    Classe 5 não pode ser desabilitada sob nenhuma circunstância
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent" style={{ borderTopColor: '#1E293B' }} />
-                  </div>
-                </div>
-              </div>
-              {form.classeNumero && (
-                <div
-                  className="mt-3 flex items-center gap-3 px-3 py-2 text-sm"
-                  style={{ background: `${COR_CLASSE[form.classeNumero]}10`, borderRadius: '6px', border: `1px solid ${COR_CLASSE[form.classeNumero]}40` }}
-                >
-                  <ClasseBadge classe={parseInt(form.classeNumero) as ClasseNum} showPrazo />
-                  <span style={{ color: '#475569' }}>
-                    Prazo máximo: <strong>{PRAZO_MAX[form.classeNumero]}</strong> após execução
-                  </span>
-                </div>
-              )}
-            </Field>
+                  {medidas.length === 0 ? (
+                    <div style={{ color: '#94A3B8', fontSize: 13, padding: '12px 0' }}>Carregando medidas...</div>
+                  ) : (
+                    <>
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '1fr 1fr',
+                          gap: '8px 24px',
+                          marginBottom: 12,
+                        }}
+                      >
+                        {medidas.map(medida => {
+                          const isSelected = form.medidasIds.includes(medida.id)
+                          const isObrigatorio = medida.obrigatoria
+                          return (
+                            <label
+                              key={medida.id}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'flex-start',
+                                gap: 8,
+                                cursor: isObrigatorio ? 'default' : 'pointer',
+                                padding: '4px 0',
+                              }}
+                            >
+                              {/* Custom checkbox visual */}
+                              <span
+                                onClick={() => {
+                                  if (isObrigatorio) return
+                                  const newIds = isSelected
+                                    ? form.medidasIds.filter(id => id !== medida.id)
+                                    : [...form.medidasIds, medida.id]
+                                  set('medidasIds', newIds)
+                                }}
+                                style={{
+                                  display: 'inline-flex',
+                                  width: 18,
+                                  height: 18,
+                                  minWidth: 18,
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  borderRadius: 4,
+                                  border: `1.5px solid ${isSelected ? '#0038A8' : '#CBD5E1'}`,
+                                  background: isSelected ? '#0038A8' : 'white',
+                                  marginTop: 1,
+                                  cursor: isObrigatorio ? 'default' : 'pointer',
+                                  opacity: isObrigatorio ? 0.85 : 1,
+                                  flexShrink: 0,
+                                  transition: 'background 0.1s ease',
+                                }}
+                              >
+                                {isSelected && (
+                                  <svg fill="white" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+                                    <path d="M9.1603 1.12218C9.50684 1.34873 9.60427 1.81354 9.37792 2.16038L5.13603 8.66012C5.01614 8.8438 4.82192 8.96576 4.60451 8.99384C4.3871 9.02194 4.1683 8.95335 4.00574 8.80615L1.24664 6.30769C0.939709 6.02975 0.916013 5.55541 1.19372 5.24822C1.47142 4.94102 1.94536 4.91731 2.2523 5.19524L4.36085 7.10461L8.12299 1.33999C8.34934 0.993152 8.81376 0.895638 9.1603 1.12218Z" />
+                                  </svg>
+                                )}
+                              </span>
+                              <span style={{ fontSize: 13, color: '#374151', lineHeight: '18px', flex: 1 }}>
+                                {medida.descricao}
+                                {isObrigatorio && (
+                                  <span style={{ marginLeft: 4, fontSize: 11, color: '#DC2626', fontWeight: 500 }}>
+                                    (obrigatório)
+                                  </span>
+                                )}
+                              </span>
+                            </label>
+                          )
+                        })}
+                      </div>
 
-            <Textarea
-              label="Motivo da desabilitação *"
-              rows={3}
-              placeholder="Descreva o motivo técnico da desabilitação..."
-              value={form.motivoDesabilitacao}
-              onChange={e => set('motivoDesabilitacao', e.target.value)}
-              variant={errors.motivoDesabilitacao ? 'error' : 'default'}
-              errorMessage={errors.motivoDesabilitacao}
-            />
+                      {/* Medidas customizadas */}
+                      {form.medidasCustom.length > 0 && (
+                        <div style={{ marginBottom: 8 }}>
+                          {form.medidasCustom.map((m, i) => (
+                            <div
+                              key={i}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 8,
+                                padding: '6px 10px',
+                                marginBottom: 4,
+                                background: '#F8FAFC',
+                                borderRadius: 4,
+                                border: '1px solid #E2E8F0',
+                              }}
+                            >
+                              <span style={{ flex: 1, fontSize: 13, color: '#374151' }}>{m}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const next = form.medidasCustom.filter((_, idx) => idx !== i)
+                                  set('medidasCustom', next)
+                                }}
+                                style={{ color: '#94A3B8', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                              >
+                                <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>close</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Período início *"
-                type="datetime-local"
-                value={form.periodoInicio}
-                onChange={e => set('periodoInicio', e.target.value)}
-                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
-                  (e.target as HTMLInputElement).showPicker?.()
-                }}
-                variant={errors.periodoInicio ? 'error' : 'default'}
-                errorMessage={errors.periodoInicio}
-              />
-              <Input
-                label="Período fim *"
-                type="datetime-local"
-                value={form.periodoFim}
-                onChange={e => set('periodoFim', e.target.value)}
-                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
-                  (e.target as HTMLInputElement).showPicker?.()
-                }}
-                variant={errors.periodoFim ? 'error' : 'default'}
-                errorMessage={errors.periodoFim}
-              />
-            </div>
-
-            {form.periodoInicio && form.periodoFim && new Date(form.periodoFim) > new Date(form.periodoInicio) && (
-              <div className="flex items-center gap-2 px-3 py-2 text-sm" style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '6px' }}>
-                <Icon name="schedule" size={16} />
-                Duração prevista: <strong>{Math.ceil((new Date(form.periodoFim).getTime() - new Date(form.periodoInicio).getTime()) / 86400000)} dia(s)</strong>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* ETAPA 2 — Contingência + Anexos */}
-        {etapa === 2 && (
-          <div className="space-y-5">
-            <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 2 — Medidas contingenciais e anexos</h2>
-
-            <div className="flex items-start gap-2 px-4 py-3 text-sm" style={{ background: '#FEF9C3', color: '#92400E', borderRadius: '6px', border: '1px solid #FDE68A' }}>
-              <Icon name="warning" size={18} />
-              <span><strong>Atenção:</strong> Descreva as medidas que garantirão a segurança durante o período de desabilitação.</span>
-            </div>
-
-            {/* Medidas contingenciais — lista de checkboxes */}
-            <div>
-              <label className="field-label">
-                Medidas Preventivas / Contingenciais <span style={{ color: '#DC2626' }}>*</span>
-              </label>
-
-              {medidas.length === 0 ? (
-                <div style={{ color: '#94A3B8', fontSize: 13, padding: '12px 0' }}>Carregando medidas...</div>
-              ) : (
-                <>
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: '1fr 1fr',
-                      gap: '8px 24px',
-                      marginBottom: 12,
-                    }}
-                  >
-                    {medidas.map(medida => {
-                      const isSelected = form.medidasIds.includes(medida.id)
-                      const isObrigatorio = medida.obrigatoria
-                      return (
-                        <label
-                          key={medida.id}
+                      {/* Adicionar medida customizada */}
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <input
+                          type="text"
+                          placeholder="Adicionar outra medida..."
+                          value={novaMedida}
+                          onChange={e => setNovaMedida(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && novaMedida.trim()) {
+                              e.preventDefault()
+                              set('medidasCustom', [...form.medidasCustom, novaMedida.trim()])
+                              setNovaMedida('')
+                            }
+                          }}
                           style={{
-                            display: 'flex',
-                            alignItems: 'flex-start',
-                            gap: 8,
-                            cursor: isObrigatorio ? 'default' : 'pointer',
-                            padding: '4px 0',
+                            flex: 1,
+                            padding: '8px 12px',
+                            fontSize: 13,
+                            border: '1px solid #E2E8F0',
+                            borderRadius: 4,
+                            outline: 'none',
+                          }}
+                        />
+                        <button
+                          type="button"
+                          disabled={!novaMedida.trim()}
+                          onClick={() => {
+                            if (!novaMedida.trim()) return
+                            set('medidasCustom', [...form.medidasCustom, novaMedida.trim()])
+                            setNovaMedida('')
+                          }}
+                          style={{
+                            padding: '8px 16px',
+                            background: novaMedida.trim() ? '#0038A8' : '#E2E8F0',
+                            color: novaMedida.trim() ? 'white' : '#94A3B8',
+                            borderRadius: 4,
+                            border: 'none',
+                            fontSize: 13,
+                            cursor: novaMedida.trim() ? 'pointer' : 'not-allowed',
                           }}
                         >
-                          {/* Custom checkbox visual */}
-                          <span
-                            onClick={() => {
-                              if (isObrigatorio) return
-                              const newIds = isSelected
-                                ? form.medidasIds.filter(id => id !== medida.id)
-                                : [...form.medidasIds, medida.id]
-                              set('medidasIds', newIds)
-                            }}
-                            style={{
-                              display: 'inline-flex',
-                              width: 18,
-                              height: 18,
-                              minWidth: 18,
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              borderRadius: 4,
-                              border: `1.5px solid ${isSelected ? '#0038A8' : '#CBD5E1'}`,
-                              background: isSelected ? '#0038A8' : 'white',
-                              marginTop: 1,
-                              cursor: isObrigatorio ? 'default' : 'pointer',
-                              opacity: isObrigatorio ? 0.85 : 1,
-                              flexShrink: 0,
-                              transition: 'background 0.1s ease',
-                            }}
-                          >
-                            {isSelected && (
-                              <svg fill="white" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
-                                <path d="M9.1603 1.12218C9.50684 1.34873 9.60427 1.81354 9.37792 2.16038L5.13603 8.66012C5.01614 8.8438 4.82192 8.96576 4.60451 8.99384C4.3871 9.02194 4.1683 8.95335 4.00574 8.80615L1.24664 6.30769C0.939709 6.02975 0.916013 5.55541 1.19372 5.24822C1.47142 4.94102 1.94536 4.91731 2.2523 5.19524L4.36085 7.10461L8.12299 1.33999C8.34934 0.993152 8.81376 0.895638 9.1603 1.12218Z" />
-                              </svg>
-                            )}
-                          </span>
-                          <span style={{ fontSize: 13, color: '#374151', lineHeight: '18px', flex: 1 }}>
-                            {medida.descricao}
-                            {isObrigatorio && (
-                              <span style={{ marginLeft: 4, fontSize: 11, color: '#DC2626', fontWeight: 500 }}>
-                                (obrigatório)
-                              </span>
-                            )}
-                          </span>
-                        </label>
-                      )
-                    })}
-                  </div>
+                          Adicionar
+                        </button>
+                      </div>
+                    </>
+                  )}
 
-                  {/* Medidas customizadas */}
-                  {form.medidasCustom.length > 0 && (
-                    <div style={{ marginBottom: 8 }}>
-                      {form.medidasCustom.map((m, i) => (
+                  {errors.medidasIds && (
+                    <p className="field-error-msg">
+                      <span className="material-symbols-outlined select-none" style={{ fontSize: 13, lineHeight: 1 }} aria-hidden="true">error</span>
+                      {errors.medidasIds}
+                    </p>
+                  )}
+                  </div>{/* end medidas inner div */}
+                </div>{/* end bloco medidas */}
+
+                {/* ── Bloco 2: Anexos ── */}
+                <div className="border p-5" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
+                  <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>
+                    Anexos
+                  </label>
+                  <p style={{ fontSize: 12, color: '#64748B', marginTop: 0, marginBottom: 12, lineHeight: '1.5' }}>
+                    Adicione fotos, PDFs ou outros documentos de suporte à solicitação.
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,application/pdf"
+                    multiple
+                    onChange={handleFileChange}
+                    className="hidden"
+                    id="file-upload"
+                  />
+                  <label
+                    htmlFor="file-upload"
+                    className="flex items-center justify-center gap-2 w-full py-3 text-sm cursor-pointer border-2 border-dashed transition-colors"
+                    style={{ borderColor: '#CBD5E1', borderRadius: '6px', color: '#475569' }}
+                    onMouseEnter={e => (e.currentTarget.style.borderColor = '#0038A8')}
+                    onMouseLeave={e => (e.currentTarget.style.borderColor = '#CBD5E1')}
+                  >
+                    <Icon name="attach_file" size={20} />
+                    Clique para adicionar arquivos ou arraste aqui
+                    <span className="text-xs" style={{ color: '#94A3B8' }}>(PDF, JPG, PNG, WEBP)</span>
+                  </label>
+
+                  {/* Lista de anexos adicionados */}
+                  {anexos.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      {anexos.map((a, i) => (
                         <div
                           key={i}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8,
-                            padding: '6px 10px',
-                            marginBottom: 4,
-                            background: '#F8FAFC',
-                            borderRadius: 4,
-                            border: '1px solid #E2E8F0',
-                          }}
+                          className="flex items-center gap-3 px-3 py-2.5"
+                          style={{ background: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0' }}
                         >
-                          <span style={{ flex: 1, fontSize: 13, color: '#374151' }}>{m}</span>
+                          {a.preview ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img src={a.preview} alt="" className="w-10 h-10 object-cover" style={{ borderRadius: '4px' }} />
+                          ) : (
+                            <div
+                              className="w-10 h-10 flex items-center justify-center"
+                              style={{ background: '#FEE2E2', borderRadius: '4px' }}
+                            >
+                              <Icon name="picture_as_pdf" size={22} />
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>{a.file.name}</p>
+                            <p className="text-xs" style={{ color: '#94A3B8' }}>{formatBytes(a.file.size)}</p>
+                          </div>
                           <button
                             type="button"
-                            onClick={() => {
-                              const next = form.medidasCustom.filter((_, idx) => idx !== i)
-                              set('medidasCustom', next)
-                            }}
-                            style={{ color: '#94A3B8', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                            onClick={() => removerAnexo(i)}
+                            className="flex items-center justify-center w-7 h-7"
+                            style={{ color: '#94A3B8', borderRadius: '4px' }}
                           >
-                            <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>close</span>
+                            <Icon name="close" size={18} />
                           </button>
                         </div>
                       ))}
                     </div>
                   )}
-
-                  {/* Adicionar medida customizada */}
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <input
-                      type="text"
-                      placeholder="Adicionar outra medida..."
-                      value={novaMedida}
-                      onChange={e => setNovaMedida(e.target.value)}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' && novaMedida.trim()) {
-                          e.preventDefault()
-                          set('medidasCustom', [...form.medidasCustom, novaMedida.trim()])
-                          setNovaMedida('')
-                        }
-                      }}
-                      style={{
-                        flex: 1,
-                        padding: '8px 12px',
-                        fontSize: 13,
-                        border: '1px solid #E2E8F0',
-                        borderRadius: 4,
-                        outline: 'none',
-                      }}
-                    />
-                    <button
-                      type="button"
-                      disabled={!novaMedida.trim()}
-                      onClick={() => {
-                        if (!novaMedida.trim()) return
-                        set('medidasCustom', [...form.medidasCustom, novaMedida.trim()])
-                        setNovaMedida('')
-                      }}
-                      style={{
-                        padding: '8px 16px',
-                        background: novaMedida.trim() ? '#0038A8' : '#E2E8F0',
-                        color: novaMedida.trim() ? 'white' : '#94A3B8',
-                        borderRadius: 4,
-                        border: 'none',
-                        fontSize: 13,
-                        cursor: novaMedida.trim() ? 'pointer' : 'not-allowed',
-                      }}
-                    >
-                      Adicionar
-                    </button>
-                  </div>
-                </>
-              )}
-
-              {errors.medidasIds && (
-                <p className="field-error-msg">
-                  <span className="material-symbols-outlined select-none" style={{ fontSize: 13, lineHeight: 1 }} aria-hidden="true">error</span>
-                  {errors.medidasIds}
-                </p>
-              )}
-            </div>
-
-            {/* Upload de anexos — RF-016 */}
-            <div>
-              <label className="block text-sm font-medium mb-1.5" style={{ color: '#374151' }}>
-                Anexos (fotos, PDFs)
-              </label>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*,application/pdf"
-                multiple
-                onChange={handleFileChange}
-                className="hidden"
-                id="file-upload"
-              />
-              <label
-                htmlFor="file-upload"
-                className="flex items-center justify-center gap-2 w-full py-3 text-sm cursor-pointer border-2 border-dashed transition-colors"
-                style={{ borderColor: '#CBD5E1', borderRadius: '6px', color: '#475569' }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = '#0038A8')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = '#CBD5E1')}
-              >
-                <Icon name="attach_file" size={20} />
-                Clique para adicionar arquivos ou arraste aqui
-                <span className="text-xs" style={{ color: '#94A3B8' }}>(PDF, JPG, PNG, WEBP)</span>
-              </label>
-
-              {/* Lista de anexos adicionados */}
-              {anexos.length > 0 && (
-                <div className="mt-3 space-y-2">
-                  {anexos.map((a, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-3 px-3 py-2.5"
-                      style={{ background: '#F8FAFC', borderRadius: '6px', border: '1px solid #E2E8F0' }}
-                    >
-                      {a.preview ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={a.preview} alt="" className="w-10 h-10 object-cover" style={{ borderRadius: '4px' }} />
-                      ) : (
-                        <div
-                          className="w-10 h-10 flex items-center justify-center"
-                          style={{ background: '#FEE2E2', borderRadius: '4px' }}
-                        >
-                          <Icon name="picture_as_pdf" size={22} />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate" style={{ color: '#0F172A' }}>{a.file.name}</p>
-                        <p className="text-xs" style={{ color: '#94A3B8' }}>{formatBytes(a.file.size)}</p>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removerAnexo(i)}
-                        className="flex items-center justify-center w-7 h-7"
-                        style={{ color: '#94A3B8', borderRadius: '4px' }}
-                      >
-                        <Icon name="close" size={18} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* ETAPA 3 — Revisão */}
-        {etapa === 3 && (
-          <div className="space-y-5">
-            <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 3 — Revisão e envio</h2>
-
-            <div className="border divide-y" style={{ borderColor: '#E2E8F0', borderRadius: '6px' }}>
-              <ResumoRow label="Área" value={areaSelecionada ? `${areaSelecionada.planta.nome} › ${areaSelecionada.nome}` : '—'} />
-              <ResumoRow label="TAG" value={equipSelecionado?.tag ?? '—'} mono />
-              <ResumoRow label="Tipo" value={
-                form.tipo === 'FISICO' ? 'Físico' :
-                form.tipo === 'LOGICO' ? 'Lógico' :
-                form.tipo === 'DISPOSITIVO_SEGURANCA' ? 'Dispositivo de Segurança' : '—'
-              } />
-              <ResumoRow label="Classe" value={form.classeNumero ? `Classe ${form.classeNumero} — ${PRAZO_MAX[form.classeNumero]}` : '—'} />
-              <ResumoRow label="Executante" value={executanteSelecionado ? `${executanteSelecionado.nome} (${executanteSelecionado.matricula})` : '—'} />
-              <ResumoRow label="Período" value={
-                form.periodoInicio && form.periodoFim
-                  ? `${new Date(form.periodoInicio).toLocaleString('pt-BR')} → ${new Date(form.periodoFim).toLocaleString('pt-BR')}`
-                  : '—'
-              } />
-              <ResumoRow label="Motivo" value={form.motivoDesabilitacao} />
-              <ResumoRow label="Medidas" value={buildMedidasText() || '—'} />
-              {anexos.length > 0 && (
-                <ResumoRow label="Anexos" value={`${anexos.length} arquivo(s): ${anexos.map(a => a.file.name).join(', ')}`} />
-              )}
-            </div>
-
-            {/* Aprovadores — RF-030 */}
-            <div
-              className="flex items-start gap-3 px-4 py-3"
-              style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '6px', color: '#1D4ED8' }}
-            >
-              <span className="material-symbols-outlined shrink-0" style={{ fontSize: 18, lineHeight: 1, marginTop: 1 }}>
-                group
-              </span>
-              <div>
-                <p className="text-sm font-medium" style={{ color: '#1E40AF' }}>Aprovadores que serão notificados</p>
-                <p className="text-xs mt-0.5" style={{ color: '#3B82F6', lineHeight: 1.5 }}>
-                  {form.classeNumero
-                    ? `Os aprovadores serão notificados conforme a alçada configurada para Classe ${form.classeNumero}.`
-                    : 'Os aprovadores serão notificados conforme a alçada configurada para a classe selecionada.'}
-                </p>
+                </div>{/* end bloco anexos */}
               </div>
-            </div>
+            )}
 
-            {/* Ciência — RF-024 */}
-            <div className="border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '6px' }}>
-              <Checkbox
-                checked={form.cienteRiscos}
-                onCheckedChange={(checked) => set('cienteRiscos', checked)}
-                label={
-                  <span className="text-sm" style={{ color: '#374151' }}>
-                    <strong>Declaro ciência dos riscos</strong> durante o período de desabilitação e assumo responsabilidade como Responsável Operacional por todas as medidas contingenciais descritas.
-                  </span>
-                }
-              />
-            </div>
+            {/* ETAPA 3 — Revisão */}
+            {etapa === 3 && (
+              <div className="space-y-5">
+                <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 3 — Revisão e envio</h2>
+
+                {/* D — Lighter dividers: borderColor #F1F5F9 */}
+                <div className="border" style={{ borderColor: '#F1F5F9', borderRadius: '6px', overflow: 'hidden' }}>
+                  <ResumoRow label="Área" value={areaSelecionada ? `${areaSelecionada.planta.nome} › ${areaSelecionada.nome}` : '—'} />
+                  <ResumoRow label="TAG" value={equipSelecionado?.tag ?? '—'} mono />
+                  <ResumoRow label="Tipo" value={
+                    form.tipo === 'FISICO' ? 'Físico' :
+                    form.tipo === 'LOGICO' ? 'Lógico' :
+                    form.tipo === 'DISPOSITIVO_SEGURANCA' ? 'Dispositivo de Segurança' : '—'
+                  } />
+                  <ResumoRow label="Classe" value={form.classeNumero ? `Classe ${form.classeNumero} — ${PRAZO_MAX[form.classeNumero]}` : '—'} />
+                  <ResumoRow label="Executante" value={executanteSelecionado ? `${executanteSelecionado.nome} (${executanteSelecionado.matricula})` : '—'} />
+                  <ResumoRow label="Período" value={
+                    form.periodoInicio && form.periodoFim
+                      ? `${new Date(form.periodoInicio).toLocaleString('pt-BR')} → ${new Date(form.periodoFim).toLocaleString('pt-BR')}`
+                      : '—'
+                  } />
+                  <ResumoRow label="Motivo" value={form.motivoDesabilitacao} />
+                  <ResumoRow label="Medidas" value={buildMedidasText() || '—'} last />
+                  {anexos.length > 0 && (
+                    <ResumoRow label="Anexos" value={`${anexos.length} arquivo(s): ${anexos.map(a => a.file.name).join(', ')}`} last />
+                  )}
+                </div>
+
+                {/* E — Aprovadores: show actual names */}
+                <div
+                  className="px-4 py-3"
+                  style={{ background: '#EFF6FF', border: '1px solid #BFDBFE', borderRadius: '6px' }}
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="material-symbols-outlined shrink-0" style={{ fontSize: 18, lineHeight: 1, color: '#1D4ED8' }}>
+                      group
+                    </span>
+                    <p className="text-sm font-medium" style={{ color: '#1E40AF' }}>
+                      Aprovadores{form.classeNumero ? ` (Classe ${form.classeNumero})` : ''}
+                    </p>
+                  </div>
+                  {aprovadores.length > 0 ? (
+                    <ul style={{ margin: 0, padding: 0, listStyle: 'none' }}>
+                      {aprovadores.map(ap => (
+                        <li
+                          key={ap.id}
+                          className="flex items-center gap-2 text-xs"
+                          style={{ color: '#1D4ED8', padding: '2px 0' }}
+                        >
+                          <span style={{ color: '#93C5FD' }}>•</span>
+                          <span style={{ color: '#1E40AF', fontWeight: 500 }}>{ap.user.nome}</span>
+                          <span style={{ color: '#60A5FA' }}>(Nível {ap.nivel})</span>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-xs mt-0.5" style={{ color: '#3B82F6', lineHeight: 1.5 }}>
+                      {form.classeNumero && form.areaId
+                        ? 'Nenhum aprovador configurado para esta classe e planta.'
+                        : 'Selecione classe e área para ver os aprovadores.'}
+                    </p>
+                  )}
+                </div>
+
+                {/* Ciência — RF-024 */}
+                <div className="border p-4" style={{ borderColor: '#F1F5F9', borderRadius: '6px' }}>
+                  <Checkbox
+                    checked={form.cienteRiscos}
+                    onCheckedChange={(checked) => set('cienteRiscos', checked)}
+                    label={
+                      <span className="text-sm" style={{ color: '#374151' }}>
+                        <strong>Declaro ciência dos riscos</strong> durante o período de desabilitação e assumo responsabilidade como Responsável Operacional por todas as medidas contingenciais descritas.
+                      </span>
+                    }
+                  />
+                </div>
+              </div>
+            )}
+
           </div>
-        )}
-
+        </div>
       </div>
 
-      {/* Sticky footer navigation */}
-      <ActionFooter>
-        <div className="flex items-center justify-between w-full">
+      {/* G — Sticky footer, always at bottom */}
+      <div
+        style={{
+          flexShrink: 0,
+          background: 'white',
+          borderTop: '1px solid #E2E8F0',
+          padding: '16px 24px',
+          zIndex: 30,
+          boxShadow: '0 -4px 16px rgba(0,0,0,0.07)',
+        }}
+      >
+        <div className="flex items-center justify-between w-full max-w-4xl mx-auto">
           <div className="flex gap-2">
-            <Button
+            {/* B — Cancelar styled exactly like Anterior (same white/gray border style) */}
+            <button
               type="button"
-              variant="outline"
-              size="md"
               onClick={() => router.push('/solicitacoes')}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '8px 16px',
+                fontSize: 14,
+                fontWeight: 500,
+                borderRadius: '6px',
+                border: '1px solid #E2E8F0',
+                background: 'white',
+                color: '#374151',
+                cursor: 'pointer',
+              }}
             >
               Cancelar
-            </Button>
+            </button>
             {etapa > 1 && (
-              <Button
+              <button
                 type="button"
-                variant="ghost"
-                size="md"
                 onClick={() => setEtapa(e => (e - 1) as Etapa)}
-                leadingIcon="arrow_back"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 6,
+                  padding: '8px 16px',
+                  fontSize: 14,
+                  fontWeight: 500,
+                  borderRadius: '6px',
+                  border: '1px solid #E2E8F0',
+                  background: 'white',
+                  color: '#374151',
+                  cursor: 'pointer',
+                }}
               >
+                <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>arrow_back</span>
                 Anterior
-              </Button>
+              </button>
             )}
           </div>
           <div className="flex gap-2">
@@ -1085,6 +1331,7 @@ export default function NovaSolicitacaoPage() {
                 Próximo: {ETAPAS[etapa].label}
               </Button>
             ) : (
+              /* F — "Enviar solicitação" with send icon on the right */
               <Button
                 type="button"
                 variant="primary"
@@ -1092,14 +1339,15 @@ export default function NovaSolicitacaoPage() {
                 onClick={handleEnviar}
                 disabled={!form.cienteRiscos}
                 loading={loading}
-                leadingIcon={loading ? undefined : 'send'}
+                trailingIcon={loading ? undefined : 'send'}
               >
-                {loading ? 'Enviando...' : 'Enviar Solicitação'}
+                {loading ? 'Enviando...' : 'Enviar solicitação'}
               </Button>
             )}
           </div>
         </div>
-      </ActionFooter>
+      </div>
+
     </div>
   )
 }
@@ -1130,9 +1378,12 @@ function InfoRow({ icon, label, value, mono }: { icon: string; label: string; va
   )
 }
 
-function ResumoRow({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function ResumoRow({ label, value, mono, last }: { label: string; value: string; mono?: boolean; last?: boolean }) {
   return (
-    <div className="flex gap-4 px-4 py-3">
+    <div
+      className="flex gap-4 px-4 py-3"
+      style={{ borderBottom: last ? 'none' : '1px solid #F1F5F9' }}
+    >
       <span className="text-xs font-medium w-24 shrink-0" style={{ color: '#6B7280' }}>{label}</span>
       <span className={`text-sm flex-1 ${mono ? 'font-mono font-semibold' : ''}`} style={{ color: mono ? '#0038A8' : '#0F172A' }}>
         {value || <span style={{ color: '#94A3B8' }}>—</span>}

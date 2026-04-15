@@ -5,11 +5,19 @@ import { ptBR } from 'date-fns/locale'
 import { StatusBadge } from '@/components/sgi/StatusBadge'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { ClasseNum, STATUS_LABELS } from '@/lib/tokens'
+import { ClickableCard } from '@/components/design-system/ClickableCard'
+
+const TIPO_LABEL: Record<string, string> = {
+  LOGICO: 'Lógico',
+  FISICO: 'Físico',
+  DISPOSITIVO_SEGURANCA: 'Disp. Segurança',
+}
 
 interface SolicitacaoCardProps {
   id: string
   protocolo: string
   status: string
+  tipo?: string | null
   classe: { numero: number; prazoMaxDias?: number | null } | null
   equipamento: { tag: string; descricao: string }
   area: { nome: string }
@@ -44,6 +52,7 @@ export function SolicitacaoCard({
   id,
   protocolo,
   status,
+  tipo,
   classe,
   equipamento,
   area,
@@ -82,64 +91,75 @@ export function SolicitacaoCard({
 
   // Whether any action buttons exist for this card
   const hasButtons =
+    (status === 'RASCUNHO' && isSolicitante) ||
     (status === 'EM_APROVACAO' && isAprovador) ||
     (status === 'EXECUCAO_AUTORIZADA' && isExecutante) ||
     (status === 'DESABILITADO' && isExecutante) ||
     (status === 'EM_VALIDACAO_DA_REABILITACAO' && isAprovador)
 
+  const detailHref = `/solicitacoes/${id}`
+
   return (
-    <div
-      className={`bg-white border relative${className ? ` ${className}` : ''}`}
+    <ClickableCard
+      href={detailHref}
+      className={className}
       style={{
-        borderColor: '#E2E8F0',
-        borderRadius: '4px',
+        background: '#FFFFFF',
+        border: '1px solid #E2E8F0',
+        borderRadius: 4,
         borderLeft: `4px solid ${borderColor}`,
         overflow: 'hidden',
       }}
     >
-      {/* Clickable overlay — whole card opens detail */}
-      <Link
-        href={`/solicitacoes/${id}`}
-        className="absolute inset-0 z-0"
-        aria-label={`Ver detalhes de ${protocolo}`}
-      />
-
-      <div className="relative z-10 pointer-events-none px-4 pt-3 pb-0">
+      {/* ── Body ── */}
+      <div style={{ padding: '12px 16px 0' }}>
         {/* Line 1: Classe badge · Identificador · progress pill · Status badge */}
-        <div className="flex flex-wrap items-center gap-2 mb-1">
+        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 4 }}>
           {classe && (
             <ClasseBadge classe={classe.numero as ClasseNum} size="sm" />
           )}
-          <span className="font-mono text-xs font-semibold" style={{ color: '#0038A8' }}>
+          <span style={{ fontFamily: 'monospace', fontSize: 12, fontWeight: 600, color: '#0038A8' }}>
             #{protocolo}
           </span>
           {status === 'EM_APROVACAO' && totalAprovacoes > 0 && (
             <span
-              className="text-xs font-semibold px-1.5 py-0.5"
-              style={{ background: '#DBEAFE', color: '#1D4ED8', borderRadius: '4px' }}
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                padding: '2px 6px',
+                background: '#FEF5E5',
+                color: '#AC6F00',
+                borderRadius: 4,
+              }}
             >
               {aprovAprovadas}/{totalAprovacoes}
             </span>
           )}
-          <div className="ml-auto">
+          <div style={{ marginLeft: 'auto' }}>
             <StatusBadge status={status as any} size="sm" />
           </div>
         </div>
 
         {/* Line 2: TAG */}
-        <div className="mb-0.5">
-          <span className="font-mono font-bold text-sm" style={{ color: '#0F172A' }}>
+        <div style={{ marginBottom: 2 }}>
+          <span style={{ fontFamily: 'monospace', fontWeight: 700, fontSize: 14, color: '#0F172A' }}>
             {equipamento.tag}
           </span>
         </div>
 
-        {/* Line 3: equipamento.descricao */}
-        <div className="text-sm mb-1" style={{ color: '#374151' }}>
-          {equipamento.descricao}
+        {/* Line 3: equipamento.descricao · tipo */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#374151', marginBottom: 4 }}>
+          <span>{equipamento.descricao}</span>
+          {tipo && TIPO_LABEL[tipo] && (
+            <>
+              <span style={{ color: '#D1D5DB' }}>·</span>
+              <span style={{ fontSize: 12, color: '#6B7280' }}>{TIPO_LABEL[tipo]}</span>
+            </>
+          )}
         </div>
 
         {/* Line 4: location_on icon + Area · Planta */}
-        <div className="flex items-center gap-1 text-xs mb-2" style={{ color: '#6B7280' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#6B7280', marginBottom: 8 }}>
           <span className="material-symbols-outlined" style={{ fontSize: 13, lineHeight: 1 }}>location_on</span>
           <span>
             {area.nome}
@@ -150,26 +170,32 @@ export function SolicitacaoCard({
         {/* Line 5: Contextual info */}
         {status === 'EM_APROVACAO' && periodoInicio && periodoFim && (
           <div
-            className="text-xs px-2 py-1.5 mb-2"
-            style={{ background: '#F1F5F9', color: '#475569', borderRadius: '4px' }}
+            style={{
+              fontSize: 12,
+              padding: '6px 8px',
+              marginBottom: 8,
+              background: '#F1F5F9',
+              color: '#475569',
+              borderRadius: 4,
+            }}
           >
             Período previsto: {fmtDate(periodoInicio)} → {fmtDate(periodoFim)}
           </div>
         )}
 
         {status === 'DESABILITADO' && prazoMaxDias && (
-          <div className="mb-2">
-            <div className="flex items-center justify-between text-xs mb-1" style={{ color: '#6B7280' }}>
+          <div style={{ marginBottom: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 12, color: '#6B7280', marginBottom: 4 }}>
               <span>{diasDesabilitado}d / prazo máximo</span>
               <span style={{ color: slaBarColor, fontWeight: 600 }}>{slaPercent}%</span>
             </div>
-            <div className="w-full h-1.5" style={{ background: '#E2E8F0', borderRadius: '4px' }}>
+            <div style={{ width: '100%', height: 6, background: '#E2E8F0', borderRadius: 4 }}>
               <div
                 style={{
                   width: `${slaPercent}%`,
                   height: '100%',
                   background: slaBarColor,
-                  borderRadius: '4px',
+                  borderRadius: 4,
                   transition: 'width 0.3s',
                 }}
               />
@@ -178,29 +204,60 @@ export function SolicitacaoCard({
         )}
 
         {status === 'EM_VALIDACAO_DA_REABILITACAO' && (
-          <div className="text-xs mb-2" style={{ color: '#0F766E' }}>
+          <div style={{ fontSize: 12, marginBottom: 8, color: '#0F766E' }}>
             Aguardando validação...
           </div>
         )}
 
         {status === 'EXECUCAO_AUTORIZADA' && (
-          <div className="text-xs mb-2" style={{ color: '#1E40AF' }}>
+          <div style={{ fontSize: 12, marginBottom: 8, color: '#1E40AF' }}>
             Aguardando execução
           </div>
         )}
       </div>
 
-      {/* Line 6: Footer with contextual action buttons */}
+      {/* ── Footer with contextual action buttons ── */}
       {hasButtons && (
         <div
-          className="relative z-10 flex items-center gap-2 px-4 py-2"
-          style={{ borderTop: '1px solid #F1F5F9' }}
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '8px 16px',
+            borderTop: '1px solid #F1F5F9',
+            pointerEvents: 'auto',
+          }}
         >
+          {status === 'RASCUNHO' && isSolicitante && (
+            <Link
+              href={`/solicitacoes/nova?editar=${id}`}
+              style={{
+                padding: '6px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#FFFFFF',
+                background: '#0038A8',
+                borderRadius: 4,
+                textDecoration: 'none',
+              }}
+            >
+              Editar
+            </Link>
+          )}
+
           {status === 'EM_APROVACAO' && isAprovador && (
             <Link
-              href={`/solicitacoes/${id}`}
-              className="px-3 py-1.5 text-xs font-semibold text-white"
-              style={{ background: '#0038A8', borderRadius: '4px' }}
+              href={detailHref}
+              style={{
+                padding: '6px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#FFFFFF',
+                background: '#0038A8',
+                borderRadius: 4,
+                textDecoration: 'none',
+              }}
             >
               Analisar
             </Link>
@@ -208,9 +265,16 @@ export function SolicitacaoCard({
 
           {status === 'EXECUCAO_AUTORIZADA' && isExecutante && (
             <Link
-              href={`/solicitacoes/${id}`}
-              className="px-3 py-1.5 text-xs font-semibold text-white"
-              style={{ background: '#0038A8', borderRadius: '4px' }}
+              href={detailHref}
+              style={{
+                padding: '6px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#FFFFFF',
+                background: '#0038A8',
+                borderRadius: 4,
+                textDecoration: 'none',
+              }}
             >
               Executar desabilitação →
             </Link>
@@ -220,15 +284,30 @@ export function SolicitacaoCard({
             <>
               <Link
                 href={`/solicitacoes/${id}?acao=extensao`}
-                className="px-3 py-1.5 text-xs font-semibold"
-                style={{ background: '#FEF3C7', color: '#92400E', borderRadius: '4px', border: '1px solid #FDE68A' }}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: '#0038A8',
+                  background: '#EBF0FB',
+                  border: '1px solid #D8E4F8',
+                  borderRadius: 4,
+                  textDecoration: 'none',
+                }}
               >
                 Solicitar extensão
               </Link>
               <Link
                 href={`/solicitacoes/${id}?acao=reabilitar`}
-                className="px-3 py-1.5 text-xs font-semibold text-white"
-                style={{ background: '#8B5CF6', borderRadius: '4px' }}
+                style={{
+                  padding: '6px 12px',
+                  fontSize: 12,
+                  fontWeight: 600,
+                  color: '#FFFFFF',
+                  background: '#16A34A',
+                  borderRadius: 4,
+                  textDecoration: 'none',
+                }}
               >
                 Reabilitar
               </Link>
@@ -237,15 +316,22 @@ export function SolicitacaoCard({
 
           {status === 'EM_VALIDACAO_DA_REABILITACAO' && isAprovador && (
             <Link
-              href={`/solicitacoes/${id}`}
-              className="px-3 py-1.5 text-xs font-semibold text-white"
-              style={{ background: '#10B981', borderRadius: '4px' }}
+              href={detailHref}
+              style={{
+                padding: '6px 12px',
+                fontSize: 12,
+                fontWeight: 600,
+                color: '#FFFFFF',
+                background: '#16A34A',
+                borderRadius: 4,
+                textDecoration: 'none',
+              }}
             >
               Validar
             </Link>
           )}
         </div>
       )}
-    </div>
+    </ClickableCard>
   )
 }

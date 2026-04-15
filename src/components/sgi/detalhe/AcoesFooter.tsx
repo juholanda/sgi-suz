@@ -189,6 +189,9 @@ export default function AcoesFooter({
       case 'CANCELAR':
         setModal('CANCELAR')
         break
+      case 'EDITAR':
+        router.push(`/solicitacoes/nova?editar=${solicitacaoId}`)
+        break
       case 'CLONAR':
         router.push(`/solicitacoes/nova?clonar=${solicitacaoId}`)
         break

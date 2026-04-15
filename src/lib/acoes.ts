@@ -88,10 +88,18 @@ export function getAcoesPermitidas(opts: {
   if (isSolicitante || isAdmin) {
     if (status === 'RASCUNHO') {
       acoes.push({
+        id: 'EDITAR',
+        label: 'Editar rascunho',
+        icon: 'edit',
+        variant: 'primary',
+        requiresConfirmation: false,
+        requiresJustificativa: false,
+      })
+      acoes.push({
         id: 'ENVIAR_APROVACAO',
         label: 'Enviar para aprovação',
         icon: 'send',
-        variant: 'primary',
+        variant: 'secondary',
         requiresConfirmation: true,
         requiresJustificativa: false,
         confirmTitle: 'Enviar para aprovação?',
