@@ -38,14 +38,14 @@ export default function DetalheHeader({ s }: DetalheHeaderProps) {
           {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} showPrazo />}
         </div>
 
-        {/* Subtitle: Protocolo · Planta > Área · Tipo */}
+        {/* Subtitle: Descrição · Protocolo · Tipo */}
         <div
           className="flex flex-wrap items-center gap-2"
           style={{ fontSize: 13, color: '#475569' }}
         >
-          <span style={{ fontWeight: 500, color: '#0038A8' }}>#{s.protocolo}</span>
+          <span>{s.equipamento.descricao}</span>
           <span style={{ color: '#CBD5E1' }}>{'\u00B7'}</span>
-          <span>{s.area.planta.nome} {'\u203A'} {s.area.nome}</span>
+          <span style={{ fontWeight: 500, color: '#0038A8' }}>#{s.protocolo}</span>
           {s.tipo && (
             <>
               <span style={{ color: '#CBD5E1' }}>{'\u00B7'}</span>
