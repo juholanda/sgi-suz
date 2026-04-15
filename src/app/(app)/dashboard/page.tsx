@@ -399,32 +399,31 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ─── Bloco 3: Painel operacional ─── */}
-      <div style={{ marginBottom: 16 }}>
-        <h2 style={{ fontWeight: 500, fontSize: 18, color: '#0F172A', lineHeight: '27px', margin: 0 }}>
-          Painel operacional
-        </h2>
-        <p style={{ fontWeight: 400, fontSize: 14, color: '#6A7178', lineHeight: '21px', marginTop: 4, marginBottom: 0 }}>
-          Monitore prioridades, prazos e solicitacoes que exigem atencao
-        </p>
-      </div>
-
-      {/* ─── Bloco 4: Carrossel de pendências ─── */}
+      {/* ─── Minhas pendências ─── */}
       <div style={{ marginBottom: 32 }}>
-        <div className="flex items-center justify-between mb-3">
-          <h3 style={{ fontWeight: 600, fontSize: 14, color: '#0F172A', margin: 0 }}>
-            Minhas pendencias
-            {tarefas.length > 0 && (
-              <span style={{ fontWeight: 400, fontSize: 13, color: '#64748B', marginLeft: 6 }}>
-                ({tarefas.length})
-              </span>
-            )}
-          </h3>
-        </div>
+        <h2 className="flex items-center gap-2" style={{ fontWeight: 600, fontSize: 16, color: '#0F172A', margin: '0 0 12px 0' }}>
+          Minhas pendencias
+          {tarefas.length > 0 && (
+            <span style={{ fontWeight: 400, fontSize: 13, color: '#64748B' }}>
+              ({tarefas.length})
+            </span>
+          )}
+        </h2>
         <TarefasCarrossel tarefas={tarefas} />
       </div>
 
-      {/* ─── Bloco 5: Tabela com tabs ─── */}
+      {/* ─── Últimas solicitações ─── */}
+      <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
+        <h2 style={{ fontWeight: 600, fontSize: 16, color: '#0F172A', margin: 0 }}>
+          Ultimas solicitacoes
+        </h2>
+        <Link
+          href="/solicitacoes"
+          style={{ fontSize: 13, fontWeight: 500, color: '#0038A8', textDecoration: 'none' }}
+        >
+          Ver todas →
+        </Link>
+      </div>
       <div
         style={{
           background: '#FFFFFF',
@@ -433,22 +432,6 @@ export default async function DashboardPage() {
           overflow: 'hidden',
         }}
       >
-        {/* Header */}
-        <div
-          className="flex items-center justify-between px-4 md:px-6 py-4"
-          style={{ borderBottom: '1px solid #F1F5F9' }}
-        >
-          <h3 style={{ fontWeight: 600, fontSize: 15, color: '#0F172A', margin: 0 }}>
-            Ultimas solicitacoes
-          </h3>
-          <Link
-            href="/solicitacoes"
-            style={{ fontSize: 13, fontWeight: 500, color: '#0038A8', textDecoration: 'none' }}
-          >
-            Ver todas →
-          </Link>
-        </div>
-
         {/* Tabs + Table (client component) */}
         <DashboardTabs
           todas={ultimasSolicitacoes.todas}
