@@ -237,20 +237,19 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
           </div>
 
           {/* Limpar */}
-          {hasActiveFilters && (
-            <Button
-              variant="danger-outline"
-              size="sm"
-              type="button"
-              leadingIcon="filter_list_off"
-              onClick={() => {
-                setSearch('')
-                navigate({ search: null, classe: null, areaId: null, tipo: null, statusFiltro: null })
-              }}
-            >
-              Limpar
-            </Button>
-          )}
+          <Button
+            variant="danger-outline"
+            size="sm"
+            type="button"
+            leadingIcon="filter_list_off"
+            disabled={!hasActiveFilters}
+            onClick={() => {
+              setSearch('')
+              navigate({ search: null, classe: null, areaId: null, tipo: null, statusFiltro: null })
+            }}
+          >
+            Limpar
+          </Button>
         </div>
       )}
     </div>

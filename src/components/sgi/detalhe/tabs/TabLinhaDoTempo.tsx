@@ -12,7 +12,7 @@ const ACAO_LABELS: Record<string, string> = {
   RASCUNHO_CRIADO: 'Rascunho criado',
   SOLICITACAO_ENVIADA: 'Enviada para aprovação',
   APROVACAO_REGISTRADA: 'Aprovação registrada',
-  PROXIMO_APROVADOR_NOTIFICADO: 'Encaminhada ao próximo aprovador',
+  PROXIMO_APROVADOR_NOTIFICADO: 'Aguardando aprovação',
   APROVACAO_COMPLETA: 'Aprovação concluída',
   REJEICAO_REGISTRADA: 'Rejeitada',
   EXECUCAO_INICIADA: 'Execução iniciada',

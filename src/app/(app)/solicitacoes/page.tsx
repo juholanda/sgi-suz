@@ -7,6 +7,7 @@ import { SolicitacoesFilters } from './SolicitacoesFilters'
 import { DeleteRascunhoButton } from './DeleteRascunhoButton'
 import SolicitacoesTable from './SolicitacoesTable'
 import { buildPlantaScope, getAreasForPlanta } from '@/lib/scope'
+import { NavigationTabs } from '@/components/sgi/NavigationTabs'
 
 // ─── Universal tabs (same as dashboard) ──────────────────────────────────────
 
@@ -229,63 +230,16 @@ export default async function SolicitacoesPage({
           background: '#FFFFFF',
           border: '1px solid #E2E8F0',
           borderRadius: 10,
-          padding: '0 20px 16px',
+          padding: '16px 20px',
           marginBottom: 16,
         }}
       >
         {/* Tabs */}
-        <div
-          className="flex gap-0 overflow-x-auto"
-          style={{ borderBottom: '1px solid #E2E8F0', scrollbarWidth: 'none' }}
-        >
-          {TABS.map(t => {
-            const isActive = activeTab === t.key
-            const count = tabCounts[t.key]
-            const params = new URLSearchParams(searchParams as any)
-            if (t.key === 'todas') params.delete('tab')
-            else params.set('tab', t.key)
-            return (
-              <Link
-                key={t.key}
-                href={`/solicitacoes?${params.toString()}`}
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 5,
-                  padding: '12px 16px',
-                  fontSize: 13,
-                  fontWeight: isActive ? 600 : 400,
-                  color: isActive ? '#0038A8' : '#64748B',
-                  background: 'none',
-                  borderBottom: isActive ? '2px solid #0038A8' : '2px solid transparent',
-                  whiteSpace: 'nowrap',
-                  transition: 'all 0.15s',
-                  textDecoration: 'none',
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 15, lineHeight: 1 }}>
-                  {t.icon}
-                </span>
-                {t.label}
-                {count > 0 && (
-                  <span
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 600,
-                      padding: '1px 6px',
-                      borderRadius: 10,
-                      background: isActive ? '#EBF0FB' : '#F1F5F9',
-                      color: isActive ? '#0038A8' : '#94A3B8',
-                      lineHeight: '16px',
-                    }}
-                  >
-                    {count}
-                  </span>
-                )}
-              </Link>
-            )
-          })}
-        </div>
+        <NavigationTabs
+          tabs={TABS.map(t => ({ key: t.key, label: t.label, icon: t.icon, count: tabCounts[t.key] }))}
+          activeTab={activeTab}
+          defaultTab="todas"
+        />
 
         {/* Search + filters + view toggle */}
         <div style={{ paddingTop: 16 }}>
