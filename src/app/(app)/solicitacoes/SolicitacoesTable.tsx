@@ -154,7 +154,7 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
                 {s.solicitante.nome}
               </td>
               <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: '#6B7280' }}>
-                {format(s.updatedAt, 'dd/MM/yy', { locale: ptBR })}
+                {format(s.updatedAt, "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
               </td>
               <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: '#6B7280' }}>
                 {s.periodoInicio

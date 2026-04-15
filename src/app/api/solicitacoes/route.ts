@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { buildPlantaScope } from '@/lib/scope'
+import { cookies } from 'next/headers'
 import { z } from 'zod'
 import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
@@ -32,7 +34,11 @@ export async function GET() {
   const session = await auth()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
+  const cookieStore = await cookies()
+  const plantaId = cookieStore.get('sgi_planta_ativa')?.value ?? ''
+
   const solicitacoes = await prisma.solicitacao.findMany({
+    where: { ...buildPlantaScope(plantaId) },
     include: {
       equipamento: true,
       area: { include: { planta: true } },

@@ -1,7 +1,9 @@
 import { prisma } from '@/lib/db'
 import { auth } from '@/lib/auth'
+import { cookies } from 'next/headers'
 import { SolicitacaoCard } from '@/components/sgi/SolicitacaoCard'
 import Link from 'next/link'
+import { buildPlantaScope } from '@/lib/scope'
 
 const FILTER_CHIPS: Record<string, { label: string; description: string }> = {
   todas:       { label: 'Todas',                       description: '' },
@@ -11,8 +13,8 @@ const FILTER_CHIPS: Record<string, { label: string; description: string }> = {
   encerradas:  { label: 'Encerradas',                  description: 'ENCERRADA' },
 }
 
-async function getSolicitacoes(filter: string) {
-  const where: any = {}
+async function getSolicitacoes(filter: string, plantaId: string) {
+  const where: any = { ...buildPlantaScope(plantaId) }
 
   if (filter === 'aguardando') {
     where.status = { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'EXTENSAO_EM_ANALISE'] }
@@ -26,7 +28,6 @@ async function getSolicitacoes(filter: string) {
   } else if (filter === 'encerradas') {
     where.status = { in: ['ENCERRADA', 'CANCELADA', 'REJEITADA'] }
   } else {
-    // todas — show relevant statuses for approvers
     where.status = { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'EXTENSAO_EM_ANALISE', 'DESABILITADO', 'ENCERRADA', 'CANCELADA', 'REJEITADA'] }
   }
 
@@ -52,13 +53,14 @@ async function getSolicitacoes(filter: string) {
   })
 }
 
-async function getCounts() {
+async function getCounts(plantaId: string) {
+  const scope = buildPlantaScope(plantaId)
   const [aguardando, desabilitados, emRisco, encerradas, todas] = await Promise.all([
-    prisma.solicitacao.count({ where: { status: { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'EXTENSAO_EM_ANALISE'] } } }),
-    prisma.solicitacao.count({ where: { status: 'DESABILITADO' } }),
-    prisma.solicitacao.count({ where: { AND: [{ status: 'DESABILITADO' }, { OR: [{ prazoMaximoAtingido: true }, { prazoPrevitoAtingido: true }] }] } }),
-    prisma.solicitacao.count({ where: { status: { in: ['ENCERRADA', 'CANCELADA', 'REJEITADA'] } } }),
-    prisma.solicitacao.count({ where: { status: { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'EXTENSAO_EM_ANALISE', 'DESABILITADO', 'ENCERRADA', 'CANCELADA', 'REJEITADA'] } } }),
+    prisma.solicitacao.count({ where: { status: { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'EXTENSAO_EM_ANALISE'] }, ...scope } }),
+    prisma.solicitacao.count({ where: { status: 'DESABILITADO', ...scope } }),
+    prisma.solicitacao.count({ where: { AND: [{ status: 'DESABILITADO' }, { OR: [{ prazoMaximoAtingido: true }, { prazoPrevitoAtingido: true }] }], ...scope } }),
+    prisma.solicitacao.count({ where: { status: { in: ['ENCERRADA', 'CANCELADA', 'REJEITADA'] }, ...scope } }),
+    prisma.solicitacao.count({ where: { status: { in: ['EM_APROVACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'EXTENSAO_EM_ANALISE', 'DESABILITADO', 'ENCERRADA', 'CANCELADA', 'REJEITADA'] }, ...scope } }),
   ])
   return { todas, aguardando, desabilitados, em_risco: emRisco, encerradas }
 }
@@ -70,11 +72,13 @@ export default async function AprovacoesPage({
 }) {
   const session = await auth()
   const userId = (session?.user as any)?.id as string | undefined
+  const cookieStore = await cookies()
+  const plantaId = cookieStore.get('sgi_planta_ativa')?.value ?? ''
   const activeFilter = searchParams.filter && FILTER_CHIPS[searchParams.filter] ? searchParams.filter : 'aguardando'
 
   const [solicitacoes, counts] = await Promise.all([
-    getSolicitacoes(activeFilter),
-    getCounts(),
+    getSolicitacoes(activeFilter, plantaId),
+    getCounts(plantaId),
   ])
 
   const CHIP_COUNTS: Record<string, number> = counts as any
@@ -156,6 +160,7 @@ export default async function AprovacoesPage({
                   id={s.id}
                   protocolo={s.protocolo}
                   status={s.status}
+                  tipo={s.tipo}
                   classe={s.classe ? { numero: s.classe.numero, prazoMaxDias: s.classe.prazoMaximoDias } : null}
                   equipamento={{ tag: s.equipamento.tag, descricao: s.equipamento.descricao }}
                   area={{ nome: s.area.nome }}

@@ -45,7 +45,7 @@ export default function DetalheHeader({ s }: DetalheHeaderProps) {
         >
           <span>{s.equipamento.descricao}</span>
           <span style={{ color: '#CBD5E1' }}>{'\u00B7'}</span>
-          <span style={{ fontWeight: 500, color: '#0038A8' }}>#{s.protocolo}</span>
+          <span style={{ fontWeight: 500, color: '#475569' }}>#{s.protocolo}</span>
           {s.tipo && (
             <>
               <span style={{ color: '#CBD5E1' }}>{'\u00B7'}</span>

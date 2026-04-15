@@ -37,6 +37,8 @@ export function SolicitacoesFilters({ areas }: Props) {
   const currentClasse = (searchParams.get('classe') ?? '').split(',').filter(Boolean)
   const currentAreaId = searchParams.get('areaId') ?? ''
   const currentSort = searchParams.get('sort') ?? 'recentes'
+  const currentTipo = searchParams.get('tipo') ?? ''
+  const currentStatus = searchParams.get('statusFiltro') ?? ''
 
   const [search, setSearch] = useState(currentSearch)
 
@@ -73,13 +75,13 @@ export function SolicitacoesFilters({ areas }: Props) {
     navigate({ search: search.trim() || null })
   }
 
-  const hasActiveFilters = currentClasse.length > 0 || currentAreaId || currentSearch
+  const hasActiveFilters = currentClasse.length > 0 || currentAreaId || currentSearch || currentTipo || currentStatus
 
   return (
     <div className="mb-4 space-y-3">
       {/* Search bar */}
       <form onSubmit={handleSearchSubmit} className="flex gap-2">
-        <div className="relative flex-1">
+        <div className="relative" style={{ maxWidth: '320px' }}>
           <span
             className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
             style={{ fontSize: 18, color: '#94A3B8', lineHeight: 1 }}
@@ -92,7 +94,7 @@ export function SolicitacoesFilters({ areas }: Props) {
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar por TAG, protocolo ou solicitante..."
             className="w-full pl-9 pr-3 py-2 text-sm border outline-none"
-            style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#0F172A' }}
+            style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#0F172A', background: 'white' }}
           />
         </div>
         {search && (
@@ -123,7 +125,7 @@ export function SolicitacoesFilters({ areas }: Props) {
               className="w-4 h-4 flex items-center justify-center text-xs font-bold text-white"
               style={{ background: '#0038A8', borderRadius: '50%' }}
             >
-              {[currentClasse.length > 0, !!currentAreaId, !!currentSearch].filter(Boolean).length}
+              {[currentClasse.length > 0, !!currentAreaId, !!currentSearch, !!currentTipo, !!currentStatus].filter(Boolean).length}
             </span>
           )}
         </button>
@@ -192,13 +194,51 @@ export function SolicitacoesFilters({ areas }: Props) {
             </div>
           </div>
 
+          {/* Tipo de intertravamento */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: '#374151' }}>Tipo de Intertravamento</label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { value: 'LOGICO', label: 'Lógico' },
+                { value: 'FISICO', label: 'Físico' },
+                { value: 'DISPOSITIVO_SEGURANCA', label: 'Disp. Segurança' },
+              ].map(t => {
+                const active = currentTipo === t.value
+                return (
+                  <button key={t.value} type="button" onClick={() => navigate({ tipo: active ? null : t.value })}
+                    className="px-3 py-1.5 text-xs font-medium border transition-all"
+                    style={{ borderRadius: '4px', borderColor: active ? '#0038A8' : '#E2E8F0', background: active ? '#EBF0FB' : 'white', color: active ? '#0038A8' : '#6B7280' }}>
+                    {t.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
+          {/* Status */}
+          <div>
+            <label className="block text-xs font-medium mb-1.5" style={{ color: '#374151' }}>Status</label>
+            <div className="flex flex-wrap gap-2">
+              {STATUS_OPTIONS.map(opt => {
+                const active = currentStatus === opt.value
+                return (
+                  <button key={opt.value} type="button" onClick={() => navigate({ statusFiltro: active ? null : opt.value })}
+                    className="px-3 py-1.5 text-xs font-medium border transition-all"
+                    style={{ borderRadius: '4px', borderColor: active ? '#0038A8' : '#E2E8F0', background: active ? '#EBF0FB' : 'white', color: active ? '#0038A8' : '#6B7280' }}>
+                    {opt.label}
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+
           {/* Limpar */}
           {hasActiveFilters && (
             <button
               type="button"
               onClick={() => {
                 setSearch('')
-                navigate({ search: null, classe: null, areaId: null })
+                navigate({ search: null, classe: null, areaId: null, tipo: null, statusFiltro: null })
               }}
               className="text-xs font-medium"
               style={{ color: '#DC2626' }}

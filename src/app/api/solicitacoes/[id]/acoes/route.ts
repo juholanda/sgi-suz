@@ -38,16 +38,16 @@ export async function POST(req: NextRequest, { params }: Params) {
       data: { status: 'APROVADO', comentario, respondidaEm: new Date() },
     })
 
-    await registrarEvento(id, userId, 'APROVACAO_REGISTRADA',
-      `Nível ${aprovPendente.nivel} aprovado${comentario ? `: ${comentario}` : ''}`)
-
     // Verifica se há próximo nível aguardando — RF-031
     const proximoNivel = solicitacao.aprovacoes.find(
       a => a.status === 'AGUARDANDO' && a.tipo === 'DESABILITACAO' && a.nivel > aprovPendente.nivel
     )
 
     if (proximoNivel) {
-      // Ativa o próximo aprovador
+      // Registra aprovação parcial e ativa o próximo aprovador
+      await registrarEvento(id, userId, 'APROVACAO_REGISTRADA',
+        `Nível ${aprovPendente.nivel} aprovado${comentario ? `: ${comentario}` : ''}`)
+
       await prisma.aprovacao.update({
         where: { id: proximoNivel.id },
         data: { status: 'PENDENTE' },
@@ -55,12 +55,13 @@ export async function POST(req: NextRequest, { params }: Params) {
       await registrarEvento(id, userId, 'PROXIMO_APROVADOR_NOTIFICADO',
         `Aprovação de nível ${proximoNivel.nivel} liberada`)
     } else {
-      // Todos aprovaram — avança para execução autorizada — RF-037
+      // Todos aprovaram (ou aprovador único) — avança para execução autorizada — RF-037
       await prisma.solicitacao.update({
         where: { id },
         data: { status: 'EXECUCAO_AUTORIZADA', dataAprovacaoFinal: new Date() },
       })
-      await registrarEvento(id, userId, 'APROVACAO_COMPLETA', 'Todos os aprovadores concluíram — execução autorizada')
+      await registrarEvento(id, userId, 'APROVACAO_COMPLETA',
+        `Nível ${aprovPendente.nivel} aprovado — execução autorizada${comentario ? `. ${comentario}` : ''}`)
     }
 
     return NextResponse.json({ ok: true })

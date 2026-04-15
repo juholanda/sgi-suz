@@ -24,8 +24,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
+  async function doLogin() {
+    if (loading) return
     setLoading(true)
     setErrorMatricula('')
     setErrorSenha('')
@@ -55,6 +55,11 @@ export default function LoginPage() {
       setErrorSenha('Erro ao autenticar. Tente novamente.')
     }
     setLoading(false)
+  }
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    doLogin()
   }
 
   const formContent = (
@@ -96,6 +101,7 @@ export default function LoginPage() {
           type={showSenha ? 'text' : 'password'}
           value={senha}
           onChange={e => { setSenha(e.target.value); setErrorSenha('') }}
+          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); doLogin() } }}
           placeholder="Digite sua senha"
           required
           autoComplete="current-password"

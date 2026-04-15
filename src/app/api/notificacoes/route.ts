@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { buildPlantaScope } from '@/lib/scope'
+import { cookies } from 'next/headers'
 
 export interface NotifItem {
   id: string
@@ -17,6 +19,8 @@ export async function GET(req: NextRequest) {
 
   const userId = (session.user as any)?.id as string
   const perfil = req.nextUrl.searchParams.get('perfil') ?? ''
+  const cookieStore = await cookies()
+  const plantaId = cookieStore.get('sgi_planta_ativa')?.value ?? ''
 
   const items: NotifItem[] = []
 
@@ -75,6 +79,7 @@ export async function GET(req: NextRequest) {
       where: {
         solicitanteId: userId,
         status: { in: ['EXECUCAO_AUTORIZADA', 'RASCUNHO'] },
+        ...buildPlantaScope(plantaId),
       },
       include: {
         equipamento: { select: { tag: true } },
@@ -99,6 +104,7 @@ export async function GET(req: NextRequest) {
       where: {
         executanteId: userId,
         status: { in: ['EXECUCAO_AUTORIZADA', 'EM_EXECUCAO'] },
+        ...buildPlantaScope(plantaId),
       },
       include: {
         equipamento: { select: { tag: true } },

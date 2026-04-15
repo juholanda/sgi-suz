@@ -570,13 +570,6 @@ export default function NovaSolicitacaoPage() {
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>{isEditMode ? `Editar rascunho${editProtocolo ? ` #${editProtocolo}` : ''}` : 'Nova solicitação de desabilitação'}</h1>
-            {equipSelecionado && areaSelecionada && (
-              <p className="text-sm mt-0.5" style={{ color: '#64748B' }}>
-                {areaSelecionada.planta.nome} › {areaSelecionada.nome}
-                {equipSelecionado.tag && <> · <span className="font-semibold" style={{ color: '#0038A8' }}>{equipSelecionado.tag}</span></>}
-                {form.tipo && <> · {form.tipo === 'FISICO' ? 'Físico' : form.tipo === 'LOGICO' ? 'Lógico' : 'Disp. Segurança'}</>}
-              </p>
-            )}
           </div>
           <span
             className="text-xs font-semibold px-2.5 py-1 shrink-0"
