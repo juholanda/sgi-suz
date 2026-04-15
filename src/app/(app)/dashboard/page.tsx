@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { cookies } from 'next/headers'
-import { tokens, StatusSolicitacao } from '@/lib/tokens'
+import { tokens } from '@/lib/tokens'
 import Link from 'next/link'
 import { TarefasCarrossel } from '@/components/sgi/TarefasCarrossel'
 import { buildPlantaScope } from '@/lib/scope'
@@ -11,29 +11,27 @@ import DashboardTabs from '@/components/sgi/DashboardTabs'
 
 async function getMetrics(plantaId: string) {
   const scope = buildPlantaScope(plantaId)
+  const ANDAMENTO = [
+    'EM_APROVACAO', 'EXECUCAO_AUTORIZADA', 'EM_EXECUCAO',
+    'DESABILITADO', 'EM_REABILITACAO', 'EM_VALIDACAO_DA_REABILITACAO', 'EXTENSAO_EM_ANALISE',
+  ]
   const [
+    desabilitadosAgora,
     emAprovacao,
     execucaoAutorizada,
-    desabilitados,
     aguardandoValidacao,
-    encerradasMes,
-    violacoesSla,
+    prazosExcedidos,
   ] = await Promise.all([
+    prisma.solicitacao.count({ where: { status: 'DESABILITADO', ...scope } }),
     prisma.solicitacao.count({ where: { status: 'EM_APROVACAO', ...scope } }),
     prisma.solicitacao.count({ where: { status: 'EXECUCAO_AUTORIZADA', ...scope } }),
-    prisma.solicitacao.count({ where: { status: 'DESABILITADO', ...scope } }),
     prisma.solicitacao.count({ where: { status: 'EM_VALIDACAO_DA_REABILITACAO', ...scope } }),
     prisma.solicitacao.count({
-      where: {
-        status: 'ENCERRADA',
-        dataEncerramento: { gte: new Date(new Date().setDate(1)) },
-        ...scope,
-      },
+      where: { prazoMaximoAtingido: true, status: { in: ANDAMENTO }, ...scope },
     }),
-    prisma.solicitacao.count({ where: { prazoMaximoAtingido: true, ...scope } }),
   ])
 
-  return { emAprovacao, execucaoAutorizada, desabilitados, aguardandoValidacao, encerradasMes, violacoesSla }
+  return { desabilitadosAgora, emAprovacao, execucaoAutorizada, aguardandoValidacao, prazosExcedidos }
 }
 
 // ─── Tarefas pendentes (carrossel) ──────────────────────────────────────────
@@ -273,11 +271,12 @@ export default async function DashboardPage() {
     getUltimasSolicitacoes(plantaId),
   ])
 
-  const metricCards = [
-    { label: 'Em Aprovação', value: metrics.emAprovacao, status: 'EM_APROVACAO' as StatusSolicitacao, href: '/solicitacoes?tab=andamento', icon: 'pending_actions' },
-    { label: 'Exec. Autorizada', value: metrics.execucaoAutorizada, status: 'EXECUCAO_AUTORIZADA' as StatusSolicitacao, href: '/solicitacoes?tab=andamento', icon: 'engineering' },
-    { label: 'Desabilitados', value: metrics.desabilitados, status: 'DESABILITADO' as StatusSolicitacao, href: '/solicitacoes?tab=andamento', icon: 'lock_open' },
-    { label: 'Aguard. Validação', value: metrics.aguardandoValidacao, status: 'EM_VALIDACAO_DA_REABILITACAO' as StatusSolicitacao, href: '/solicitacoes?tab=andamento', icon: 'fact_check' },
+  const kpiCards = [
+    { label: 'Desabilitados agora', value: metrics.desabilitadosAgora, icon: 'warning', color: '#EA580C', bgColor: '#FFF7ED' },
+    { label: 'Em aprovação', value: metrics.emAprovacao, icon: 'hourglass_top', color: '#AC6F00', bgColor: '#FEF5E5' },
+    { label: 'Execução autorizada', value: metrics.execucaoAutorizada, icon: 'engineering', color: '#1E40AF', bgColor: '#EFF6FF' },
+    { label: 'Aguardando validação', value: metrics.aguardandoValidacao, icon: 'verified', color: '#0D9488', bgColor: '#F0FDFA' },
+    { label: 'Prazos excedidos', value: metrics.prazosExcedidos, icon: 'alarm', color: '#DC2626', bgColor: '#FEF2F2' },
   ]
 
   return (
@@ -302,64 +301,52 @@ export default async function DashboardPage() {
         )}
       </div>
 
-      {/* ─── Bloco 2: Contadores ─── */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2" style={{ marginBottom: 32 }}>
-        {metricCards.map(card => {
-          const colors = tokens.colors.status[card.status]
-          return (
-            <Link key={card.status} href={card.href} className="h-full">
+      {/* ─── Bloco 2: Situação atual ─── */}
+      <div style={{ marginBottom: 32 }}>
+        <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
+          <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A', flexShrink: 0 }} />
+          <h2 style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', margin: 0 }}>Situação atual</h2>
+          <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 400 }}>— tempo real</span>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+          {kpiCards.map(card => (
+            <div
+              key={card.label}
+              style={{
+                background: '#FFFFFF',
+                border: '1px solid #E2E8F0',
+                borderRadius: 10,
+                padding: '16px 18px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+              }}
+            >
               <div
-                className="bg-white border cursor-pointer transition-shadow hover:shadow-sm h-full flex items-center justify-between px-3 py-2.5 gap-2"
-                style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: 10,
+                  background: card.bgColor,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: card.color,
+                  flexShrink: 0,
+                }}
               >
-                <div className="flex items-center gap-2 min-w-0">
-                  <span
-                    className="material-symbols-outlined shrink-0"
-                    style={{
-                      fontSize: 15,
-                      color: colors.text,
-                      lineHeight: 1,
-                      background: `${colors.text}14`,
-                      borderRadius: '6px',
-                      width: 28,
-                      height: 28,
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                    aria-hidden="true"
-                  >
-                    {card.icon}
-                  </span>
-                  <div className="text-xs leading-tight" style={{ color: '#64748B' }}>{card.label}</div>
-                </div>
-                <div className="font-bold shrink-0" style={{ fontSize: 14, color: colors.text }}>{card.value}</div>
+                <span className="material-symbols-outlined" style={{ fontSize: 22, lineHeight: 1 }} aria-hidden="true">
+                  {card.icon}
+                </span>
               </div>
-            </Link>
-          )
-        })}
-        <Link href="/solicitacoes?tab=encerradas" className="h-full">
-          <div className="bg-white border cursor-pointer transition-shadow hover:shadow-sm h-full flex items-center justify-between px-3 py-2.5 gap-2" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="material-symbols-outlined shrink-0" style={{ fontSize: 15, color: '#10B981', lineHeight: 1, background: '#10B98114', borderRadius: '6px', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true">check_circle</span>
-              <div className="text-xs leading-tight" style={{ color: '#64748B' }}>Encerradas/mês</div>
+              <div>
+                <div style={{ fontSize: 24, fontWeight: 700, color: '#0F172A', lineHeight: 1.1 }}>
+                  {card.value}
+                </div>
+                <div style={{ fontSize: 12, color: '#64748B', marginTop: 2 }}>{card.label}</div>
+              </div>
             </div>
-            <div className="font-bold shrink-0" style={{ fontSize: 14, color: '#10B981' }}>{metrics.encerradasMes}</div>
-          </div>
-        </Link>
-        <div
-          className="border h-full flex items-center justify-between px-3 py-2.5 gap-2"
-          style={{
-            background: metrics.violacoesSla > 0 ? '#FEF2F2' : 'white',
-            borderColor: metrics.violacoesSla > 0 ? '#FECACA' : '#E2E8F0',
-            borderRadius: '8px',
-          }}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="material-symbols-outlined shrink-0" style={{ fontSize: 15, color: metrics.violacoesSla > 0 ? '#DC2626' : '#10B981', lineHeight: 1, background: metrics.violacoesSla > 0 ? '#DC262614' : '#10B98114', borderRadius: '6px', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center' }} aria-hidden="true">warning</span>
-            <div className="text-xs leading-tight" style={{ color: metrics.violacoesSla > 0 ? '#DC2626' : '#64748B' }}>Prazos vencidos</div>
-          </div>
-          <div className="font-bold shrink-0" style={{ fontSize: 14, color: metrics.violacoesSla > 0 ? '#DC2626' : '#10B981' }}>{metrics.violacoesSla}</div>
+          ))}
         </div>
       </div>
 

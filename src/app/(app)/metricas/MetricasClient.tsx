@@ -16,6 +16,7 @@ interface KPIs {
   prazosExcedidosAgora: number
   desabilitacoesPeriodo: number
   extensoesPeriodo: number
+  reabilitadosDentroPrazo: number
 }
 
 interface TopEquip {
@@ -257,7 +258,7 @@ export default function MetricasClient({ data, periodo }: Props) {
         </div>
 
         {/* ── BLOCO: Situação atual (hoje) ─────────────────────────── */}
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 36 }}>
           <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
             <span
               style={{
@@ -314,8 +315,9 @@ export default function MetricasClient({ data, periodo }: Props) {
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-3">
             <KpiCard label="Desabilitações realizadas" value={kpis.desabilitacoesPeriodo} icon="toggle_off" color="#EA580C" bgColor="#FFF7ED" />
+            <KpiCard label="Reabilitados dentro do prazo" value={kpis.reabilitadosDentroPrazo} icon="check_circle" color="#16A34A" bgColor="#F0FDF4" />
             <KpiCard label="Prazos estendidos" value={kpis.extensoesPeriodo} icon="event_repeat" color="#AC6F00" bgColor="#FEF5E5" />
           </div>
         </div>
