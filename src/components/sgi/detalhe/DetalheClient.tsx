@@ -10,16 +10,14 @@ import TabDetalhes from './tabs/TabDetalhes'
 import TabAprovacoes from './tabs/TabAprovacoes'
 import TabLinhaDoTempo from './tabs/TabLinhaDoTempo'
 import TabAnexos from './tabs/TabAnexos'
-import TabAuditoria from './tabs/TabAuditoria'
 
 // ── Tab configuration ────────────────────────────────────────────────────────
 
 const TABS = [
   { key: 'detalhes',   label: 'Detalhes',       icon: 'info' },
-  { key: 'aprovacoes', label: 'Aprovacoes',      icon: 'task_alt' },
+  { key: 'aprovacoes', label: 'Aprovações',      icon: 'task_alt' },
   { key: 'timeline',   label: 'Linha do Tempo',  icon: 'timeline' },
   { key: 'anexos',     label: 'Anexos',           icon: 'attach_file' },
-  { key: 'auditoria',  label: 'Auditoria',        icon: 'policy' },
 ] as const
 
 type TabKey = typeof TABS[number]['key']
@@ -123,7 +121,6 @@ export default function DetalheClient({ solicitacao: s, acoes, conflict, userId,
               let count: number | null = null
               if (tab.key === 'aprovacoes') count = s.aprovacoes.filter(a => a.tipo === 'DESABILITACAO').length
               if (tab.key === 'anexos') count = s.anexos.length
-              if (tab.key === 'auditoria') count = s.eventos.length
 
               return (
                 <button
@@ -181,7 +178,6 @@ export default function DetalheClient({ solicitacao: s, acoes, conflict, userId,
             {activeTab === 'aprovacoes' && <TabAprovacoes aprovacoes={s.aprovacoes} status={s.status} />}
             {activeTab === 'timeline' && <TabLinhaDoTempo eventos={s.eventos} />}
             {activeTab === 'anexos' && <TabAnexos anexos={s.anexos} />}
-            {activeTab === 'auditoria' && <TabAuditoria eventos={s.eventos} protocolo={s.protocolo} />}
           </div>
 
         </div>
