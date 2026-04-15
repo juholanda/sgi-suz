@@ -64,7 +64,7 @@ function getCta(status: string): PendenciaItem['cta'] {
     case 'EM_APROVACAO':
       return { label: 'Analisar', bg: '#0038A8', color: '#FFFFFF' }
     case 'EM_VALIDACAO_DA_REABILITACAO':
-      return { label: 'Validar', bg: '#16A34A', color: '#FFFFFF' }
+      return { label: 'Analisar', bg: '#0038A8', color: '#FFFFFF' }
     case 'DESABILITADO':
       return { label: 'Ver agora', bg: '#DC2626', color: '#FFFFFF' }
     default:
