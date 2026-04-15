@@ -134,8 +134,14 @@ export default function TabLinhaDoTempo({ eventos }: TabLinhaDoTempoProps) {
                   <div style={{ fontSize: 13, fontWeight: 500, color: '#0F172A', lineHeight: 1.4 }}>
                     {ACAO_LABELS[ev.acao] ?? ev.acao}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 12, color: '#475569' }}>{ev.user.nome}</span>
+                    {ev.user.cargo && (
+                      <>
+                        <span style={{ fontSize: 12, color: '#CBD5E1' }}>{'\u00B7'}</span>
+                        <span style={{ fontSize: 12, color: '#94A3B8' }}>{ev.user.cargo}</span>
+                      </>
+                    )}
                     <span style={{ fontSize: 12, color: '#CBD5E1' }}>{'\u00B7'}</span>
                     <span style={{ fontSize: 12, color: '#94A3B8' }}>{fmt(ev.createdAt)}</span>
                   </div>

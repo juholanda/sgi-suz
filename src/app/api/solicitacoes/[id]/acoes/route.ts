@@ -16,7 +16,10 @@ export async function POST(req: NextRequest, { params }: Params) {
   const solicitacao = await prisma.solicitacao.findUnique({
     where: { id },
     include: {
-      aprovacoes: { orderBy: { nivel: 'asc' } },
+      aprovacoes: {
+        orderBy: { nivel: 'asc' },
+        include: { aprovador: { select: { id: true, nome: true } } },
+      },
       classe: true,
     },
   })
@@ -52,8 +55,8 @@ export async function POST(req: NextRequest, { params }: Params) {
         where: { id: proximoNivel.id },
         data: { status: 'PENDENTE' },
       })
-      await registrarEvento(id, userId, 'PROXIMO_APROVADOR_NOTIFICADO',
-        `Aprovação de nível ${proximoNivel.nivel} liberada`)
+      await registrarEvento(id, proximoNivel.aprovadorId, 'PROXIMO_APROVADOR_NOTIFICADO',
+        `Aguardando aprovação de nível ${proximoNivel.nivel}`)
     } else {
       // Todos aprovaram (ou aprovador único) — avança para execução autorizada — RF-037
       await prisma.solicitacao.update({

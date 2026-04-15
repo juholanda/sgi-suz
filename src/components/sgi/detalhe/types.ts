@@ -50,7 +50,7 @@ export interface EventoDetalhe {
   acao: string
   detalhes: string | null
   createdAt: string
-  user: { nome: string }
+  user: { nome: string; cargo?: string | null }
 }
 
 // ── Main serialized solicitação ──────────────────────────────────────────────

@@ -35,7 +35,7 @@ async function getSolicitacao(id: string) {
       checklists: { orderBy: { numero: 'asc' } },
       anexos: true,
       eventos: {
-        include: { user: { select: { nome: true } } },
+        include: { user: { select: { nome: true, cargo: { select: { nome: true } } } } },
         orderBy: { createdAt: 'asc' },
       },
     },
@@ -186,7 +186,7 @@ export default async function SolicitacaoDetailPage({
       acao: e.acao,
       detalhes: e.detalhes,
       createdAt: e.createdAt.toISOString(),
-      user: { nome: e.user.nome },
+      user: { nome: e.user.nome, cargo: (e.user as any).cargo?.nome ?? null },
     })),
     extensoes: extensoes.map((ext: any) => ({
       id: ext.id,
