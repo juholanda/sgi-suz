@@ -4,13 +4,8 @@ import { cookies } from 'next/headers'
 import { tokens, StatusSolicitacao } from '@/lib/tokens'
 import Link from 'next/link'
 import { TarefasCarrossel } from '@/components/sgi/TarefasCarrossel'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { StatusBadge } from '@/components/sgi/StatusBadge'
-import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { buildPlantaScope } from '@/lib/scope'
 import DashboardTabs from '@/components/sgi/DashboardTabs'
-import type { ClasseNum } from '@/lib/tokens'
 
 // ─── Metrics ─────────────────────────────────────────────────────────────────
 
@@ -43,164 +38,129 @@ async function getMetrics(plantaId: string) {
 
 // ─── Tarefas pendentes (carrossel) ──────────────────────────────────────────
 
-interface Tarefa {
-  id: string
-  tag: string
-  protocolo: string
-  area: string
-  planta?: string
-  acao: string
-  acaoLabel: string
-  acaoColor: string
-  acaoBg: string
-  ctaLabel: string
-  ctaColor: string
-  urgente?: boolean
+import type { PendenciaItem } from '@/components/sgi/TarefasCarrossel'
+
+const PENDENCIA_INCLUDE = {
+  equipamento: true,
+  area: { include: { planta: true } },
+  classe: { select: { numero: true, prazoMaximoDias: true } },
+  solicitante: { select: { nome: true } },
+  aprovacoes: {
+    where: { tipo: 'DESABILITACAO' as const },
+    orderBy: { nivel: 'asc' as const },
+    select: { nivel: true, status: true, aprovador: { select: { nome: true } } },
+  },
+} as const
+
+type SolicitacaoPendencia = Awaited<
+  ReturnType<typeof prisma.solicitacao.findMany<{ include: typeof PENDENCIA_INCLUDE }>>
+>[number]
+
+function serializePendencia(
+  s: SolicitacaoPendencia,
+  flags: { isAprovador: boolean; isSolicitante: boolean; isExecutante: boolean }
+): PendenciaItem {
+  return {
+    id: s.id,
+    protocolo: s.protocolo,
+    status: s.status,
+    tipo: s.tipo,
+    classe: s.classe ? { numero: s.classe.numero, prazoMaxDias: s.classe.prazoMaximoDias } : null,
+    equipamento: { tag: s.equipamento.tag, descricao: s.equipamento.descricao },
+    area: { nome: s.area.nome },
+    planta: { nome: (s.area as any).planta?.nome ?? '' },
+    solicitante: { nome: s.solicitante.nome },
+    periodoInicio: s.periodoInicio?.toISOString() ?? null,
+    periodoFim: s.periodoFim?.toISOString() ?? null,
+    dataDesabilitacao: s.dataDesabilitacao?.toISOString() ?? null,
+    prazoMaximoAtingido: s.prazoMaximoAtingido,
+    prazoPrevitoAtingido: s.prazoPrevitoAtingido,
+    aprovacoes: s.aprovacoes.map(a => ({ nivel: a.nivel, status: a.status, aprovador: { nome: a.aprovador.nome } })),
+    isAprovador: flags.isAprovador,
+    isSolicitante: flags.isSolicitante,
+    isExecutante: flags.isExecutante,
+  }
 }
 
-async function getTarefasPendentes(userId: string, perfil: string, plantaId: string): Promise<Tarefa[]> {
+async function getTarefasPendentes(
+  userId: string,
+  perfil: string,
+  plantaId: string,
+  flags: { isAprovador: boolean; isSolicitante: boolean; isExecutante: boolean }
+): Promise<PendenciaItem[]> {
   const scope = buildPlantaScope(plantaId)
-  const tarefas: Tarefa[] = []
+  const items: PendenciaItem[] = []
+  const seenIds = new Set<string>()
+
+  function addItems(solicitacoes: SolicitacaoPendencia[]) {
+    for (const s of solicitacoes) {
+      if (!seenIds.has(s.id)) {
+        seenIds.add(s.id)
+        items.push(serializePendencia(s, flags))
+      }
+    }
+  }
 
   // Rascunhos do solicitante
   if (['SOLICITANTE', 'EXECUTANTE', 'ADMINISTRADOR'].includes(perfil)) {
-    const rascunhos = await prisma.solicitacao.findMany({
+    addItems(await prisma.solicitacao.findMany({
       where: { solicitanteId: userId, status: 'RASCUNHO', ...scope },
-      include: { equipamento: true, area: { include: { planta: true } } },
+      include: PENDENCIA_INCLUDE,
       take: 10,
-    })
-    for (const s of rascunhos) {
-      tarefas.push({
-        id: s.id,
-        tag: s.equipamento.tag,
-        protocolo: s.protocolo,
-        area: s.area.nome,
-        planta: s.area.planta.nome,
-        acao: 'RASCUNHO',
-        acaoLabel: 'Rascunho',
-        acaoColor: '#475569',
-        acaoBg: '#F1F5F9',
-        ctaLabel: 'Continuar',
-        ctaColor: '#0038A8',
-      })
-    }
+    }))
   }
 
   // Execucao autorizada (executante)
   if (['EXECUTANTE', 'SOLICITANTE', 'ADMINISTRADOR'].includes(perfil)) {
-    const execAutorizada = await prisma.solicitacao.findMany({
+    addItems(await prisma.solicitacao.findMany({
       where: {
         OR: [{ executanteId: userId }, { solicitanteId: userId }],
         status: 'EXECUCAO_AUTORIZADA',
         ...scope,
       },
-      include: { equipamento: true, area: { include: { planta: true } } },
+      include: PENDENCIA_INCLUDE,
       take: 10,
-    })
-    for (const s of execAutorizada) {
-      tarefas.push({
-        id: s.id,
-        tag: s.equipamento.tag,
-        protocolo: s.protocolo,
-        area: s.area.nome,
-        planta: s.area.planta.nome,
-        acao: 'EXECUTAR',
-        acaoLabel: 'Executar',
-        acaoColor: '#0038A8',
-        acaoBg: '#EBF0FB',
-        ctaLabel: 'Executar',
-        ctaColor: '#0038A8',
-      })
-    }
+    }))
   }
 
   // Aprovacoes pendentes (aprovador / gestor / admin)
   if (['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'].includes(perfil)) {
-    const pendentes = await prisma.solicitacao.findMany({
+    addItems(await prisma.solicitacao.findMany({
       where: {
         status: 'EM_APROVACAO',
         aprovacoes: { some: { aprovadorId: userId, status: 'PENDENTE' } },
         ...scope,
       },
-      include: { equipamento: true, area: { include: { planta: true } } },
+      include: PENDENCIA_INCLUDE,
       take: 10,
-    })
-    for (const s of pendentes) {
-      tarefas.push({
-        id: s.id,
-        tag: s.equipamento.tag,
-        protocolo: s.protocolo,
-        area: s.area.nome,
-        planta: s.area.planta.nome,
-        acao: 'APROVAR',
-        acaoLabel: 'Aprovar',
-        acaoColor: '#16A34A',
-        acaoBg: '#F0FDF4',
-        ctaLabel: 'Analisar',
-        ctaColor: '#0038A8',
-      })
-    }
+    }))
   }
 
   // Validacao de reabilitacao (aprovador / gestor / admin)
   if (['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'].includes(perfil)) {
-    const validacoes = await prisma.solicitacao.findMany({
+    addItems(await prisma.solicitacao.findMany({
       where: {
         status: 'EM_VALIDACAO_DA_REABILITACAO',
         aprovacoes: { some: { aprovadorId: userId } },
         ...scope,
       },
-      include: { equipamento: true, area: { include: { planta: true } } },
+      include: PENDENCIA_INCLUDE,
       take: 10,
-    })
-    for (const s of validacoes) {
-      tarefas.push({
-        id: s.id,
-        tag: s.equipamento.tag,
-        protocolo: s.protocolo,
-        area: s.area.nome,
-        planta: s.area.planta.nome,
-        acao: 'VALIDAR',
-        acaoLabel: 'Validar',
-        acaoColor: '#16A34A',
-        acaoBg: '#F0FDF4',
-        ctaLabel: 'Validar',
-        ctaColor: '#16A34A',
-        urgente: s.prazoMaximoAtingido,
-      })
-    }
+    }))
   }
 
   // Desabilitados com prazo atingido (urgente para todos)
-  const urgentes = await prisma.solicitacao.findMany({
+  addItems(await prisma.solicitacao.findMany({
     where: {
       status: 'DESABILITADO',
       prazoMaximoAtingido: true,
       ...scope,
     },
-    include: { equipamento: true, area: { include: { planta: true } } },
+    include: PENDENCIA_INCLUDE,
     take: 5,
-  })
-  for (const s of urgentes) {
-    if (!tarefas.some(t => t.id === s.id)) {
-      tarefas.push({
-        id: s.id,
-        tag: s.equipamento.tag,
-        protocolo: s.protocolo,
-        area: s.area.nome,
-        planta: s.area.planta.nome,
-        acao: 'URGENTE',
-        acaoLabel: 'Prazo vencido',
-        acaoColor: '#DC2626',
-        acaoBg: '#FEF2F2',
-        ctaLabel: 'Ver agora',
-        ctaColor: '#DC2626',
-        urgente: true,
-      })
-    }
-  }
+  }))
 
-  return tarefas
+  return items
 }
 
 // ─── Últimas solicitações (tabela) ──────────────────────────────────────────
@@ -298,14 +258,17 @@ export default async function DashboardPage() {
     ? ['SOLICITANTE', 'EXECUTANTE'].includes(perfilAtivo)
     : perfis.some(p => ['SOLICITANTE', 'EXECUTANTE'].includes(p.perfil))
 
+  const isExecutante = ['EXECUTANTE', 'ADMINISTRADOR'].includes(perfilAtivo)
+  const isAprovador = ['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'].includes(perfilAtivo)
+
   const plantaId = plantaIdCookie ?? ''
 
   // Determine effective profile for carrossel
   const effectivePerfil = perfilAtivo || perfis[0]?.perfil || 'SOLICITANTE'
 
-  const [metrics, tarefas, ultimasSolicitacoes] = await Promise.all([
+  const [metrics, pendencias, ultimasSolicitacoes] = await Promise.all([
     getMetrics(plantaId),
-    getTarefasPendentes(userId, effectivePerfil, plantaId),
+    getTarefasPendentes(userId, effectivePerfil, plantaId, { isAprovador, isSolicitante, isExecutante }),
     getUltimasSolicitacoes(plantaId),
   ])
 
@@ -403,13 +366,13 @@ export default async function DashboardPage() {
       <div style={{ marginBottom: 32 }}>
         <h2 className="flex items-center gap-2" style={{ fontWeight: 600, fontSize: 16, color: '#0F172A', margin: '0 0 12px 0' }}>
           Minhas pendencias
-          {tarefas.length > 0 && (
+          {pendencias.length > 0 && (
             <span style={{ fontWeight: 400, fontSize: 13, color: '#64748B' }}>
-              ({tarefas.length})
+              ({pendencias.length})
             </span>
           )}
         </h2>
-        <TarefasCarrossel tarefas={tarefas} />
+        <TarefasCarrossel items={pendencias} />
       </div>
 
       {/* ─── Últimas solicitações ─── */}
