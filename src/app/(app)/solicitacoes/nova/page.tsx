@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { ClasseNum } from '@/lib/tokens'
 import { Input, Select, Textarea } from '@/components/design-system/Input'
+import { Checkbox } from '@/components/design-system/Checkbox'
 import { Button } from '@/components/design-system/Button'
 import { ActionFooter } from '@/components/design-system/ActionFooter'
 
@@ -34,6 +35,13 @@ interface UserOption {
   cargo: { nome: string } | null
 }
 
+interface MedidaContingencial {
+  id: string
+  descricao: string
+  obrigatoria: boolean
+  ordem: number
+}
+
 interface FormData {
   areaId: string
   equipamentoId: string
@@ -46,6 +54,8 @@ interface FormData {
   periodoFim: string
   medidasContingenciais: string
   cienteRiscos: boolean
+  medidasIds: string[]
+  medidasCustom: string[]
 }
 
 interface FieldError {
@@ -119,11 +129,17 @@ export default function NovaSolicitacaoPage() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [submitted, setSubmitted] = useState<SubmittedData | null>(null)
 
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null)
+
   // Dados externos
   const [areas, setAreas] = useState<Area[]>([])
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([])
   const [executantes, setExecutantes] = useState<UserOption[]>([])
   const [loadingAreas, setLoadingAreas] = useState(true)
+
+  // Medidas contingenciais
+  const [medidas, setMedidas] = useState<MedidaContingencial[]>([])
+  const [novaMedida, setNovaMedida] = useState('')
 
   // Anexos — RF-016
   const [anexos, setAnexos] = useState<AnexoFile[]>([])
@@ -132,6 +148,7 @@ export default function NovaSolicitacaoPage() {
     areaId: '', equipamentoId: '', executanteId: '', tipo: '', classeNumero: '',
     funcaoIntertravamento: '', motivoDesabilitacao: '', periodoInicio: '', periodoFim: '',
     medidasContingenciais: '', cienteRiscos: false,
+    medidasIds: [], medidasCustom: [],
   })
 
   useEffect(() => {
@@ -158,7 +175,28 @@ export default function NovaSolicitacaoPage() {
       .catch(() => {})
   }, [form.areaId, areas])
 
-  function set(field: keyof FormData, value: string | boolean) {
+  useEffect(() => {
+    fetch('/api/me')
+      .then(r => r.json())
+      .then(data => setCurrentUserId(data.id))
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    fetch('/api/medidas-contingenciais')
+      .then(r => r.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setMedidas(data)
+          // Auto-select mandatory measures
+          const obrigatorias = data.filter((m: MedidaContingencial) => m.obrigatoria).map((m: MedidaContingencial) => m.id)
+          setForm(prev => ({ ...prev, medidasIds: obrigatorias }))
+        }
+      })
+      .catch(() => {})
+  }, [])
+
+  function set(field: keyof FormData, value: string | boolean | string[]) {
     setErrors(prev => { const n = { ...prev }; delete n[field]; return n })
     if (field === 'areaId') {
       setForm(prev => ({ ...prev, areaId: value as string, equipamentoId: '', tipo: '', classeNumero: '' }))
@@ -205,7 +243,11 @@ export default function NovaSolicitacaoPage() {
 
   function validateEtapa2(): boolean {
     const e: FieldError = {}
-    if (!form.medidasContingenciais.trim()) e.medidasContingenciais = 'Campo obrigatório'
+    // Must have at least the mandatory measures selected (they auto-select, so this is almost always valid)
+    const mandatoryCount = medidas.filter(m => m.obrigatoria).length
+    if (form.medidasIds.length < mandatoryCount) {
+      e.medidasIds = 'As medidas obrigatórias devem ser selecionadas'
+    }
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -245,11 +287,25 @@ export default function NovaSolicitacaoPage() {
     return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
   }
 
+  function buildMedidasText() {
+    return [
+      ...form.medidasIds.map(id => {
+        const m = medidas.find(med => med.id === id)
+        return m?.descricao ?? ''
+      }),
+      ...form.medidasCustom,
+    ].filter(Boolean).join('\n• ')
+  }
+
   async function handleSalvarRascunho() {
     setLoading(true)
     try {
       const formData = new FormData()
-      formData.append('data', JSON.stringify({ ...form, rascunho: true }))
+      formData.append('data', JSON.stringify({
+        ...form,
+        rascunho: true,
+        medidasContingenciais: buildMedidasText(),
+      }))
       anexos.forEach(a => formData.append('anexos', a.file))
       const res = await fetch('/api/solicitacoes', {
         method: 'POST',
@@ -265,7 +321,11 @@ export default function NovaSolicitacaoPage() {
     setLoading(true)
     try {
       const formData = new FormData()
-      formData.append('data', JSON.stringify({ ...form, rascunho: false }))
+      formData.append('data', JSON.stringify({
+        ...form,
+        rascunho: false,
+        medidasContingenciais: buildMedidasText(),
+      }))
       anexos.forEach(a => formData.append('anexos', a.file))
       const res = await fetch('/api/solicitacoes', {
         method: 'POST',
@@ -385,7 +445,7 @@ export default function NovaSolicitacaoPage() {
             onClick={() => {
               setSubmitted(null)
               setEtapa(1)
-              setForm({ areaId: '', equipamentoId: '', executanteId: '', tipo: '', classeNumero: '', funcaoIntertravamento: '', motivoDesabilitacao: '', periodoInicio: '', periodoFim: '', medidasContingenciais: '', cienteRiscos: false })
+              setForm({ areaId: '', equipamentoId: '', executanteId: '', tipo: '', classeNumero: '', funcaoIntertravamento: '', motivoDesabilitacao: '', periodoInicio: '', periodoFim: '', medidasContingenciais: '', cienteRiscos: false, medidasIds: medidas.filter(m => m.obrigatoria).map(m => m.id), medidasCustom: [] })
               setAnexos([])
             }}
           >
@@ -469,7 +529,7 @@ export default function NovaSolicitacaoPage() {
               >
                 <option value="">{loadingAreas ? 'Carregando...' : 'Selecione a área'}</option>
                 {areas.map(a => (
-                  <option key={a.id} value={a.id}>{a.planta.nome} › {a.nome}</option>
+                  <option key={a.id} value={a.id}>{a.nome}</option>
                 ))}
               </Select>
 
@@ -501,15 +561,9 @@ export default function NovaSolicitacaoPage() {
                   </span>
                 </div>
                 <div className="grid grid-cols-3 gap-3">
-                  <InfoRow icon="tag" label="TAG" value={equipSelecionado.tag} mono />
-                  <InfoRow icon="description" label="Descrição" value={equipSelecionado.descricao} />
+                  <InfoRow icon="description" label="Nome do equipamento" value={equipSelecionado.descricao} />
+                  <InfoRow icon="security" label="Função" value={equipSelecionado.funcaoProtegida ?? '—'} />
                   <InfoRow icon="location_on" label="Área" value={equipSelecionado.area.nome} />
-                  {areaSelecionada && (
-                    <InfoRow icon="factory" label="Planta" value={areaSelecionada.planta.nome} />
-                  )}
-                  {equipSelecionado.funcaoProtegida && (
-                    <InfoRow icon="security" label="Função protegida" value={equipSelecionado.funcaoProtegida} />
-                  )}
                 </div>
                 {(autoFilledTipo || autoFilledClasse) && (
                   <div
@@ -579,11 +633,18 @@ export default function NovaSolicitacaoPage() {
               errorMessage={errors.executanteId}
             >
               <option value="">Selecione o executante</option>
-              {executantes.map(u => (
-                <option key={u.id} value={u.id}>
-                  {u.nome} ({u.matricula}){u.cargo ? ` — ${u.cargo.nome}` : ''}
-                </option>
-              ))}
+              {[...executantes]
+                .sort((a, b) => {
+                  if (a.id === currentUserId) return -1
+                  if (b.id === currentUserId) return 1
+                  return 0
+                })
+                .map(u => (
+                  <option key={u.id} value={u.id}>
+                    {u.id === currentUserId ? `${u.nome} (${u.matricula}) (você)` : `${u.nome} (${u.matricula})${u.cargo ? ` — ${u.cargo.nome}` : ''}`}
+                  </option>
+                ))
+              }
             </Select>
 
             {/* Seletor de Classe — RF-012: Classe 5 desabilitada */}
@@ -661,6 +722,9 @@ export default function NovaSolicitacaoPage() {
                 type="datetime-local"
                 value={form.periodoInicio}
                 onChange={e => set('periodoInicio', e.target.value)}
+                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
+                  (e.target as HTMLInputElement).showPicker?.()
+                }}
                 variant={errors.periodoInicio ? 'error' : 'default'}
                 errorMessage={errors.periodoInicio}
               />
@@ -669,6 +733,9 @@ export default function NovaSolicitacaoPage() {
                 type="datetime-local"
                 value={form.periodoFim}
                 onChange={e => set('periodoFim', e.target.value)}
+                onClick={(e: React.MouseEvent<HTMLInputElement>) => {
+                  (e.target as HTMLInputElement).showPicker?.()
+                }}
                 variant={errors.periodoFim ? 'error' : 'default'}
                 errorMessage={errors.periodoFim}
               />
@@ -693,17 +760,170 @@ export default function NovaSolicitacaoPage() {
               <span><strong>Atenção:</strong> Descreva as medidas que garantirão a segurança durante o período de desabilitação.</span>
             </div>
 
-            <Textarea
-              label="Medidas Preventivas / Contingenciais *"
-              rows={6}
-              placeholder={'Exemplos:\n• Monitoramento manual periódico\n• Isolamento de área\n• Sinalização adicional\n• Procedimentos operacionais alternativos'}
-              value={form.medidasContingenciais}
-              onChange={e => set('medidasContingenciais', e.target.value)}
-              maxLength={1000}
-              variant={errors.medidasContingenciais ? 'error' : 'default'}
-              errorMessage={errors.medidasContingenciais}
-              hint={`${form.medidasContingenciais.length}/1000 caracteres`}
-            />
+            {/* Medidas contingenciais — lista de checkboxes */}
+            <div>
+              <label className="field-label">
+                Medidas Preventivas / Contingenciais <span style={{ color: '#DC2626' }}>*</span>
+              </label>
+
+              {medidas.length === 0 ? (
+                <div style={{ color: '#94A3B8', fontSize: 13, padding: '12px 0' }}>Carregando medidas...</div>
+              ) : (
+                <>
+                  <div
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '1fr 1fr',
+                      gap: '8px 24px',
+                      marginBottom: 12,
+                    }}
+                  >
+                    {medidas.map(medida => {
+                      const isSelected = form.medidasIds.includes(medida.id)
+                      const isObrigatorio = medida.obrigatoria
+                      return (
+                        <label
+                          key={medida.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: 8,
+                            cursor: isObrigatorio ? 'default' : 'pointer',
+                            padding: '4px 0',
+                          }}
+                        >
+                          {/* Custom checkbox visual */}
+                          <span
+                            onClick={() => {
+                              if (isObrigatorio) return
+                              const newIds = isSelected
+                                ? form.medidasIds.filter(id => id !== medida.id)
+                                : [...form.medidasIds, medida.id]
+                              set('medidasIds', newIds)
+                            }}
+                            style={{
+                              display: 'inline-flex',
+                              width: 18,
+                              height: 18,
+                              minWidth: 18,
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: 4,
+                              border: `1.5px solid ${isSelected ? '#0038A8' : '#CBD5E1'}`,
+                              background: isSelected ? '#0038A8' : 'white',
+                              marginTop: 1,
+                              cursor: isObrigatorio ? 'default' : 'pointer',
+                              opacity: isObrigatorio ? 0.85 : 1,
+                              flexShrink: 0,
+                              transition: 'background 0.1s ease',
+                            }}
+                          >
+                            {isSelected && (
+                              <svg fill="white" width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
+                                <path d="M9.1603 1.12218C9.50684 1.34873 9.60427 1.81354 9.37792 2.16038L5.13603 8.66012C5.01614 8.8438 4.82192 8.96576 4.60451 8.99384C4.3871 9.02194 4.1683 8.95335 4.00574 8.80615L1.24664 6.30769C0.939709 6.02975 0.916013 5.55541 1.19372 5.24822C1.47142 4.94102 1.94536 4.91731 2.2523 5.19524L4.36085 7.10461L8.12299 1.33999C8.34934 0.993152 8.81376 0.895638 9.1603 1.12218Z" />
+                              </svg>
+                            )}
+                          </span>
+                          <span style={{ fontSize: 13, color: '#374151', lineHeight: '18px', flex: 1 }}>
+                            {medida.descricao}
+                            {isObrigatorio && (
+                              <span style={{ marginLeft: 4, fontSize: 11, color: '#DC2626', fontWeight: 500 }}>
+                                (obrigatório)
+                              </span>
+                            )}
+                          </span>
+                        </label>
+                      )
+                    })}
+                  </div>
+
+                  {/* Medidas customizadas */}
+                  {form.medidasCustom.length > 0 && (
+                    <div style={{ marginBottom: 8 }}>
+                      {form.medidasCustom.map((m, i) => (
+                        <div
+                          key={i}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 8,
+                            padding: '6px 10px',
+                            marginBottom: 4,
+                            background: '#F8FAFC',
+                            borderRadius: 4,
+                            border: '1px solid #E2E8F0',
+                          }}
+                        >
+                          <span style={{ flex: 1, fontSize: 13, color: '#374151' }}>{m}</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = form.medidasCustom.filter((_, idx) => idx !== i)
+                              set('medidasCustom', next)
+                            }}
+                            style={{ color: '#94A3B8', background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                          >
+                            <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>close</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Adicionar medida customizada */}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      type="text"
+                      placeholder="Adicionar outra medida..."
+                      value={novaMedida}
+                      onChange={e => setNovaMedida(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter' && novaMedida.trim()) {
+                          e.preventDefault()
+                          set('medidasCustom', [...form.medidasCustom, novaMedida.trim()])
+                          setNovaMedida('')
+                        }
+                      }}
+                      style={{
+                        flex: 1,
+                        padding: '8px 12px',
+                        fontSize: 13,
+                        border: '1px solid #E2E8F0',
+                        borderRadius: 4,
+                        outline: 'none',
+                      }}
+                    />
+                    <button
+                      type="button"
+                      disabled={!novaMedida.trim()}
+                      onClick={() => {
+                        if (!novaMedida.trim()) return
+                        set('medidasCustom', [...form.medidasCustom, novaMedida.trim()])
+                        setNovaMedida('')
+                      }}
+                      style={{
+                        padding: '8px 16px',
+                        background: novaMedida.trim() ? '#0038A8' : '#E2E8F0',
+                        color: novaMedida.trim() ? 'white' : '#94A3B8',
+                        borderRadius: 4,
+                        border: 'none',
+                        fontSize: 13,
+                        cursor: novaMedida.trim() ? 'pointer' : 'not-allowed',
+                      }}
+                    >
+                      Adicionar
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {errors.medidasIds && (
+                <p className="field-error-msg">
+                  <span className="material-symbols-outlined select-none" style={{ fontSize: 13, lineHeight: 1 }} aria-hidden="true">error</span>
+                  {errors.medidasIds}
+                </p>
+              )}
+            </div>
 
             {/* Upload de anexos — RF-016 */}
             <div>
@@ -792,7 +1012,7 @@ export default function NovaSolicitacaoPage() {
                   : '—'
               } />
               <ResumoRow label="Motivo" value={form.motivoDesabilitacao} />
-              <ResumoRow label="Medidas" value={form.medidasContingenciais} />
+              <ResumoRow label="Medidas" value={buildMedidasText() || '—'} />
               {anexos.length > 0 && (
                 <ResumoRow label="Anexos" value={`${anexos.length} arquivo(s): ${anexos.map(a => a.file.name).join(', ')}`} />
               )}
@@ -818,18 +1038,15 @@ export default function NovaSolicitacaoPage() {
 
             {/* Ciência — RF-024 */}
             <div className="border p-4" style={{ borderColor: '#E2E8F0', borderRadius: '6px' }}>
-              <label className="flex items-start gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  checked={form.cienteRiscos}
-                  onChange={e => set('cienteRiscos', e.target.checked)}
-                  className="mt-0.5"
-                  style={{ accentColor: '#0038A8' }}
-                />
-                <span className="text-sm" style={{ color: '#374151' }}>
-                  <strong>Declaro ciência dos riscos</strong> durante o período de desabilitação e assumo responsabilidade como Responsável Operacional por todas as medidas contingenciais descritas.
-                </span>
-              </label>
+              <Checkbox
+                checked={form.cienteRiscos}
+                onCheckedChange={(checked) => set('cienteRiscos', checked)}
+                label={
+                  <span className="text-sm" style={{ color: '#374151' }}>
+                    <strong>Declaro ciência dos riscos</strong> durante o período de desabilitação e assumo responsabilidade como Responsável Operacional por todas as medidas contingenciais descritas.
+                  </span>
+                }
+              />
             </div>
           </div>
         )}
@@ -840,10 +1057,18 @@ export default function NovaSolicitacaoPage() {
       <ActionFooter>
         <div className="flex items-center justify-between w-full">
           <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              onClick={() => router.push('/solicitacoes')}
+            >
+              Cancelar
+            </Button>
             {etapa > 1 && (
               <Button
                 type="button"
-                variant="outline"
+                variant="ghost"
                 size="md"
                 onClick={() => setEtapa(e => (e - 1) as Etapa)}
                 leadingIcon="arrow_back"
@@ -851,9 +1076,11 @@ export default function NovaSolicitacaoPage() {
                 Anterior
               </Button>
             )}
+          </div>
+          <div className="flex gap-2">
             <Button
               type="button"
-              variant="ghost"
+              variant="secondary"
               size="md"
               onClick={handleSalvarRascunho}
               disabled={loading}
@@ -861,30 +1088,30 @@ export default function NovaSolicitacaoPage() {
             >
               Salvar rascunho
             </Button>
+            {etapa < 3 ? (
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={avancar}
+                trailingIcon="arrow_forward"
+              >
+                Próximo: {ETAPAS[etapa].label}
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                variant="primary"
+                size="md"
+                onClick={handleEnviar}
+                disabled={!form.cienteRiscos}
+                loading={loading}
+                leadingIcon={loading ? undefined : 'send'}
+              >
+                {loading ? 'Enviando...' : 'Enviar Solicitação'}
+              </Button>
+            )}
           </div>
-          {etapa < 3 ? (
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              onClick={avancar}
-              trailingIcon="arrow_forward"
-            >
-              Próximo: {ETAPAS[etapa].label}
-            </Button>
-          ) : (
-            <Button
-              type="button"
-              variant="primary"
-              size="md"
-              onClick={handleEnviar}
-              disabled={!form.cienteRiscos}
-              loading={loading}
-              leadingIcon={loading ? undefined : 'send'}
-            >
-              {loading ? 'Enviando...' : 'Enviar Solicitação'}
-            </Button>
-          )}
         </div>
       </ActionFooter>
     </div>

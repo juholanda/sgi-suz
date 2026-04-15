@@ -20,23 +20,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         senha: { label: 'Senha', type: 'password' },
       },
       async authorize(credentials) {
-        const parsed = loginSchema.safeParse(credentials)
-        if (!parsed.success) return null
+        try {
+          const parsed = loginSchema.safeParse(credentials)
+          if (!parsed.success) return null
 
-        const user = await prisma.user.findUnique({
-          where: { matricula: parsed.data.matricula },
-          include: { perfis: { include: { planta: true, area: true } } },
-        })
-        if (!user || !user.ativo) return null
+          const user = await prisma.user.findUnique({
+            where: { matricula: parsed.data.matricula },
+          })
+          if (!user || !user.ativo) return null
 
-        const valid = await bcrypt.compare(parsed.data.senha, user.passwordHash)
-        if (!valid) return null
+          const valid = await bcrypt.compare(parsed.data.senha, user.passwordHash)
+          if (!valid) return null
 
-        return {
-          id: user.id,
-          name: user.nome,
-          email: user.email,
-          matricula: user.matricula,
+          return {
+            id: user.id,
+            name: user.nome,
+            email: user.email,
+            matricula: user.matricula,
+          }
+        } catch (err) {
+          console.error('[auth] authorize error:', err)
+          return null
         }
       },
     }),
@@ -44,14 +48,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        // Persist custom fields into the JWT
         token.id = user.id
+        token.sub = user.id  // ensure sub is always the DB user ID
         token.matricula = (user as any).matricula
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id as string
+        // Use token.id or token.sub (NextAuth v5 auto-sets sub = user.id)
+        session.user.id = (token.id ?? token.sub) as string
         ;(session.user as any).matricula = token.matricula
       }
       return session

@@ -639,6 +639,7 @@ select.field-input {
   --color-primary-hover: #002D8A;
   --color-primary-light: #EBF0FB;
   --font-sans: 'Inter', sans-serif;
+  --font-mono: 'Inter', sans-serif;  /* Sobrescreve monospace — toda a UI usa Inter */
   --radius-DEFAULT: 4px;
   --radius-sm: 4px;
   --radius-md: 4px;

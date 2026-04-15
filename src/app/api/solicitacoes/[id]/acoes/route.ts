@@ -181,6 +181,32 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ ok: true })
   }
 
+  // ── INICIAR REABILITAÇÃO COMPLETA (com checklist) — vai direto para validação ──
+  if (tipo === 'INICIAR_REABILITACAO_COMPLETA') {
+    const items: { numero: number; descricao: string; resposta: string; observacao?: string }[] = checklistItems ?? []
+
+    await prisma.checklistItem.deleteMany({ where: { solicitacaoId: id, tipo: 'REABILITACAO' } })
+    for (const item of items) {
+      await prisma.checklistItem.create({
+        data: {
+          solicitacaoId: id,
+          numero: item.numero,
+          descricao: item.descricao,
+          resposta: item.resposta,
+          tipo: 'REABILITACAO',
+          observacao: item.observacao,
+        },
+      })
+    }
+
+    await prisma.solicitacao.update({
+      where: { id },
+      data: { status: 'EM_VALIDACAO_DA_REABILITACAO', dataReabilitacao: new Date() },
+    })
+    await registrarEvento(id, userId, 'REABILITACAO_INICIADA_E_CONCLUIDA', 'Checklist de reabilitação concluído — aguardando validação')
+    return NextResponse.json({ ok: true })
+  }
+
   // ── VALIDAR REABILITAÇÃO (aprovador de maior nível) ─── RF-081 ────────────
   if (tipo === 'VALIDAR_REABILITACAO') {
     await prisma.solicitacao.update({
@@ -193,7 +219,8 @@ export async function POST(req: NextRequest, { params }: Params) {
 
   // ── REJEITAR REABILITAÇÃO ─── RF-082 ──────────────────────────────────────
   if (tipo === 'REJEITAR_REABILITACAO') {
-    await prisma.solicitacao.update({ where: { id }, data: { status: 'EM_REABILITACAO' } })
+    // Devolve para DESABILITADO (sem estado intermediário EM_REABILITACAO)
+    await prisma.solicitacao.update({ where: { id }, data: { status: 'DESABILITADO' } })
     await registrarEvento(id, userId, 'REABILITACAO_REJEITADA', motivo)
     return NextResponse.json({ ok: true })
   }

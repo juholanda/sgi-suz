@@ -196,6 +196,7 @@ model Solicitacao {
   anexos          Anexo[]
   extensoes       ExtensaoPrazo[]
   eventos         EventoAuditoria[]
+  medidasSelecionadas SolicitacaoMedida[]
 }
 
 model Aprovacao {
@@ -249,6 +250,27 @@ model ExtensaoPrazo {
   createdAt       DateTime @default(now())
 
   solicitacao Solicitacao @relation(fields: [solicitacaoId], references: [id])
+}
+
+model MedidaContingencial {
+  id        String  @id @default(cuid())
+  descricao String
+  obrigatoria Boolean @default(false)
+  ativa      Boolean @default(true)
+  ordem      Int     @default(0)
+
+  solicitacaoMedidas SolicitacaoMedida[]
+}
+
+model SolicitacaoMedida {
+  id                    String  @id @default(cuid())
+  solicitacaoId         String
+  medidaContingencialId String?  // null = medida customizada
+  descricaoCustom       String?  // para medidas customizadas
+  createdAt             DateTime @default(now())
+
+  solicitacao          Solicitacao          @relation(fields: [solicitacaoId], references: [id])
+  medidaContingencial  MedidaContingencial? @relation(fields: [medidaContingencialId], references: [id])
 }
 
 model EventoAuditoria {

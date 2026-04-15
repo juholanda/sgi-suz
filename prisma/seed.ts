@@ -88,6 +88,16 @@ async function main() {
     })
   }
 
+  // ── Equipamentos Limeira ───────────────────────────────────────────────────
+  const equipsLimeira = ['PRD-BOM-001', 'PRD-VAL-002', 'PRD-SEN-010', 'PRD-MOT-003']
+  for (const tag of equipsLimeira) {
+    await prisma.equipamento.upsert({
+      where: { tag },
+      update: {},
+      create: { tag, descricao: `Intertravamento ${tag}`, areaId: areaLimeira.id },
+    })
+  }
+
   // ── Usuários ───────────────────────────────────────────────────────────────
   // Admin
   const admin = await prisma.user.upsert({
@@ -239,6 +249,38 @@ async function main() {
     await prisma.usuarioPerfil.create({
       data: { userId: aprovador2.id, perfil: 'APROVADOR', plantaId: plantaItem.id },
     }).catch(() => {})
+  }
+
+  // ── Medidas contingenciais — 16 medidas gerais, 4 obrigatórias ───────────
+  const medidasContingenciaisData = [
+    // Obrigatórias (primeiras 4 - sempre aparecem e não podem ser desmarcadas)
+    { descricao: 'Monitoramento manual periódico da área afetada', obrigatoria: true, ordem: 1 },
+    { descricao: 'Isolamento da área de risco com fita de sinalização ou barreira física', obrigatoria: true, ordem: 2 },
+    { descricao: 'Comunicação formal ao supervisor responsável e equipe de operação', obrigatoria: true, ordem: 3 },
+    { descricao: 'Instalação de cartão de advertência no equipamento/painel de controle', obrigatoria: true, ordem: 4 },
+
+    // Opcionais
+    { descricao: 'Proteção alternativa temporária em substituição ao dispositivo desabilitado', obrigatoria: false, ordem: 5 },
+    { descricao: 'Inspeção visual do equipamento a cada 2 horas', obrigatoria: false, ordem: 6 },
+    { descricao: 'Redução da taxa de produção ou carga de processo', obrigatoria: false, ordem: 7 },
+    { descricao: 'Posicionamento de operador de plantão na área de risco', obrigatoria: false, ordem: 8 },
+    { descricao: 'Verificação contínua dos parâmetros operacionais críticos', obrigatoria: false, ordem: 9 },
+    { descricao: 'Notificação da equipe de manutenção em standby', obrigatoria: false, ordem: 10 },
+    { descricao: 'Uso de sistema de detecção alternativo (sensor portátil, detector manual)', obrigatoria: false, ordem: 11 },
+    { descricao: 'Restrição de acesso à área para pessoal não autorizado', obrigatoria: false, ordem: 12 },
+    { descricao: 'Verificação de integridade do equipamento antes de cada turno', obrigatoria: false, ordem: 13 },
+    { descricao: 'Registro horário das condições operacionais no livro de bordo', obrigatoria: false, ordem: 14 },
+    { descricao: 'Disponibilização de EPI adicional para operadores da área', obrigatoria: false, ordem: 15 },
+    { descricao: 'Acionamento do procedimento de emergência caso haja desvio de processo', obrigatoria: false, ordem: 16 },
+  ]
+
+  // Only create if not already seeded
+  const existingMedidas = await prisma.medidaContingencial.count()
+  if (existingMedidas === 0) {
+    for (const medida of medidasContingenciaisData) {
+      await prisma.medidaContingencial.create({ data: medida })
+    }
+    console.log('✓ 16 medidas contingenciais criadas')
   }
 
   console.log(`

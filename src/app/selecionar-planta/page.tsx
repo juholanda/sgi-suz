@@ -7,7 +7,8 @@ export default async function SelecionarPlantaPage() {
   const session = await auth()
   if (!session) redirect('/login')
 
-  const userId = (session.user as any)?.id as string
+  const userId = (session.user as any)?.id as string | undefined
+  if (!userId) redirect('/login')  // sessão sem ID — força novo login
 
   const [perfisReais, userRecord] = await Promise.all([
     prisma.usuarioPerfil.findMany({ where: { userId }, include: { planta: true } }),

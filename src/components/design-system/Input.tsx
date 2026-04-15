@@ -5,7 +5,7 @@ export type InputVariant = 'default' | 'error' | 'success'
 export type InputSize = 'sm' | 'md' | 'lg'
 
 export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
-  label?: string
+  label?: React.ReactNode
   hint?: string
   errorMessage?: string
   successMessage?: string
@@ -21,7 +21,7 @@ export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElem
 }
 
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
-  label?: string
+  label?: React.ReactNode
   hint?: string
   errorMessage?: string
   successMessage?: string
@@ -31,7 +31,7 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
 }
 
 export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElement> {
-  label?: string
+  label?: React.ReactNode
   hint?: string
   errorMessage?: string
   successMessage?: string
@@ -39,6 +39,19 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
   required?: boolean
   placeholder?: string
   children: React.ReactNode
+}
+
+function renderLabel(label: React.ReactNode) {
+  if (typeof label !== 'string') return label
+  if (label.endsWith(' *')) {
+    return (
+      <>
+        {label.slice(0, -2)}
+        <span style={{ color: '#DC2626' }}> *</span>
+      </>
+    )
+  }
+  return label
 }
 
 function MaterialIcon({ name, size = 16 }: { name: string; size?: number }) {
@@ -81,7 +94,7 @@ function FieldWrapper({
   children,
 }: {
   id: string
-  label?: string
+  label?: React.ReactNode
   hint?: string
   errorMessage?: string
   successMessage?: string
@@ -93,7 +106,7 @@ function FieldWrapper({
     <div>
       {label && (
         <label className="field-label" htmlFor={id}>
-          {label}
+          {renderLabel(label)}
           {required && <span className="field-required" aria-hidden="true"> *</span>}
         </label>
       )}

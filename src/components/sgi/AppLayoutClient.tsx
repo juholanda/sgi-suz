@@ -86,6 +86,10 @@ export default function AppLayoutClient({ children, user, perfisReais, plantas, 
 
   function switchPlanta(plantaId: string) {
     localStorage.setItem('sgi_demo_planta', plantaId)
+    // Sincroniza como cookie para que o server-side leia corretamente
+    document.cookie = `sgi_planta_ativa=${plantaId};path=/;max-age=86400`
+    // Limpa o perfil ativo para que o layout escolha o primeiro perfil válido da nova planta
+    document.cookie = `sgi_perfil_ativo=;path=/;max-age=0`
     window.location.reload()
   }
 

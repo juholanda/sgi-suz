@@ -8,7 +8,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await auth()
   if (!session) redirect('/login')
 
-  const userId = (session.user as any)?.id as string
+  const userId = ((session.user as any)?.id ?? (session.user as any)?.sub) as string | undefined
+  if (!userId) redirect('/login')
 
   const perfisReais = await prisma.usuarioPerfil.findMany({
     where: { userId },

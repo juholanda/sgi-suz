@@ -15,12 +15,6 @@ const commonItems: NavItem[] = [
   { href: '/dashboard',    label: 'Início',       icon: 'home' },
   { href: '/solicitacoes', label: 'Solicitações', icon: 'description' },
 ]
-const aprovadorItems: NavItem[] = [
-  { href: '/aprovacoes',   label: 'Aprovações',   icon: 'task_alt' },
-]
-const solicitanteItems: NavItem[] = [
-  { href: '/execucao',     label: 'Execução',     icon: 'engineering' },
-]
 const bottomItems: NavItem[] = [
   { href: '/relatorios',   label: 'Relatórios',   icon: 'bar_chart' },
   { href: '/perfil',       label: 'Perfil',       icon: 'manage_accounts' },
@@ -103,8 +97,6 @@ export default function Sidebar({
 
   const navItems: NavItem[] = [
     ...commonItems,
-    ...(isAprovador   ? aprovadorItems   : []),
-    ...(isSolicitante ? solicitanteItems : []),
     ...bottomItems,
   ]
 

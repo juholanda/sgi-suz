@@ -48,13 +48,13 @@ export default function LoginPage() {
       return
     }
 
-    const result = await signIn('credentials', { matricula, senha, redirect: false })
-    setLoading(false)
-    if (result?.error) {
-      setErrorSenha('Erro ao autenticar. Tente novamente.')
-    } else {
+    try {
+      await signIn('credentials', { matricula, senha, redirect: false })
       router.push('/selecionar-planta')
+    } catch {
+      setErrorSenha('Erro ao autenticar. Tente novamente.')
     }
+    setLoading(false)
   }
 
   const formContent = (

@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { StatusSolicitacao } from '@/lib/tokens'
 import { ActionFooter } from '@/components/design-system/ActionFooter'
+import { Checkbox } from '@/components/design-system/Checkbox'
 
 interface ChecklistItemState {
   numero: number
@@ -48,6 +49,7 @@ export default function AcoesButtons({
   const [comentario, setComentario] = useState('')
   const [novaDataFim, setNovaDataFim] = useState('')
   const [justificativaExtensao, setJustificativaExtensao] = useState('')
+  const [confirmacaoValidacao, setConfirmacaoValidacao] = useState(false)
 
   // Checklist de desabilitação — RF-053, RF-054
   const [checklistDesab, setChecklistDesab] = useState<ChecklistItemState[]>(
@@ -108,19 +110,18 @@ export default function AcoesButtons({
 
   const canAprovar = isAprovador && status === 'EM_APROVACAO' && hasMinhaAprovPendente
   const canValidarReab = isAprovador && status === 'EM_VALIDACAO_DA_REABILITACAO'
-  const canIniciarExec = (isSolicitante || isExecutante) && status === 'EXECUCAO_AUTORIZADA'
-  const canConfirmarDesab = (isSolicitante || isExecutante) && status === 'EM_EXECUCAO'
+  // Merged: canExecutar replaces canIniciarExec + canConfirmarDesab — opens CHECKLIST_DESAB modal directly
+  const canExecutar = (isSolicitante || isExecutante) && status === 'EXECUCAO_AUTORIZADA'
   // Spec: Executante (and Solicitante) can initiate rehabilitation when DESABILITADO
   const canIniciarReab = (isSolicitante || isExecutante) && status === 'DESABILITADO'
-  const canConcluirReab = (isSolicitante || isExecutante) && status === 'EM_REABILITACAO'
   const canCancelar = isSolicitante && ['RASCUNHO', 'EM_APROVACAO', 'EXECUCAO_AUTORIZADA'].includes(status)
   const canSolicitarExtensao = isSolicitante && status === 'DESABILITADO'
   // Spec: Solicitante can clone from REJEITADA/CANCELADA
   const canClonar = isSolicitante && ['REJEITADA', 'CANCELADA'].includes(status)
   const canExportarPdf = status === 'ENCERRADA'
 
-  const hasAcoes = canAprovar || canValidarReab || canIniciarExec || canConfirmarDesab ||
-    canIniciarReab || canConcluirReab || canCancelar || canSolicitarExtensao || canClonar || canExportarPdf
+  const hasAcoes = canAprovar || canValidarReab || canExecutar ||
+    canIniciarReab || canCancelar || canSolicitarExtensao || canClonar || canExportarPdf
 
   if (!hasAcoes) return null
 
@@ -186,11 +187,10 @@ export default function AcoesButtons({
           </>
         )}
 
-        {/* Execução */}
-        {canIniciarExec && (
+        {/* Execução — abre checklist diretamente (sem estado intermediário EM_EXECUCAO) */}
+        {canExecutar && (
           <button
-            onClick={() => acao('INICIAR_EXECUCAO')}
-            disabled={loading}
+            onClick={() => setModal('CHECKLIST_DESAB')}
             className="px-4 py-2 text-sm font-medium text-white"
             style={{ background: '#0038A8', borderRadius: '4px' }}
           >
@@ -198,24 +198,12 @@ export default function AcoesButtons({
           </button>
         )}
 
-        {/* Confirmar desabilitação com checklist — RF-053 */}
-        {canConfirmarDesab && (
-          <button
-            onClick={() => setModal('CHECKLIST_DESAB')}
-            className="px-4 py-2 text-sm font-medium text-white"
-            style={{ background: '#EA580C', borderRadius: '4px' }}
-          >
-            Confirmar Desabilitação
-          </button>
-        )}
-
-        {/* Iniciar reabilitação */}
+        {/* Iniciar reabilitação — abre checklist diretamente (sem estado intermediário EM_REABILITACAO) */}
         {canIniciarReab && (
           <button
-            onClick={() => acao('INICIAR_REABILITACAO')}
-            disabled={loading}
+            onClick={() => setModal('CHECKLIST_REAB')}
             className="px-4 py-2 text-sm font-medium text-white"
-            style={{ background: '#8B5CF6', borderRadius: '4px' }}
+            style={{ background: '#0D9488', borderRadius: '4px' }}
           >
             Iniciar Reabilitação
           </button>
@@ -229,17 +217,6 @@ export default function AcoesButtons({
             style={{ background: '#FEF3C7', color: '#92400E', borderRadius: '4px', border: '1px solid #FDE68A' }}
           >
             Solicitar Extensão
-          </button>
-        )}
-
-        {/* Concluir reabilitação com checklist — RF-074 */}
-        {canConcluirReab && (
-          <button
-            onClick={() => setModal('CHECKLIST_REAB')}
-            className="px-4 py-2 text-sm font-medium text-white"
-            style={{ background: '#6366F1', borderRadius: '4px' }}
-          >
-            Concluir Reabilitação
           </button>
         )}
 
@@ -380,7 +357,7 @@ export default function AcoesButtons({
       {/* ── Modal: Checklist Reabilitação ─── RF-074, RF-075, RF-077 */}
       {modal === 'CHECKLIST_REAB' && (
         <Modal title="Checklist de Reabilitação" onClose={() => setModal(null)} wide>
-          <div className="px-3 py-2 text-sm mb-4" style={{ background: '#EDE9FE', color: '#6D28D9', borderRadius: '4px' }}>
+          <div className="px-3 py-2 text-sm mb-4" style={{ background: '#CCFBF1', color: '#0F766E', borderRadius: '4px' }}>
             Confirme cada item antes de concluir a reabilitação. Todos os itens são obrigatórios.
           </div>
           <div className="space-y-4">
@@ -389,7 +366,7 @@ export default function AcoesButtons({
                 <div className="flex items-start gap-3 mb-3">
                   <span
                     className="text-xs font-bold px-1.5 py-0.5 shrink-0"
-                    style={{ background: '#EDE9FE', color: '#6D28D9', borderRadius: '4px' }}
+                    style={{ background: '#CCFBF1', color: '#0F766E', borderRadius: '4px' }}
                   >
                     {item.numero}
                   </span>
@@ -408,7 +385,7 @@ export default function AcoesButtons({
                         value={opt}
                         checked={item.resposta === opt}
                         onChange={() => updateChecklist(setChecklistReab, i, 'resposta', opt)}
-                        style={{ accentColor: '#6D28D9' }}
+                        style={{ accentColor: '#0D9488' }}
                       />
                       <span className="text-sm font-medium" style={{ color: opt === 'SIM' ? '#16A34A' : '#6B7280' }}>
                         {opt === 'NA' ? 'N.A.' : 'SIM'}
@@ -439,7 +416,7 @@ export default function AcoesButtons({
             </button>
             <button
               disabled={!checklistValido(checklistReab) || checklistReab.some(i => i.resposta === 'NA' && !i.observacao.trim()) || loading}
-              onClick={() => acao('CONCLUIR_REABILITACAO', {
+              onClick={() => acao('INICIAR_REABILITACAO_COMPLETA', {
                 checklistItems: checklistReab.map(i => ({
                   numero: i.numero,
                   descricao: i.descricao,
@@ -450,7 +427,7 @@ export default function AcoesButtons({
               className="px-5 py-2 text-sm font-medium text-white"
               style={{
                 background: (checklistValido(checklistReab) && !checklistReab.some(i => i.resposta === 'NA' && !i.observacao.trim()))
-                  ? '#6366F1' : '#94A3B8',
+                  ? '#0D9488' : '#94A3B8',
                 borderRadius: '4px',
               }}
             >
@@ -462,7 +439,7 @@ export default function AcoesButtons({
 
       {/* Modal: Validar reabilitação — RF-081 */}
       {modal === 'VALIDAR_REABILITACAO' && (
-        <Modal title="Validar e Encerrar Solicitação" onClose={() => setModal(null)}>
+        <Modal title="Validar e Encerrar Solicitação" onClose={() => { setModal(null); setConfirmacaoValidacao(false) }}>
           <div className="mb-3 px-3 py-2 text-sm" style={{ background: '#D1FAE5', color: '#065F46', borderRadius: '4px' }}>
             Ao validar, a solicitação será encerrada de forma permanente e imutável (RF-085).
           </div>
@@ -475,29 +452,30 @@ export default function AcoesButtons({
             style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
           />
           {/* Confirmação digital — RF-081 */}
-          <label className="flex items-start gap-3 mt-4 cursor-pointer">
-            <input
-              type="checkbox"
-              id="assinatura-validacao"
-              className="mt-0.5"
-              style={{ accentColor: '#10B981' }}
-              onChange={e => {
-                const btn = document.getElementById('btn-validar-reab') as HTMLButtonElement | null
-                if (btn) btn.disabled = !e.target.checked || loading
-              }}
+          <div className="mt-4">
+            <Checkbox
+              checked={confirmacaoValidacao}
+              onCheckedChange={setConfirmacaoValidacao}
+              label={
+                <span className="text-sm" style={{ color: '#374151' }}>
+                  <strong>Confirmo minha identidade e valido digitalmente</strong> a reabilitação deste intertravamento.
+                </span>
+              }
             />
-            <span className="text-sm" style={{ color: '#374151' }}>
-              <strong>Confirmo minha identidade e valido digitalmente</strong> a reabilitação deste intertravamento.
-            </span>
-          </label>
+          </div>
           <div className="flex justify-end gap-2 mt-4">
-            <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>Voltar</button>
             <button
-              id="btn-validar-reab"
-              disabled
+              onClick={() => { setModal(null); setConfirmacaoValidacao(false) }}
+              className="px-4 py-2 text-sm border"
+              style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}
+            >
+              Voltar
+            </button>
+            <button
+              disabled={!confirmacaoValidacao || loading}
               onClick={() => acao('VALIDAR_REABILITACAO', { comentario })}
               className="px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#10B981', borderRadius: '4px' }}
+              style={{ background: confirmacaoValidacao && !loading ? '#10B981' : '#94A3B8', borderRadius: '4px' }}
             >
               {loading ? 'Validando...' : 'Validar e Encerrar'}
             </button>

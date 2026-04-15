@@ -47,7 +47,7 @@ export const tokens = {
       CANCELADA:    { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1', dot: '#94A3B8' },
 
       // Atenção — aguarda ação humana (âmbar/laranja)
-      EM_APROVACAO:        { bg: '#FFFBEB', text: '#92400E', border: '#FCD34D', dot: '#D97706' },
+      EM_APROVACAO:        { bg: '#FEF5E5', text: '#AC6F00', border: '#F9D89C', dot: '#AC6F00' },
       EXTENSAO_EM_ANALISE: { bg: '#FFF7ED', text: '#7C2D12', border: '#FDBA74', dot: '#EA580C' },
 
       // Em andamento — trabalho ativo (azul)
