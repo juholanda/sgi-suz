@@ -3,8 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
-  PieChart, Pie, Cell, ResponsiveContainer,
-  LineChart, Line,
+  PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line,
 } from 'recharts'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -12,12 +11,11 @@ import {
 interface KPIs {
   desabilitadosAgora: number
   emAprovacao: number
-  emExecucao: number
-  aguardandoReab: number
+  execucaoAutorizada: number
+  aguardandoValidacao: number
   prazosExcedidosAgora: number
   desabilitacoesPeriodo: number
   encerradasPeriodo: number
-  totalPeriodo: number
 }
 
 interface TopEquip {
@@ -258,60 +256,68 @@ export default function MetricasClient({ data, periodo }: Props) {
           </p>
         </div>
 
-        {/* ── KPIs em tempo real ──────────────────────────────────── */}
-        <div
-          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3"
-          style={{ marginBottom: 20 }}
-        >
-          <KpiCard label="Desabilitados agora" value={kpis.desabilitadosAgora} icon="warning" color="#EA580C" bgColor="#FFF7ED" />
-          <KpiCard label="Em aprovação" value={kpis.emAprovacao} icon="hourglass_top" color="#AC6F00" bgColor="#FEF5E5" />
-          <KpiCard label="Execução autorizada" value={kpis.emExecucao} icon="engineering" color="#1E40AF" bgColor="#EFF6FF" />
-          <KpiCard label="Aguardando reabilitação" value={kpis.aguardandoReab} icon="replay" color="#0D9488" bgColor="#F0FDFA" />
-          <KpiCard label="Prazos excedidos" value={kpis.prazosExcedidosAgora} icon="alarm" color="#DC2626" bgColor="#FEF2F2" />
+        {/* ── BLOCO: Situação atual (hoje) ─────────────────────────── */}
+        <div style={{ marginBottom: 24 }}>
+          <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
+            <span
+              style={{
+                width: 8,
+                height: 8,
+                borderRadius: '50%',
+                background: '#16A34A',
+                flexShrink: 0,
+                animation: 'pulse 2s infinite',
+              }}
+            />
+            <h2 style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', margin: 0 }}>
+              Situação atual
+            </h2>
+            <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 400 }}>
+              — tempo real
+            </span>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+            <KpiCard label="Desabilitados agora" value={kpis.desabilitadosAgora} icon="warning" color="#EA580C" bgColor="#FFF7ED" />
+            <KpiCard label="Em aprovação" value={kpis.emAprovacao} icon="hourglass_top" color="#AC6F00" bgColor="#FEF5E5" />
+            <KpiCard label="Execução autorizada" value={kpis.execucaoAutorizada} icon="engineering" color="#1E40AF" bgColor="#EFF6FF" />
+            <KpiCard label="Aguardando validação" value={kpis.aguardandoValidacao} icon="verified" color="#0D9488" bgColor="#F0FDFA" />
+            <KpiCard label="Prazos excedidos" value={kpis.prazosExcedidosAgora} icon="alarm" color="#DC2626" bgColor="#FEF2F2" />
+          </div>
         </div>
 
-        {/* ── Filtro de período ───────────────────────────────────── */}
-        <div
-          className="flex flex-wrap items-center justify-between gap-3"
-          style={{
-            marginBottom: 16,
-            padding: '10px 0',
-            borderTop: '1px solid #E2E8F0',
-            borderBottom: '1px solid #E2E8F0',
-          }}
-        >
-          <span style={{ fontSize: 13, fontWeight: 500, color: '#64748B' }}>
-            Dados do período
-          </span>
-          <select
-            value={periodo}
-            onChange={e => handlePeriodoChange(e.target.value)}
-            style={{
-              padding: '6px 12px',
-              borderRadius: 6,
-              border: '1px solid #E2E8F0',
-              background: '#FFFFFF',
-              fontSize: 13,
-              fontWeight: 500,
-              color: '#374151',
-              cursor: 'pointer',
-              outline: 'none',
-            }}
-          >
-            {PERIODOS.map(p => (
-              <option key={p.value} value={p.value}>{p.label}</option>
-            ))}
-          </select>
-        </div>
-
-        {/* ── KPIs do período ─────────────────────────────────────── */}
-        <div
-          className="grid grid-cols-2 md:grid-cols-3 gap-3"
-          style={{ marginBottom: 24 }}
-        >
-          <KpiCard label="Desabilitações realizadas" value={kpis.desabilitacoesPeriodo} icon="toggle_off" color="#EA580C" bgColor="#FFF7ED" />
-          <KpiCard label="Encerradas" value={kpis.encerradasPeriodo} icon="check_circle" color="#16A34A" bgColor="#F0FDF4" />
-          <KpiCard label="Total de solicitações" value={kpis.totalPeriodo} icon="list_alt" color="#0038A8" bgColor="#EBF0FB" />
+        {/* ── BLOCO: Período selecionado ──────────────────────────── */}
+        <div style={{ marginBottom: 24 }}>
+          <div className="flex flex-wrap items-center justify-between gap-3" style={{ marginBottom: 10 }}>
+            <div className="flex items-center gap-2">
+              <Icon name="date_range" size={16} />
+              <h2 style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', margin: 0 }}>
+                Período selecionado
+              </h2>
+            </div>
+            <select
+              value={periodo}
+              onChange={e => handlePeriodoChange(e.target.value)}
+              style={{
+                padding: '6px 12px',
+                borderRadius: 6,
+                border: '1px solid #E2E8F0',
+                background: '#FFFFFF',
+                fontSize: 13,
+                fontWeight: 500,
+                color: '#374151',
+                cursor: 'pointer',
+                outline: 'none',
+              }}
+            >
+              {PERIODOS.map(p => (
+                <option key={p.value} value={p.value}>{p.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <KpiCard label="Desabilitações realizadas" value={kpis.desabilitacoesPeriodo} icon="toggle_off" color="#EA580C" bgColor="#FFF7ED" />
+            <KpiCard label="Encerradas" value={kpis.encerradasPeriodo} icon="check_circle" color="#16A34A" bgColor="#F0FDF4" />
+          </div>
         </div>
 
         {/* ── SEÇÃO 2: Top equipamentos recorrentes ───────────────── */}
@@ -337,12 +343,7 @@ export default function MetricasClient({ data, periodo }: Props) {
                       tick={{ fontSize: 12, fill: '#0F172A', fontWeight: 600 }}
                     />
                     <Tooltip content={<CustomTooltip />} />
-                    <Bar dataKey="total" name="Solicitações" radius={[0, 6, 6, 0]} barSize={24}>
-                      {topEquipamentos.map((entry, i) => {
-                        const mainClasse = entry.classes[0]?.classe ?? 1
-                        return <Cell key={i} fill={CLASSE_COLORS[mainClasse] ?? '#0038A8'} />
-                      })}
-                    </Bar>
+                    <Bar dataKey="total" name="Solicitações" fill="#0038A8" radius={[0, 6, 6, 0]} barSize={24} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -354,7 +355,6 @@ export default function MetricasClient({ data, periodo }: Props) {
                     <tr style={{ borderBottom: '2px solid #E2E8F0' }}>
                       <th style={{ textAlign: 'left', padding: '6px 8px', color: '#64748B', fontWeight: 600 }}>TAG</th>
                       <th style={{ textAlign: 'center', padding: '6px 8px', color: '#64748B', fontWeight: 600 }}>Qty</th>
-                      <th style={{ textAlign: 'left', padding: '6px 8px', color: '#64748B', fontWeight: 600 }}>Classes</th>
                       <th style={{ textAlign: 'left', padding: '6px 8px', color: '#64748B', fontWeight: 600 }}>Motivo principal</th>
                     </tr>
                   </thead>
@@ -366,17 +366,7 @@ export default function MetricasClient({ data, periodo }: Props) {
                           <div style={{ fontSize: 11, color: '#94A3B8' }}>{eq.area}</div>
                         </td>
                         <td style={{ textAlign: 'center', fontWeight: 700, color: '#0F172A', padding: '8px' }}>{eq.total}</td>
-                        <td style={{ padding: '8px' }}>
-                          <div style={{ display: 'flex', gap: 3, flexWrap: 'wrap' }}>
-                            {eq.classes.map((c, j) => (
-                              <span key={j} style={{ display: 'inline-flex', alignItems: 'center', gap: 2 }}>
-                                <ClasseBadge classe={c.classe} />
-                                <span style={{ fontSize: 10, color: '#94A3B8' }}>×{c.count}</span>
-                              </span>
-                            ))}
-                          </div>
-                        </td>
-                        <td style={{ padding: '8px', fontSize: 11, color: '#475569', maxWidth: 180 }}>
+                        <td style={{ padding: '8px', fontSize: 11, color: '#475569', maxWidth: 200 }}>
                           {eq.motivos[0]?.motivo ?? '—'}
                         </td>
                       </tr>

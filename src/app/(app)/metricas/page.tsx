@@ -37,17 +37,16 @@ async function getMetricasData(plantaId: string, periodo: string) {
   const [
     desabilitadosAgora,
     emAprovacao,
-    emExecucao,
-    aguardandoReab,
+    execucaoAutorizada,
+    aguardandoValidacao,
     prazosExcedidosAgora,
     desabilitacoesPeriodo,
     encerradasPeriodo,
-    totalPeriodo,
   ] = await Promise.all([
     prisma.solicitacao.count({ where: { status: 'DESABILITADO', ...scope } }),
     prisma.solicitacao.count({ where: { status: 'EM_APROVACAO', ...scope } }),
     prisma.solicitacao.count({ where: { status: 'EXECUCAO_AUTORIZADA', ...scope } }),
-    prisma.solicitacao.count({ where: { status: { in: ['EM_REABILITACAO', 'EM_VALIDACAO_DA_REABILITACAO'] }, ...scope } }),
+    prisma.solicitacao.count({ where: { status: 'EM_VALIDACAO_DA_REABILITACAO', ...scope } }),
     prisma.solicitacao.count({
       where: {
         prazoMaximoAtingido: true,
@@ -63,9 +62,6 @@ async function getMetricasData(plantaId: string, periodo: string) {
     }),
     prisma.solicitacao.count({
       where: { status: 'ENCERRADA', dataEncerramento: { gte: desde }, ...scope },
-    }),
-    prisma.solicitacao.count({
-      where: { createdAt: { gte: desde }, ...scope },
     }),
   ])
 
@@ -391,12 +387,11 @@ async function getMetricasData(plantaId: string, periodo: string) {
     kpis: {
       desabilitadosAgora,
       emAprovacao,
-      emExecucao,
-      aguardandoReab,
+      execucaoAutorizada,
+      aguardandoValidacao,
       prazosExcedidosAgora,
       desabilitacoesPeriodo,
       encerradasPeriodo,
-      totalPeriodo,
     },
     topEquipamentos,
     porClasse,
