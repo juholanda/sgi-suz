@@ -124,7 +124,7 @@ export default async function SolicitacaoDetailPage({
     dataDesabilitacao: serializeDate(s.dataDesabilitacao),
     dataReabilitacao: serializeDate(s.dataReabilitacao),
     dataEncerramento: serializeDate(s.dataEncerramento),
-    dataEnvioAprovacao: serializeDate((s as any).dataEnvioAprovacao),
+    dataEnvioAprovacao: serializeDate(s.dataEnvio),
     prazoMaximoAtingido: s.prazoMaximoAtingido,
     prazoPrevitoAtingido: s.prazoPrevitoAtingido,
     createdAt: s.createdAt.toISOString(),
@@ -175,8 +175,8 @@ export default async function SolicitacaoDetailPage({
     anexos: s.anexos.map((a: any) => ({
       id: a.id,
       nome: a.nome ?? null,
-      filename: a.filename ?? null,
-      tipo: a.tipo ?? null,
+      filename: a.nome ?? null,
+      tipo: null,
       mimeType: a.mimeType ?? null,
       tamanho: a.tamanho ?? null,
       url: a.url ?? null,
@@ -190,7 +190,7 @@ export default async function SolicitacaoDetailPage({
     })),
     extensoes: extensoes.map((ext: any) => ({
       id: ext.id,
-      novaDataFim: ext.novaDataFim?.toISOString?.() ?? ext.novaDataFim,
+      novaDataFim: ext.novoPeriodoFim?.toISOString?.() ?? null,
       justificativa: ext.justificativa,
       status: ext.status,
       createdAt: ext.createdAt?.toISOString?.() ?? ext.createdAt,
