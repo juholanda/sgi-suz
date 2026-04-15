@@ -208,7 +208,7 @@ export default async function DashboardPage({
   ]
 
   return (
-    <div className="p-4 md:p-6 max-w-full" style={{ minHeight: '100vh', background: '#F8FAFC' }}>
+    <div className="p-4 md:p-6 max-w-full" style={{ minHeight: '100vh', background: '#F1F5F9' }}>
 
       {/* ─── Bloco 1: Bem-vindo ─── */}
       <div className="flex items-center justify-between mb-8">

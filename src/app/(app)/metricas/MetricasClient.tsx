@@ -243,7 +243,7 @@ export default function MetricasClient({ data, periodo }: Props) {
   const porAreaTop = porArea.slice(0, 8)
 
   return (
-    <div style={{ minHeight: '100vh', background: '#F8FAFC' }}>
+    <div style={{ minHeight: '100vh', background: '#F1F5F9' }}>
       <div className="max-w-7xl mx-auto w-full px-4 md:px-6 py-4 md:py-6">
 
         {/* ── Header ───────────────────────────────────────────────── */}
