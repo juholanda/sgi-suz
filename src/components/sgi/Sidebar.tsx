@@ -16,7 +16,7 @@ const commonItems: NavItem[] = [
   { href: '/solicitacoes', label: 'Solicitações', icon: 'description' },
 ]
 const bottomItems: NavItem[] = [
-  { href: '/relatorios',   label: 'Relatórios',   icon: 'bar_chart' },
+  { href: '/metricas',     label: 'Métricas',     icon: 'insights' },
   { href: '/perfil',       label: 'Perfil',       icon: 'manage_accounts' },
 ]
 
@@ -26,6 +26,20 @@ const PERFIL_LABELS: Record<string, string> = {
   APROVADOR:     'Aprovador',
   GESTOR_SMS:    'Gestor SMS',
   ADMINISTRADOR: 'Administrador',
+}
+
+/** Mescla SOLICITANTE+EXECUTANTE num único entry quando o user tem os dois perfis */
+function buildDisplayPerfis(perfisReais: { perfil: string }[]): { perfil: string; label: string }[] {
+  const hasSol  = perfisReais.some(p => p.perfil === 'SOLICITANTE')
+  const hasExec = perfisReais.some(p => p.perfil === 'EXECUTANTE')
+  return perfisReais
+    .filter(p => !(hasSol && hasExec && p.perfil === 'SOLICITANTE')) // remove SOLICITANTE quando ambos existem
+    .map(p => ({
+      perfil: p.perfil,
+      label: hasSol && hasExec && p.perfil === 'EXECUTANTE'
+        ? 'Solicitante / Executante'
+        : (PERFIL_LABELS[p.perfil] ?? p.perfil),
+    }))
 }
 
 const PERFIL_ICONS: Record<string, string> = {
@@ -239,7 +253,7 @@ export default function Sidebar({
                 className="absolute top-full left-0 right-0 z-50 mt-1 shadow-lg overflow-hidden"
                 style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
               >
-                {perfisReais.map(p => (
+                {buildDisplayPerfis(perfisReais).map(p => (
                   <button
                     key={p.perfil}
                     onClick={() => { setShowPerfilDropdown(false); onSwitchPerfil(p.perfil) }}
@@ -252,7 +266,7 @@ export default function Sidebar({
                     }}
                   >
                     <Icon name={PERFIL_ICONS[p.perfil] ?? 'person'} size={15} />
-                    <span className="flex-1 truncate">{PERFIL_LABELS[p.perfil] ?? p.perfil}</span>
+                    <span className="flex-1 truncate">{p.label}</span>
                     {perfil === p.perfil && <Icon name="check" size={14} />}
                   </button>
                 ))}
