@@ -208,6 +208,8 @@ export default function NovaSolicitacaoPage() {
         // Auto-fill from equipment data if available
         tipo: equip?.tipo ?? prev.tipo,
         classeNumero: equip?.classeNumero != null ? String(equip.classeNumero) : prev.classeNumero,
+        // Auto-fill funcaoIntertravamento from equipment's funcaoProtegida
+        funcaoIntertravamento: equip?.funcaoProtegida ?? prev.funcaoIntertravamento,
       }))
     } else {
       setForm(prev => ({ ...prev, [field]: value }))
@@ -230,7 +232,6 @@ export default function NovaSolicitacaoPage() {
     if (!form.executanteId) e.executanteId = 'Selecione o executante'
     if (!form.tipo) e.tipo = 'Selecione o tipo de intertravamento'
     if (!form.classeNumero) e.classeNumero = 'Selecione a classe'
-    if (!form.funcaoIntertravamento.trim()) e.funcaoIntertravamento = 'Campo obrigatório'
     if (!form.motivoDesabilitacao.trim()) e.motivoDesabilitacao = 'Campo obrigatório'
     if (!form.periodoInicio) e.periodoInicio = 'Campo obrigatório'
     if (!form.periodoFim) e.periodoFim = 'Campo obrigatório'
@@ -562,7 +563,7 @@ export default function NovaSolicitacaoPage() {
                 </div>
                 <div className="grid grid-cols-3 gap-3">
                   <InfoRow icon="description" label="Nome do equipamento" value={equipSelecionado.descricao} />
-                  <InfoRow icon="security" label="Função" value={equipSelecionado.funcaoProtegida ?? '—'} />
+                  <InfoRow icon="security" label="Função do intertravamento" value={equipSelecionado.funcaoProtegida ?? '—'} />
                   <InfoRow icon="location_on" label="Área" value={equipSelecionado.area.nome} />
                 </div>
                 {(autoFilledTipo || autoFilledClasse) && (
@@ -582,48 +583,33 @@ export default function NovaSolicitacaoPage() {
               </div>
             )}
 
-            {/* Função + Tipo */}
-            <div className="grid grid-cols-2 gap-4">
-              <Select
-                label="Função do intertravamento *"
-                value={form.funcaoIntertravamento}
-                onChange={e => set('funcaoIntertravamento', e.target.value)}
-                variant={errors.funcaoIntertravamento ? 'error' : 'default'}
-                errorMessage={errors.funcaoIntertravamento}
-              >
-                <option value="">Selecione a função</option>
-                {FUNCOES_INTERTRAVAMENTO.map(f => (
-                  <option key={f} value={f}>{f}</option>
-                ))}
-              </Select>
-
-              {autoFilledTipo ? (
-                <div>
-                  <label className="field-label">Tipo de intertravamento</label>
-                  <div
-                    className="px-3 py-2 text-sm flex items-center gap-2"
-                    style={{ background: '#F0F4F8', borderRadius: '4px', border: '1px solid #E2E8F0', color: '#374151' }}
-                  >
-                    <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#0038A8', lineHeight: 1 }}>lock</span>
-                    {form.tipo === 'FISICO' ? 'Físico' : form.tipo === 'LOGICO' ? 'Lógico' : form.tipo === 'DISPOSITIVO_SEGURANCA' ? 'Dispositivo de segurança' : form.tipo}
-                    <span className="ml-auto text-xs" style={{ color: '#0038A8' }}>pré-preenchido</span>
-                  </div>
-                </div>
-              ) : (
-                <Select
-                  label="Tipo de intertravamento *"
-                  value={form.tipo}
-                  onChange={e => set('tipo', e.target.value)}
-                  variant={errors.tipo ? 'error' : 'default'}
-                  errorMessage={errors.tipo}
+            {/* Tipo */}
+            {autoFilledTipo ? (
+              <div>
+                <label className="field-label">Tipo de intertravamento</label>
+                <div
+                  className="px-3 py-2 text-sm flex items-center gap-2"
+                  style={{ background: '#F0F4F8', borderRadius: '4px', border: '1px solid #E2E8F0', color: '#374151' }}
                 >
-                  <option value="">Selecione o tipo</option>
-                  <option value="FISICO">Físico</option>
-                  <option value="LOGICO">Lógico</option>
-                  <option value="DISPOSITIVO_SEGURANCA">Dispositivo de segurança</option>
-                </Select>
-              )}
-            </div>
+                  <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#0038A8', lineHeight: 1 }}>lock</span>
+                  {form.tipo === 'FISICO' ? 'Físico' : form.tipo === 'LOGICO' ? 'Lógico' : form.tipo === 'DISPOSITIVO_SEGURANCA' ? 'Dispositivo de segurança' : form.tipo}
+                  <span className="ml-auto text-xs" style={{ color: '#0038A8' }}>pré-preenchido</span>
+                </div>
+              </div>
+            ) : (
+              <Select
+                label="Tipo de intertravamento *"
+                value={form.tipo}
+                onChange={e => set('tipo', e.target.value)}
+                variant={errors.tipo ? 'error' : 'default'}
+                errorMessage={errors.tipo}
+              >
+                <option value="">Selecione o tipo</option>
+                <option value="FISICO">Físico</option>
+                <option value="LOGICO">Lógico</option>
+                <option value="DISPOSITIVO_SEGURANCA">Dispositivo de segurança</option>
+              </Select>
+            )}
 
             <Select
               label="Executante *"
