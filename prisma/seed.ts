@@ -1377,6 +1377,361 @@ async function main() {
 
   console.log('✓ 20 solicitações históricas criadas (Aracruz: 11, Ribas: 9) — classes 1-4, meses 1-5 atrás')
 
+  // ── Solicitações extras para popular o gráfico de ciclo de vida ───────────
+  // Com tempos significativos entre etapas (aprovação, execução, desabilitado, reabilitação)
+
+  const cicloVidaSolicitacoes = [
+    // ═══ ARACRUZ ═════════════════════════════════════════════════════════════
+
+    // C1 — aprovação 1d, execução 1d, desabilitado 3d, reabilitação 2d
+    {
+      id: 'seed-ciclo-ara-c1-a',
+      protocolo: 'SGI-20260201-CV01',
+      status: 'ENCERRADA',
+      areaId: areaFibras.id,
+      equipamentoId: equipFib1.id,
+      classeId: classe1.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'Alarme de nível baixo do tanque de polpa',
+      motivoDesabilitacao: 'Limpeza do sensor ultrassônico de nível',
+      medidasContingenciais: 'Medição manual com trena a cada 2h',
+      periodoInicio: daysAgo(73),
+      periodoFim: daysAgo(66),
+      dataEnvio: daysAgo(73),
+      dataAprovacaoFinal: daysAgo(72),
+      dataDesabilitacao: daysAgo(71),
+      dataReabilitacao: daysAgo(68),
+      dataEncerramento: daysAgo(66),
+      prazoMaximoAtingido: false,
+      createdAt: daysAgo(74),
+    },
+    // C1 — aprovação 2d, execução 1d, desabilitado 4d, reabilitação 1d
+    {
+      id: 'seed-ciclo-ara-c1-b',
+      protocolo: 'SGI-20260225-CV02',
+      status: 'ENCERRADA',
+      areaId: areaCaldeira.id,
+      equipamentoId: equipCal1.id,
+      classeId: classe1.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'FISICO',
+      funcaoIntertravamento: 'Sensor de vazão de água de resfriamento',
+      motivoDesabilitacao: 'Troca de elemento sensor com corrosão',
+      medidasContingenciais: 'Monitoramento manual da temperatura de saída',
+      periodoInicio: daysAgo(49),
+      periodoFim: daysAgo(42),
+      dataEnvio: daysAgo(50),
+      dataAprovacaoFinal: daysAgo(48),
+      dataDesabilitacao: daysAgo(47),
+      dataReabilitacao: daysAgo(43),
+      dataEncerramento: daysAgo(42),
+      prazoMaximoAtingido: false,
+      createdAt: daysAgo(51),
+    },
+
+    // C2 — aprovação 2d, execução 2d, desabilitado 3d, reabilitação 2d
+    {
+      id: 'seed-ciclo-ara-c2-a',
+      protocolo: 'SGI-20260205-CV03',
+      status: 'ENCERRADA',
+      areaId: areaFibras.id,
+      equipamentoId: equipFib2.id,
+      classeId: classe2.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'Trip de alta vibração do agitador',
+      motivoDesabilitacao: 'Balanceamento dinâmico do eixo',
+      medidasContingenciais: 'Velocidade reduzida, monitoramento contínuo',
+      periodoInicio: daysAgo(69),
+      periodoFim: daysAgo(60),
+      dataEnvio: daysAgo(70),
+      dataAprovacaoFinal: daysAgo(68),
+      dataDesabilitacao: daysAgo(66),
+      dataReabilitacao: daysAgo(63),
+      dataEncerramento: daysAgo(61),
+      prazoMaximoAtingido: false,
+      createdAt: daysAgo(71),
+    },
+    // C2 — aprovação 1d, execução 1d, desabilitado 6d, reabilitação 3d (prazo estourado)
+    {
+      id: 'seed-ciclo-ara-c2-b',
+      protocolo: 'SGI-20260301-CV04',
+      status: 'ENCERRADA',
+      areaId: areaCaldeira.id,
+      equipamentoId: equipCal3.id,
+      classeId: classe2.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'DISPOSITIVO_SEGURANCA',
+      funcaoIntertravamento: 'Proteção contra retorno de vapor',
+      motivoDesabilitacao: 'Troca de válvula de retenção com mau funcionamento',
+      medidasContingenciais: 'Válvula manual operada, monitoramento de pressão',
+      periodoInicio: daysAgo(45),
+      periodoFim: daysAgo(38),
+      dataEnvio: daysAgo(46),
+      dataAprovacaoFinal: daysAgo(45),
+      dataDesabilitacao: daysAgo(44),
+      dataReabilitacao: daysAgo(38),
+      dataEncerramento: daysAgo(35),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(47),
+    },
+
+    // C3 — aprovação 1d, execução 1d, desabilitado 2d, reabilitação 1d
+    {
+      id: 'seed-ciclo-ara-c3-a',
+      protocolo: 'SGI-20260210-CV05',
+      status: 'ENCERRADA',
+      areaId: areaFibras.id,
+      equipamentoId: equipFib3.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'ESD por alta pressão do reator',
+      motivoDesabilitacao: 'Falha no transmissor de pressão — troca urgente',
+      medidasContingenciais: 'Manômetro local, operador dedicado, carga a 50%',
+      periodoInicio: daysAgo(64),
+      periodoFim: daysAgo(60),
+      dataEnvio: daysAgo(65),
+      dataAprovacaoFinal: daysAgo(64),
+      dataDesabilitacao: daysAgo(63),
+      dataReabilitacao: daysAgo(61),
+      dataEncerramento: daysAgo(60),
+      prazoMaximoAtingido: false,
+      createdAt: daysAgo(66),
+    },
+    // C3 — aprovação 1d, execução 1d, desabilitado 5d, reabilitação 2d (prazo estourado)
+    {
+      id: 'seed-ciclo-ara-c3-b',
+      protocolo: 'SGI-20260305-CV06',
+      status: 'ENCERRADA',
+      areaId: areaCaldeira.id,
+      equipamentoId: equipCal2.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'FISICO',
+      funcaoIntertravamento: 'Trip de falha de ignição do queimador',
+      motivoDesabilitacao: 'Substituição do eletrodo de ignição danificado',
+      medidasContingenciais: 'Ignição manual supervisionada, extintor posicionado',
+      periodoInicio: daysAgo(41),
+      periodoFim: daysAgo(38),
+      dataEnvio: daysAgo(42),
+      dataAprovacaoFinal: daysAgo(41),
+      dataDesabilitacao: daysAgo(40),
+      dataReabilitacao: daysAgo(35),
+      dataEncerramento: daysAgo(33),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(43),
+    },
+
+    // C4 — aprovação 1d, execução 1d, desabilitado 1d, reabilitação 1d (rápido, dentro do prazo)
+    {
+      id: 'seed-ciclo-ara-c4-a',
+      protocolo: 'SGI-20260215-CV07',
+      status: 'ENCERRADA',
+      areaId: areaFibras.id,
+      equipamentoId: equipFib4.id,
+      classeId: classe4.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'Shutdown de emergência do evaporador',
+      motivoDesabilitacao: 'Reset do módulo de segurança após falha espúria',
+      medidasContingenciais: 'Operação manual total, equipe de emergência em standby',
+      periodoInicio: daysAgo(59),
+      periodoFim: daysAgo(58),
+      dataEnvio: daysAgo(60),
+      dataAprovacaoFinal: daysAgo(59),
+      dataDesabilitacao: daysAgo(58),
+      dataReabilitacao: daysAgo(57),
+      dataEncerramento: daysAgo(56),
+      prazoMaximoAtingido: false,
+      createdAt: daysAgo(61),
+    },
+    // C4 — aprovação 1d, execução 1d, desabilitado 3d, reabilitação 2d (prazo estourado)
+    {
+      id: 'seed-ciclo-ara-c4-b',
+      protocolo: 'SGI-20260310-CV08',
+      status: 'ENCERRADA',
+      areaId: areaFibras.id,
+      equipamentoId: equipFib5.id,
+      classeId: classe4.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'DISPOSITIVO_SEGURANCA',
+      funcaoIntertravamento: 'Bloqueio por detecção de gás H2S',
+      motivoDesabilitacao: 'Detector de gás fora de calibração — recertificação',
+      medidasContingenciais: 'Detector portátil, área isolada, EPI respiratório obrigatório',
+      periodoInicio: daysAgo(36),
+      periodoFim: daysAgo(35),
+      dataEnvio: daysAgo(37),
+      dataAprovacaoFinal: daysAgo(36),
+      dataDesabilitacao: daysAgo(35),
+      dataReabilitacao: daysAgo(32),
+      dataEncerramento: daysAgo(30),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(38),
+    },
+
+    // ═══ RIBAS DO RIO PARDO ═════════════════════════════════════════════════
+
+    // C1 — aprovação 1d, execução 2d, desabilitado 5d, reabilitação 2d
+    {
+      id: 'seed-ciclo-rrp-c1-a',
+      protocolo: 'SGI-20260208-RCV01',
+      status: 'ENCERRADA',
+      areaId: areaRecuperacao.id,
+      equipamentoId: eqRec1.id,
+      classeId: classe1.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'Alarme de temperatura do licor negro',
+      motivoDesabilitacao: 'Recalibração do termopar de imersão',
+      medidasContingenciais: 'Pirômetro portátil, verificação manual',
+      periodoInicio: daysAgo(66),
+      periodoFim: daysAgo(56),
+      dataEnvio: daysAgo(67),
+      dataAprovacaoFinal: daysAgo(66),
+      dataDesabilitacao: daysAgo(64),
+      dataReabilitacao: daysAgo(59),
+      dataEncerramento: daysAgo(57),
+      prazoMaximoAtingido: false,
+      createdAt: daysAgo(68),
+    },
+    // C2 — aprovação 2d, execução 1d, desabilitado 4d, reabilitação 2d
+    {
+      id: 'seed-ciclo-rrp-c2-a',
+      protocolo: 'SGI-20260220-RCV02',
+      status: 'ENCERRADA',
+      areaId: areaCelulose.id,
+      equipamentoId: eqCel2.id,
+      classeId: classe2.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'FISICO',
+      funcaoIntertravamento: 'Proteção contra sobrecarga do filtro',
+      motivoDesabilitacao: 'Troca da tela filtrante com desgaste',
+      medidasContingenciais: 'Bypass parcial, monitoramento de pressão diferencial',
+      periodoInicio: daysAgo(54),
+      periodoFim: daysAgo(46),
+      dataEnvio: daysAgo(55),
+      dataAprovacaoFinal: daysAgo(53),
+      dataDesabilitacao: daysAgo(52),
+      dataReabilitacao: daysAgo(48),
+      dataEncerramento: daysAgo(46),
+      prazoMaximoAtingido: false,
+      createdAt: daysAgo(56),
+    },
+    // C3 — aprovação 1d, execução 1d, desabilitado 4d, reabilitação 1d (prazo estourado)
+    {
+      id: 'seed-ciclo-rrp-c3-a',
+      protocolo: 'SGI-20260228-RCV03',
+      status: 'ENCERRADA',
+      areaId: areaRecuperacao.id,
+      equipamentoId: eqRec3.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'Trip de pressão alta do evaporador',
+      motivoDesabilitacao: 'Válvula de controle travada — reparo do atuador',
+      medidasContingenciais: 'Operação manual da válvula, redução de carga',
+      periodoInicio: daysAgo(46),
+      periodoFim: daysAgo(43),
+      dataEnvio: daysAgo(47),
+      dataAprovacaoFinal: daysAgo(46),
+      dataDesabilitacao: daysAgo(45),
+      dataReabilitacao: daysAgo(41),
+      dataEncerramento: daysAgo(40),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(48),
+    },
+    // C4 — aprovação 1d, execução 1d, desabilitado 2d, reabilitação 1d (prazo estourado)
+    {
+      id: 'seed-ciclo-rrp-c4-a',
+      protocolo: 'SGI-20260312-RCV04',
+      status: 'ENCERRADA',
+      areaId: areaCelulose.id,
+      equipamentoId: eqCel3.id,
+      classeId: classe4.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'DISPOSITIVO_SEGURANCA',
+      funcaoIntertravamento: 'Válvula de segurança do digestor — alívio',
+      motivoDesabilitacao: 'Teste hidrostático obrigatório — NR-13',
+      medidasContingenciais: 'Disco de ruptura temporário, pressão reduzida, supervisor dedicado',
+      periodoInicio: daysAgo(34),
+      periodoFim: daysAgo(33),
+      dataEnvio: daysAgo(35),
+      dataAprovacaoFinal: daysAgo(34),
+      dataDesabilitacao: daysAgo(33),
+      dataReabilitacao: daysAgo(31),
+      dataEncerramento: daysAgo(30),
+      prazoMaximoAtingido: true,
+      createdAt: daysAgo(36),
+    },
+  ]
+
+  for (const sol of cicloVidaSolicitacoes) {
+    await prisma.solicitacao.upsert({
+      where: { id: sol.id },
+      update: {},
+      create: sol,
+    })
+  }
+
+  // Aprovações e eventos para ciclo de vida
+  const cicloAprovacoes: any[] = []
+  const cicloEventos: any[] = []
+  for (const sol of cicloVidaSolicitacoes) {
+    const classeNumero = sol.classeId === classe1.id ? 1
+      : sol.classeId === classe2.id ? 2
+      : sol.classeId === classe3.id ? 3 : 4
+
+    cicloAprovacoes.push({ solicitacaoId: sol.id, aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: sol.dataAprovacaoFinal })
+    if (classeNumero >= 2) {
+      cicloAprovacoes.push({ solicitacaoId: sol.id, aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: sol.dataAprovacaoFinal })
+    }
+    if (classeNumero >= 4) {
+      cicloAprovacoes.push({ solicitacaoId: sol.id, aprovadorId: gestor.id, nivel: 3, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: sol.dataAprovacaoFinal })
+    }
+
+    cicloEventos.push(
+      { solicitacaoId: sol.id, userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: sol.dataEnvio },
+      { solicitacaoId: sol.id, userId: aprovador1.id, acao: 'APROVADO', createdAt: sol.dataAprovacaoFinal },
+      { solicitacaoId: sol.id, userId: executante.id, acao: 'DESABILITACAO_CONFIRMADA', createdAt: sol.dataDesabilitacao },
+      { solicitacaoId: sol.id, userId: executante.id, acao: 'REABILITACAO_CONCLUIDA', createdAt: sol.dataReabilitacao },
+      { solicitacaoId: sol.id, userId: aprovador1.id, acao: 'REABILITACAO_VALIDADA', createdAt: sol.dataEncerramento },
+    )
+  }
+
+  for (const aprov of cicloAprovacoes) {
+    const existing = await prisma.aprovacao.findFirst({
+      where: { solicitacaoId: aprov.solicitacaoId, aprovadorId: aprov.aprovadorId, nivel: aprov.nivel },
+    })
+    if (!existing) {
+      await prisma.aprovacao.create({ data: aprov })
+    }
+  }
+
+  for (const evt of cicloEventos) {
+    const existing = await prisma.eventoAuditoria.findFirst({
+      where: { solicitacaoId: evt.solicitacaoId, acao: evt.acao, userId: evt.userId },
+    })
+    if (!existing) {
+      await prisma.eventoAuditoria.create({ data: evt })
+    }
+  }
+
+  console.log('✓ 12 solicitações de ciclo de vida criadas (C1-C4 × 2-3, com tempos significativos entre etapas)')
+
   console.log(`
 ✅ Seed completo!
 

@@ -147,7 +147,7 @@ export default async function DashboardPage() {
     <div className="p-4 md:p-6 max-w-full">
 
       {/* ─── Bloco 1: Bem-vindo ─── */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Bem-vindo(a) a {plantaNome}</h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
