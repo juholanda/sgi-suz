@@ -96,16 +96,6 @@ export function getAcoesPermitidas(opts: {
         requiresJustificativa: false,
       })
       acoes.push({
-        id: 'ENVIAR_APROVACAO',
-        label: 'Enviar para aprovação',
-        icon: 'send',
-        variant: 'secondary',
-        requiresConfirmation: true,
-        requiresJustificativa: false,
-        confirmTitle: 'Enviar para aprovação?',
-        confirmDescription: 'A solicitação será enviada para a cadeia de aprovação. Você não poderá editá-la enquanto estiver em análise.',
-      })
-      acoes.push({
         id: 'DESCARTAR',
         label: 'Descartar rascunho',
         icon: 'delete',

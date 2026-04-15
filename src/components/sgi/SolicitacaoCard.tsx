@@ -244,7 +244,7 @@ export function SolicitacaoCard({
                 textAlign: 'center',
               }}
             >
-              Continuar
+              Editar
             </Link>
           )}
 
@@ -347,3 +347,4 @@ export function SolicitacaoCard({
     </ClickableCard>
   )
 }
+
