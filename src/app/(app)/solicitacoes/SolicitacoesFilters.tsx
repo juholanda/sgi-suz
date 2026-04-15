@@ -67,13 +67,6 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
     router.push(`${pathname}${qs ? `?${qs}` : ''}`)
   }
 
-  function toggleClasse(c: string) {
-    const next = currentClasse.includes(c)
-      ? currentClasse.filter(x => x !== c)
-      : [...currentClasse, c]
-    navigate({ classe: next })
-  }
-
   function handleSearchSubmit(e: React.FormEvent) {
     e.preventDefault()
     navigate({ search: search.trim() || null })
@@ -173,17 +166,19 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
             borderRadius: 8,
             background: '#F8FAFC',
             display: 'flex',
-            flexDirection: 'column',
-            gap: 16,
+            alignItems: 'flex-end',
+            gap: 12,
+            flexWrap: 'wrap',
           }}
         >
           {/* Área */}
-          <div>
+          <div style={{ flex: '1 1 180px', minWidth: 160 }}>
             <label className="field-label">Área</label>
             <select
               value={currentAreaId}
               onChange={e => navigate({ areaId: e.target.value || null })}
               className="field-input"
+              style={{ height: 36, fontSize: 13 }}
             >
               <option value="">Todas as áreas</option>
               {areas.map(a => (
@@ -193,70 +188,52 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
           </div>
 
           {/* Classe */}
-          <div>
+          <div style={{ flex: '0 1 130px', minWidth: 110 }}>
             <label className="field-label">Classe</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {['1', '2', '3', '4'].map(c => {
-                const active = currentClasse.includes(c)
-                const colors: Record<string, string> = { '1': '#1D4ED8', '2': '#0D9488', '3': '#EA580C', '4': '#DC2626' }
-                const color = colors[c]
-                return (
-                  <button
-                    key={c}
-                    type="button"
-                    onClick={() => toggleClasse(c)}
-                    className="btn btn-sm"
-                    style={{
-                      borderRadius: 6,
-                      border: `1.5px solid ${active ? color : '#E2E8F0'}`,
-                      background: active ? `${color}18` : 'white',
-                      color: active ? color : '#6B7280',
-                      fontWeight: 600,
-                    }}
-                  >
-                    CL{c}
-                  </button>
-                )
-              })}
-            </div>
+            <select
+              value={currentClasse[0] ?? ''}
+              onChange={e => navigate({ classe: e.target.value || null })}
+              className="field-input"
+              style={{ height: 36, fontSize: 13 }}
+            >
+              <option value="">Todas</option>
+              <option value="1">CL1</option>
+              <option value="2">CL2</option>
+              <option value="3">CL3</option>
+              <option value="4">CL4</option>
+            </select>
           </div>
 
           {/* Tipo de intertravamento */}
-          <div>
-            <label className="field-label">Tipo de Intertravamento</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {[
-                { value: 'LOGICO', label: 'Lógico' },
-                { value: 'FISICO', label: 'Físico' },
-                { value: 'DISPOSITIVO_SEGURANCA', label: 'Disp. Segurança' },
-              ].map(t => {
-                const active = currentTipo === t.value
-                return (
-                  <Button key={t.value} type="button" size="sm"
-                    variant={active ? 'secondary' : 'outline'}
-                    onClick={() => navigate({ tipo: active ? null : t.value })}>
-                    {t.label}
-                  </Button>
-                )
-              })}
-            </div>
+          <div style={{ flex: '1 1 170px', minWidth: 150 }}>
+            <label className="field-label">Tipo</label>
+            <select
+              value={currentTipo}
+              onChange={e => navigate({ tipo: e.target.value || null })}
+              className="field-input"
+              style={{ height: 36, fontSize: 13 }}
+            >
+              <option value="">Todos os tipos</option>
+              <option value="LOGICO">Lógico</option>
+              <option value="FISICO">Físico</option>
+              <option value="DISPOSITIVO_SEGURANCA">Disp. Segurança</option>
+            </select>
           </div>
 
           {/* Status */}
-          <div>
+          <div style={{ flex: '1 1 170px', minWidth: 150 }}>
             <label className="field-label">Status</label>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {STATUS_OPTIONS.map(opt => {
-                const active = currentStatus === opt.value
-                return (
-                  <Button key={opt.value} type="button" size="sm"
-                    variant={active ? 'secondary' : 'outline'}
-                    onClick={() => navigate({ statusFiltro: active ? null : opt.value })}>
-                    {opt.label}
-                  </Button>
-                )
-              })}
-            </div>
+            <select
+              value={currentStatus}
+              onChange={e => navigate({ statusFiltro: e.target.value || null })}
+              className="field-input"
+              style={{ height: 36, fontSize: 13 }}
+            >
+              <option value="">Todos os status</option>
+              {STATUS_OPTIONS.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
           </div>
 
           {/* Limpar */}
@@ -271,7 +248,7 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
                 navigate({ search: null, classe: null, areaId: null, tipo: null, statusFiltro: null })
               }}
             >
-              Limpar filtros
+              Limpar
             </Button>
           )}
         </div>
