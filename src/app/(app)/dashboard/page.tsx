@@ -365,7 +365,7 @@ export default async function DashboardPage() {
 
       {/* ─── Minhas pendências ─── */}
       <div style={{ marginBottom: 32 }}>
-        <h2 className="flex items-center gap-2" style={{ fontWeight: 500, fontSize: 18, color: '#0F172A', margin: '0 0 12px 0' }}>
+        <h2 className="flex items-center gap-2" style={{ fontWeight: 500, fontSize: 16, color: '#0F172A', margin: '0 0 12px 0' }}>
           Minhas pendências
           {pendencias.length > 0 && (
             <span style={{ fontWeight: 400, fontSize: 13, color: '#64748B' }}>
@@ -378,7 +378,7 @@ export default async function DashboardPage() {
 
       {/* ─── Últimas solicitações ─── */}
       <div className="flex items-center justify-between" style={{ marginBottom: 12 }}>
-        <h2 style={{ fontWeight: 500, fontSize: 18, color: '#0F172A', margin: 0 }}>
+        <h2 style={{ fontWeight: 500, fontSize: 16, color: '#0F172A', margin: 0 }}>
           Últimas solicitações
         </h2>
         <Link
