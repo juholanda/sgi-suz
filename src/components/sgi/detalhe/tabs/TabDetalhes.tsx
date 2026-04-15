@@ -172,6 +172,7 @@ export default function TabDetalhes({ s }: TabDetalhesProps) {
               label="Executante"
               value={s.executante ? `${s.executante.nome} (${s.executante.matricula})` : null}
             />
+            <Row label="Medidas contingenciais" value={s.medidasContingenciais} />
           </dl>
         </Section>
 
@@ -204,19 +205,6 @@ export default function TabDetalhes({ s }: TabDetalhesProps) {
               <Row label="Encerrado em" value={fmt(s.dataEncerramento)} />
             </dl>
           </div>
-        </Section>
-
-        {/* Medidas Contingenciais */}
-        <Section title="Medidas Contingenciais" icon="shield">
-          {s.medidasContingenciais ? (
-            <p style={{ fontSize: 13, color: '#374151', lineHeight: 1.6, margin: 0 }}>
-              {s.medidasContingenciais}
-            </p>
-          ) : (
-            <p style={{ fontSize: 13, color: '#94A3B8', margin: 0, fontStyle: 'italic' }}>
-              Não informadas
-            </p>
-          )}
         </Section>
       </div>
 
