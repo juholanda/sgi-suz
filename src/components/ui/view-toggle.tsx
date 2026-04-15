@@ -18,7 +18,9 @@ export function ViewToggle({ value, onChange, className }: ViewToggleProps) {
       <Button
         className={cn(
           'rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10',
-          value === 'cards' && 'bg-[#EBF0FB] text-[#0038A8] border-[#0038A8] hover:bg-[#D6E2F7]',
+          value === 'cards'
+            ? 'bg-[#EBF0FB] text-[#0038A8] border-[#0038A8] hover:bg-[#D6E2F7]'
+            : '',
         )}
         variant="outline"
         size="icon"
@@ -26,12 +28,16 @@ export function ViewToggle({ value, onChange, className }: ViewToggleProps) {
         aria-pressed={value === 'cards'}
         onClick={() => onChange('cards')}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 18, lineHeight: 1 }}>view_agenda</span>
+        <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }} aria-hidden="true">
+          view_agenda
+        </span>
       </Button>
       <Button
         className={cn(
           'rounded-none shadow-none first:rounded-s-lg last:rounded-e-lg focus-visible:z-10',
-          value === 'table' && 'bg-[#EBF0FB] text-[#0038A8] border-[#0038A8] hover:bg-[#D6E2F7]',
+          value === 'table'
+            ? 'bg-[#EBF0FB] text-[#0038A8] border-[#0038A8] hover:bg-[#D6E2F7]'
+            : '',
         )}
         variant="outline"
         size="icon"
@@ -39,7 +45,9 @@ export function ViewToggle({ value, onChange, className }: ViewToggleProps) {
         aria-pressed={value === 'table'}
         onClick={() => onChange('table')}
       >
-        <span className="material-symbols-outlined" style={{ fontSize: 18, lineHeight: 1 }}>reorder</span>
+        <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }} aria-hidden="true">
+          reorder
+        </span>
       </Button>
     </div>
   )

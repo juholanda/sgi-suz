@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
+import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 
 interface Area {
   id: string
@@ -153,30 +154,11 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
           </div>
 
           {showViewToggle && (
-            <div
-              className="hidden sm:flex items-center border"
-              style={{ borderColor: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}
-            >
-              {(['cards', 'table'] as const).map(v => (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => navigate({ view: v === 'table' ? null : v })}
-                  className="flex items-center justify-center w-9 h-9"
-                  style={{
-                    background: currentView === v ? '#EBF0FB' : 'white',
-                    color: currentView === v ? '#0038A8' : '#94A3B8',
-                    border: 'none',
-                    cursor: 'pointer',
-                    borderRight: v === 'cards' ? '1px solid #E2E8F0' : 'none',
-                  }}
-                >
-                  <span className="material-symbols-outlined" style={{ fontSize: 18, lineHeight: 1 }}>
-                    {v === 'cards' ? 'view_agenda' : 'table_rows'}
-                  </span>
-                </button>
-              ))}
-            </div>
+            <ViewToggle
+              className="hidden sm:inline-flex"
+              value={currentView as ViewMode}
+              onChange={(mode) => navigate({ view: mode === 'table' ? null : mode })}
+            />
           )}
         </div>
       </div>
