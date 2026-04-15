@@ -1,7 +1,7 @@
 'use client'
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams, usePathname } from 'next/navigation'
-import { Input, Select } from '@/components/design-system/Input'
+import { Input } from '@/components/design-system/Input'
 import { Button } from '@/components/design-system/Button'
 import { ViewToggle, type ViewMode } from '@/components/ui/view-toggle'
 
@@ -142,16 +142,16 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
         <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 12, color: '#64748B', whiteSpace: 'nowrap' }}>Ordenar por</span>
-            <Select
-              size="sm"
+            <select
               value={currentSort}
               onChange={e => navigate({ sort: e.target.value })}
-              style={{ minWidth: 140 }}
+              className="field-input"
+              style={{ minWidth: 140, height: 32, fontSize: 13 }}
             >
               <option value="recentes">Mais recentes</option>
               <option value="antigas">Mais antigas</option>
               <option value="prazo">Por prazo</option>
-            </Select>
+            </select>
           </div>
 
           {showViewToggle && (
