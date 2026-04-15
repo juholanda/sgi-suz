@@ -15,7 +15,7 @@ interface KPIs {
   aguardandoValidacao: number
   prazosExcedidosAgora: number
   desabilitacoesPeriodo: number
-  encerradasPeriodo: number
+  extensoesPeriodo: number
 }
 
 interface TopEquip {
@@ -316,7 +316,7 @@ export default function MetricasClient({ data, periodo }: Props) {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <KpiCard label="Desabilitações realizadas" value={kpis.desabilitacoesPeriodo} icon="toggle_off" color="#EA580C" bgColor="#FFF7ED" />
-            <KpiCard label="Encerradas" value={kpis.encerradasPeriodo} icon="check_circle" color="#16A34A" bgColor="#F0FDF4" />
+            <KpiCard label="Prazos estendidos" value={kpis.extensoesPeriodo} icon="event_repeat" color="#AC6F00" bgColor="#FEF5E5" />
           </div>
         </div>
 

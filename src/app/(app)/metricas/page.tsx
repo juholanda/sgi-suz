@@ -41,7 +41,7 @@ async function getMetricasData(plantaId: string, periodo: string) {
     aguardandoValidacao,
     prazosExcedidosAgora,
     desabilitacoesPeriodo,
-    encerradasPeriodo,
+    extensoesPeriodo,
   ] = await Promise.all([
     prisma.solicitacao.count({ where: { status: 'DESABILITADO', ...scope } }),
     prisma.solicitacao.count({ where: { status: 'EM_APROVACAO', ...scope } }),
@@ -60,8 +60,11 @@ async function getMetricasData(plantaId: string, periodo: string) {
         ...scope,
       },
     }),
-    prisma.solicitacao.count({
-      where: { status: 'ENCERRADA', dataEncerramento: { gte: desde }, ...scope },
+    prisma.extensaoPrazo.count({
+      where: {
+        createdAt: { gte: desde },
+        solicitacao: { ...scope },
+      },
     }),
   ])
 
@@ -391,7 +394,7 @@ async function getMetricasData(plantaId: string, periodo: string) {
       aguardandoValidacao,
       prazosExcedidosAgora,
       desabilitacoesPeriodo,
-      encerradasPeriodo,
+      extensoesPeriodo,
     },
     topEquipamentos,
     porClasse,
