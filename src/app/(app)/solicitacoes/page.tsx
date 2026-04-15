@@ -212,37 +212,15 @@ export default async function SolicitacoesPage({
             {tabCounts.todas} {tabCounts.todas === 1 ? 'solicitação' : 'solicitações'} no total
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <div
-            className="hidden sm:flex items-center border"
-            style={{ borderColor: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}
+        {isSolicitante && (
+          <Link
+            href="/solicitacoes/nova"
+            className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-white"
+            style={{ background: '#0038A8', borderRadius: '4px' }}
           >
-            {(['cards', 'table'] as const).map(v => (
-              <Link
-                key={v}
-                href={`/solicitacoes?${new URLSearchParams({ ...searchParams, view: v }).toString()}`}
-                className="flex items-center justify-center w-8 h-8"
-                style={{
-                  background: view === v ? '#EBF0FB' : 'white',
-                  color: view === v ? '#0038A8' : '#94A3B8',
-                }}
-              >
-                <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>
-                  {v === 'cards' ? 'view_agenda' : 'table_rows'}
-                </span>
-              </Link>
-            ))}
-          </div>
-          {isSolicitante && (
-            <Link
-              href="/solicitacoes/nova"
-              className="hidden sm:flex items-center gap-2 px-4 py-2 text-sm font-medium text-white"
-              style={{ background: '#0038A8', borderRadius: '4px' }}
-            >
-              + Nova Solicitação
-            </Link>
-          )}
-        </div>
+            + Nova Solicitação
+          </Link>
+        )}
       </div>
 
       {/* Tabs */}
@@ -299,8 +277,8 @@ export default async function SolicitacoesPage({
         })}
       </div>
 
-      {/* Search + filters */}
-      <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} />
+      {/* Search + filters + view toggle */}
+      <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} showViewToggle />
 
       {/* Results */}
       {solicitacoes.length === 0 ? (

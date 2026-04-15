@@ -68,6 +68,20 @@ const PERFIS_OPTIONS = [
   'ADMINISTRADOR',
 ]
 
+// ── Group perfis by type (dedup plants) ──────────────────────────────────────
+
+function groupPerfis(perfis: UsuarioPerfil[]) {
+  const map = new Map<string, Set<string>>()
+  perfis.forEach(p => {
+    if (!map.has(p.perfil)) map.set(p.perfil, new Set())
+    if (p.planta) map.get(p.perfil)!.add(p.planta.nome)
+  })
+  return Array.from(map.entries()).map(([perfil, plantas]) => ({
+    perfil,
+    plantas: Array.from(plantas),
+  }))
+}
+
 // ── Icon helper ───────────────────────────────────────────────────────────────
 
 function Icon({ name, size = 18 }: { name: string; size?: number }) {
@@ -168,7 +182,7 @@ export default function UsuariosClient({ usuarios, plantas, areas }: Props) {
         <table className="w-full">
           <thead>
             <tr style={{ background: '#F8FAFC' }}>
-              {['Matrícula', 'Nome', 'E-mail', 'Perfis / Escopo', 'Status', 'Ações'].map(h => (
+              {['Matrícula', 'Nome', 'E-mail', 'Perfis', 'Status', 'Ações'].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-medium" style={{ color: '#6B7280' }}>{h}</th>
               ))}
             </tr>
@@ -195,19 +209,23 @@ export default function UsuariosClient({ usuarios, plantas, areas }: Props) {
                   <td className="px-4 py-3 text-sm font-medium" style={{ color: '#0F172A' }}>{u.nome}</td>
                   <td className="px-4 py-3 text-xs" style={{ color: '#475569' }}>{u.email}</td>
                   <td className="px-4 py-3">
-                    <div className="flex flex-wrap gap-1">
-                      {u.perfis.map(p => {
-                        const colors = PERFIL_COLORS[p.perfil] ?? { bg: '#F1F5F9', text: '#475569' }
+                    <div className="flex flex-col gap-1.5">
+                      {groupPerfis(u.perfis).map(g => {
+                        const colors = PERFIL_COLORS[g.perfil] ?? { bg: '#F1F5F9', text: '#475569' }
                         return (
-                          <span
-                            key={p.id}
-                            className="text-xs px-2 py-0.5 font-medium"
-                            style={{ background: colors.bg, color: colors.text, borderRadius: '4px' }}
-                            title={`${p.planta?.nome ?? 'Global'}${p.area ? ` › ${p.area.nome}` : ''}`}
-                          >
-                            {PERFIL_LABELS[p.perfil]}
-                            {p.planta && <span style={{ opacity: 0.7 }}> · {p.planta.nome}</span>}
-                          </span>
+                          <div key={g.perfil} className="flex items-baseline gap-1.5 flex-wrap">
+                            <span
+                              className="text-xs px-2 py-0.5 font-medium whitespace-nowrap"
+                              style={{ background: colors.bg, color: colors.text, borderRadius: '4px' }}
+                            >
+                              {PERFIL_LABELS[g.perfil]}
+                            </span>
+                            {g.plantas.length > 0 && (
+                              <span className="text-xs" style={{ color: '#64748B' }}>
+                                {g.plantas.join(', ')}
+                              </span>
+                            )}
+                          </div>
                         )
                       })}
                       {u.perfis.length === 0 && (

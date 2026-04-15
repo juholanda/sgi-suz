@@ -61,7 +61,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         data: { status: 'EXECUCAO_AUTORIZADA', dataAprovacaoFinal: new Date() },
       })
       await registrarEvento(id, userId, 'APROVACAO_COMPLETA',
-        `Nível ${aprovPendente.nivel} aprovado — execução autorizada${comentario ? `. ${comentario}` : ''}`)
+        `Todos os níveis aprovados — execução autorizada${comentario ? `. ${comentario}` : ''}`)
     }
 
     return NextResponse.json({ ok: true })
@@ -139,7 +139,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       where: { id },
       data: { status: 'DESABILITADO', dataDesabilitacao: new Date() },
     })
-    await registrarEvento(id, userId, 'DESABILITACAO_CONFIRMADA', 'Checklist preenchido e desabilitação confirmada')
+    await registrarEvento(id, userId, 'DESABILITACAO_CONFIRMADA', 'Checklist de desabilitação preenchido')
     return NextResponse.json({ ok: true })
   }
 
@@ -178,7 +178,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       where: { id },
       data: { status: 'EM_VALIDACAO_DA_REABILITACAO', dataReabilitacao: new Date() },
     })
-    await registrarEvento(id, userId, 'REABILITACAO_CONCLUIDA_EXECUTANTE', 'Checklist de reabilitação concluído — aguardando validação')
+    await registrarEvento(id, userId, 'REABILITACAO_CONCLUIDA_EXECUTANTE', 'Checklist preenchido — aguardando validação do aprovador')
     return NextResponse.json({ ok: true })
   }
 
@@ -204,7 +204,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       where: { id },
       data: { status: 'EM_VALIDACAO_DA_REABILITACAO', dataReabilitacao: new Date() },
     })
-    await registrarEvento(id, userId, 'REABILITACAO_INICIADA_E_CONCLUIDA', 'Checklist de reabilitação concluído — aguardando validação')
+    await registrarEvento(id, userId, 'REABILITACAO_INICIADA_E_CONCLUIDA', 'Checklist preenchido — aguardando validação do aprovador')
     return NextResponse.json({ ok: true })
   }
 
@@ -214,7 +214,7 @@ export async function POST(req: NextRequest, { params }: Params) {
       where: { id },
       data: { status: 'ENCERRADA', dataEncerramento: new Date() },
     })
-    await registrarEvento(id, userId, 'REABILITACAO_VALIDADA', `Reabilitação validada — solicitação encerrada${comentario ? `: ${comentario}` : ''}`)
+    await registrarEvento(id, userId, 'REABILITACAO_VALIDADA', comentario || undefined)
     return NextResponse.json({ ok: true })
   }
 

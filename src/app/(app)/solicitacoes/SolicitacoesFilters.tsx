@@ -10,6 +10,7 @@ interface Area {
 
 interface Props {
   areas: Area[]
+  showViewToggle?: boolean
 }
 
 const STATUS_OPTIONS = [
@@ -25,7 +26,7 @@ const STATUS_OPTIONS = [
   { value: 'RASCUNHO', label: 'Rascunho' },
 ]
 
-export function SolicitacoesFilters({ areas }: Props) {
+export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -77,71 +78,108 @@ export function SolicitacoesFilters({ areas }: Props) {
 
   const hasActiveFilters = currentClasse.length > 0 || currentAreaId || currentSearch || currentTipo || currentStatus
 
+  const currentView = searchParams.get('view') ?? 'table'
+
   return (
     <div className="mb-4 space-y-3">
-      {/* Search bar */}
-      <form onSubmit={handleSearchSubmit} className="flex gap-2">
-        <div className="relative" style={{ maxWidth: '320px' }}>
-          <span
-            className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
-            style={{ fontSize: 18, color: '#94A3B8', lineHeight: 1 }}
-          >
-            search
-          </span>
-          <input
-            type="text"
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-            placeholder="Buscar por TAG, protocolo ou solicitante..."
-            className="w-full pl-9 pr-3 py-2 text-sm border outline-none"
-            style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#0F172A', background: 'white' }}
-          />
-        </div>
-        {search && (
+      {/* Top bar: search + filters (left) / sort + view toggle (right) */}
+      <div className="flex items-center gap-2 flex-wrap">
+        {/* Left: search + filters */}
+        <form onSubmit={handleSearchSubmit} className="flex gap-2 flex-1" style={{ minWidth: '280px' }}>
+          <div className="relative" style={{ maxWidth: '320px', flex: '1 1 auto' }}>
+            <span
+              className="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none"
+              style={{ fontSize: 18, color: '#94A3B8', lineHeight: 1 }}
+            >
+              search
+            </span>
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Buscar por TAG, protocolo ou solicitante..."
+              className="w-full pl-9 pr-3 py-2 text-sm border outline-none"
+              style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#0F172A', background: 'white' }}
+            />
+          </div>
+          {search && (
+            <button
+              type="button"
+              onClick={() => { setSearch(''); navigate({ search: null }) }}
+              className="px-3 py-2 text-sm border"
+              style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#64748B' }}
+            >
+              ✕
+            </button>
+          )}
           <button
             type="button"
-            onClick={() => { setSearch(''); navigate({ search: null }) }}
-            className="px-3 py-2 text-sm border"
-            style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#64748B' }}
+            onClick={() => setOpen(v => !v)}
+            className="flex items-center gap-1.5 px-3 py-2 text-sm border"
+            style={{
+              borderColor: open || hasActiveFilters ? '#0038A8' : '#E2E8F0',
+              borderRadius: '4px',
+              background: open || hasActiveFilters ? '#EBF0FB' : 'white',
+              color: open || hasActiveFilters ? '#0038A8' : '#64748B',
+            }}
           >
-            ✕
+            <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>tune</span>
+            Filtros
+            {hasActiveFilters && (
+              <span
+                className="w-4 h-4 flex items-center justify-center text-xs font-bold text-white"
+                style={{ background: '#0038A8', borderRadius: '50%' }}
+              >
+                {[currentClasse.length > 0, !!currentAreaId, !!currentSearch, !!currentTipo, !!currentStatus].filter(Boolean).length}
+              </span>
+            )}
           </button>
-        )}
-        <button
-          type="button"
-          onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-1.5 px-3 py-2 text-sm border"
-          style={{
-            borderColor: open || hasActiveFilters ? '#0038A8' : '#E2E8F0',
-            borderRadius: '4px',
-            background: open || hasActiveFilters ? '#EBF0FB' : 'white',
-            color: open || hasActiveFilters ? '#0038A8' : '#64748B',
-          }}
-        >
-          <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>tune</span>
-          Filtros
-          {hasActiveFilters && (
-            <span
-              className="w-4 h-4 flex items-center justify-center text-xs font-bold text-white"
-              style={{ background: '#0038A8', borderRadius: '50%' }}
-            >
-              {[currentClasse.length > 0, !!currentAreaId, !!currentSearch, !!currentTipo, !!currentStatus].filter(Boolean).length}
-            </span>
-          )}
-        </button>
+        </form>
 
-        {/* Sort */}
-        <select
-          value={currentSort}
-          onChange={e => navigate({ sort: e.target.value })}
-          className="px-2 py-2 text-sm border outline-none"
-          style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#374151', background: 'white' }}
-        >
-          <option value="recentes">Mais recentes</option>
-          <option value="antigas">Mais antigas</option>
-          <option value="prazo">Por prazo</option>
-        </select>
-      </form>
+        {/* Right: sort + view toggle */}
+        <div className="flex items-center gap-2">
+          <div className="hidden sm:flex items-center gap-1.5">
+            <span className="text-xs" style={{ color: '#64748B', whiteSpace: 'nowrap' }}>Ordenar por</span>
+            <select
+              value={currentSort}
+              onChange={e => navigate({ sort: e.target.value })}
+              className="px-2 py-2 text-sm border outline-none"
+              style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#374151', background: 'white' }}
+            >
+              <option value="recentes">Mais recentes</option>
+              <option value="antigas">Mais antigas</option>
+              <option value="prazo">Por prazo</option>
+            </select>
+          </div>
+
+          {showViewToggle && (
+            <div
+              className="hidden sm:flex items-center border"
+              style={{ borderColor: '#E2E8F0', borderRadius: '4px', overflow: 'hidden' }}
+            >
+              {(['cards', 'table'] as const).map(v => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => navigate({ view: v === 'table' ? null : v })}
+                  className="flex items-center justify-center w-9 h-9"
+                  style={{
+                    background: currentView === v ? '#EBF0FB' : 'white',
+                    color: currentView === v ? '#0038A8' : '#94A3B8',
+                    border: 'none',
+                    cursor: 'pointer',
+                    borderRight: v === 'cards' ? '1px solid #E2E8F0' : 'none',
+                  }}
+                >
+                  <span className="material-symbols-outlined" style={{ fontSize: 18, lineHeight: 1 }}>
+                    {v === 'cards' ? 'view_agenda' : 'table_rows'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Advanced filters panel */}
       {open && (

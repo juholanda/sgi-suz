@@ -208,7 +208,7 @@ export default async function DashboardPage({
   ]
 
   return (
-    <div className="p-4 md:p-6 max-w-full">
+    <div className="p-4 md:p-6 max-w-full" style={{ minHeight: '100vh', background: '#F8FAFC' }}>
 
       {/* ─── Bloco 1: Bem-vindo ─── */}
       <div className="flex items-center justify-between mb-8">
@@ -334,8 +334,8 @@ export default async function DashboardPage({
         })}
       </div>
 
-      {/* Search + filters */}
-      <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} />
+      {/* Search + filters + view toggle */}
+      <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} showViewToggle />
 
       {/* Results */}
       {solicitacoes.length === 0 ? (
