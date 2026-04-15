@@ -176,8 +176,7 @@ export default async function DashboardPage({
 
   // ── Parse search params ──
   const search = searchParams.search?.trim() || undefined
-  const classeParam = Number(searchParams.classe)
-  const classes = classeParam >= 1 && classeParam <= 4 ? [classeParam] : []
+  const classes = (searchParams.classe ?? '').split(',').map(Number).filter(n => n >= 1 && n <= 4)
   const areaId = searchParams.areaId || undefined
   const sort = searchParams.sort || 'recentes'
   const tipo = searchParams.tipo || undefined
@@ -335,8 +334,8 @@ export default async function DashboardPage({
         })}
       </div>
 
-      {/* Search + filters + view toggle */}
-      <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} showViewToggle />
+      {/* Search + filters */}
+      <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} />
 
       {/* Results */}
       {solicitacoes.length === 0 ? (

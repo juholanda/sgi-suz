@@ -167,8 +167,7 @@ export default async function SolicitacoesPage({
   const isAprovador = ['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'].includes(perfilAtivo ?? '')
 
   const search = searchParams.search?.trim() || undefined
-  const classeParam = Number(searchParams.classe)
-  const classes = classeParam >= 1 && classeParam <= 4 ? [classeParam] : []
+  const classes = (searchParams.classe ?? '').split(',').map(Number).filter(n => n >= 1 && n <= 4)
   const areaId = searchParams.areaId || undefined
   const sort = searchParams.sort || 'recentes'
   const view = searchParams.view || 'table'
