@@ -176,45 +176,46 @@ export default function TabDetalhes({ s }: TabDetalhesProps) {
           </dl>
         </Section>
 
-        {/* Período e Prazos */}
-        <Section title="Período e Prazos" icon="schedule">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {/* Status de prazo dinâmico */}
-            <PrazoCard
-              status={s.status}
-              periodoInicio={s.periodoInicio}
-              periodoFim={s.periodoFim}
-              dataEnvio={s.dataEnvioAprovacao}
-              dataDesabilitacao={s.dataDesabilitacao}
-              dataAprovacaoFinal={null}
-              prazoMaximoDias={s.classe?.prazoMaximoDias ?? null}
-              prazoPrevitoAtingido={s.prazoPrevitoAtingido}
-              prazoMaximoAtingido={s.prazoMaximoAtingido}
-              createdAt={s.createdAt}
-              embedded
-            />
-            <dl style={{ display: 'flex', flexDirection: 'column' }}>
-              <Row label="Início previsto" value={fmt(s.periodoInicio)} />
-              <Row label="Fim previsto" value={fmt(s.periodoFim)} />
-              <Row
-                label="Prazo máximo"
-                value={s.classe?.prazoMaximoDias ? `${s.classe.prazoMaximoDias} dia(s)` : 'Não forçável'}
+        {/* Período e Prazos + Checklists (empilhados na coluna direita) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <Section title="Período e Prazos" icon="schedule">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              <PrazoCard
+                status={s.status}
+                periodoInicio={s.periodoInicio}
+                periodoFim={s.periodoFim}
+                dataEnvio={s.dataEnvioAprovacao}
+                dataDesabilitacao={s.dataDesabilitacao}
+                dataAprovacaoFinal={null}
+                prazoMaximoDias={s.classe?.prazoMaximoDias ?? null}
+                prazoPrevitoAtingido={s.prazoPrevitoAtingido}
+                prazoMaximoAtingido={s.prazoMaximoAtingido}
+                createdAt={s.createdAt}
+                embedded
               />
-              <Row label="Desabilitado em" value={fmt(s.dataDesabilitacao)} />
-              <Row label="Reabilitado em" value={fmt(s.dataReabilitacao)} />
-              <Row label="Encerrado em" value={fmt(s.dataEncerramento)} />
-            </dl>
-          </div>
-        </Section>
-      </div>
+              <dl style={{ display: 'flex', flexDirection: 'column' }}>
+                <Row label="Início previsto" value={fmt(s.periodoInicio)} />
+                <Row label="Fim previsto" value={fmt(s.periodoFim)} />
+                <Row
+                  label="Prazo máximo"
+                  value={s.classe?.prazoMaximoDias ? `${s.classe.prazoMaximoDias} dia(s)` : 'Não forçável'}
+                />
+                <Row label="Desabilitado em" value={fmt(s.dataDesabilitacao)} />
+                <Row label="Reabilitado em" value={fmt(s.dataReabilitacao)} />
+                <Row label="Encerrado em" value={fmt(s.dataEncerramento)} />
+              </dl>
+            </div>
+          </Section>
 
-      {/* Checklists de campo */}
-      {hasChecklists && (
-        <Section title="Checklists de Campo" icon="checklist">
-          {checklistDesab.length > 0 && <ChecklistSection tipo="DESABILITACAO" items={checklistDesab} />}
-          {checklistReab.length > 0 && <ChecklistSection tipo="REABILITACAO" items={checklistReab} />}
-        </Section>
-      )}
+          {/* Checklists de campo — abaixo de Período e Prazos */}
+          {hasChecklists && (
+            <Section title="Checklists de Campo" icon="checklist">
+              {checklistDesab.length > 0 && <ChecklistSection tipo="DESABILITACAO" items={checklistDesab} />}
+              {checklistReab.length > 0 && <ChecklistSection tipo="REABILITACAO" items={checklistReab} />}
+            </Section>
+          )}
+        </div>
+      </div>
 
       {/* Extensoes de prazo */}
       {s.extensoes && s.extensoes.length > 0 && (

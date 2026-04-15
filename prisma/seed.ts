@@ -3,6 +3,15 @@ import bcrypt from 'bcryptjs'
 
 const prisma = new PrismaClient()
 
+async function upsertPerfil(data: { userId: string; perfil: string; plantaId?: string | null; areaId?: string | null }) {
+  const existing = await prisma.usuarioPerfil.findFirst({
+    where: { userId: data.userId, perfil: data.perfil, plantaId: data.plantaId ?? null, areaId: data.areaId ?? null },
+  })
+  if (!existing) {
+    await prisma.usuarioPerfil.create({ data })
+  }
+}
+
 async function main() {
   console.log('Seeding SGI database...')
 
@@ -70,31 +79,46 @@ async function main() {
   })
 
   // ── Equipamentos ───────────────────────────────────────────────────────────
-  const equipsFibras = ['FIB-ABC-001', 'FIB-BOM-032', 'FIB-VAL-107', 'FIB-SEN-044', 'FIB-MOT-015']
-  for (const tag of equipsFibras) {
+  const equipsFibrasData = [
+    { tag: 'FIB-ABC-001', descricao: 'Analisador de consistência — Linha 1', funcaoProtegida: 'Proteção contra sobrepressão', tipo: 'LOGICO', classeNumero: 2 },
+    { tag: 'FIB-BOM-032', descricao: 'Bomba de vácuo do filtro de polpa', funcaoProtegida: 'Proteção térmica do motor', tipo: 'FISICO', classeNumero: 2 },
+    { tag: 'FIB-VAL-107', descricao: 'Válvula de emergência do digestor', funcaoProtegida: 'Trip de alta temperatura da caldeira', tipo: 'LOGICO', classeNumero: 3 },
+    { tag: 'FIB-SEN-044', descricao: 'Sensor de nível do tanque de licor', funcaoProtegida: 'Bloqueio de válvula de emergência', tipo: 'DISPOSITIVO_SEGURANCA', classeNumero: 3 },
+    { tag: 'FIB-MOT-015', descricao: 'Motor do agitador do digestor', funcaoProtegida: 'Shutdown de emergência do digestor', tipo: 'FISICO', classeNumero: 4 },
+  ]
+  for (const eq of equipsFibrasData) {
     await prisma.equipamento.upsert({
-      where: { tag },
-      update: {},
-      create: { tag, descricao: `Intertravamento ${tag}`, areaId: areaFibras.id },
+      where: { tag: eq.tag },
+      update: { funcaoProtegida: eq.funcaoProtegida, tipo: eq.tipo, classeNumero: eq.classeNumero },
+      create: { ...eq, areaId: areaFibras.id },
     })
   }
 
-  const equipsCaldeira = ['CAL-VLV-001', 'CAL-SEN-022', 'CAL-PMP-003']
-  for (const tag of equipsCaldeira) {
+  const equipsCaldData = [
+    { tag: 'CAL-VLV-001', descricao: 'Válvula de segurança da caldeira', funcaoProtegida: 'Proteção contra sobrevelocidade do motor', tipo: 'LOGICO', classeNumero: 3 },
+    { tag: 'CAL-SEN-022', descricao: 'Sensor de temperatura da caldeira', funcaoProtegida: 'Alarme de sobretemperatura', tipo: 'LOGICO', classeNumero: 2 },
+    { tag: 'CAL-PMP-003', descricao: 'Bomba de água da caldeira', funcaoProtegida: 'Trip de nível baixo do tambor', tipo: 'FISICO', classeNumero: 4 },
+  ]
+  for (const eq of equipsCaldData) {
     await prisma.equipamento.upsert({
-      where: { tag },
-      update: {},
-      create: { tag, descricao: `Intertravamento ${tag}`, areaId: areaCaldeira.id },
+      where: { tag: eq.tag },
+      update: { funcaoProtegida: eq.funcaoProtegida, tipo: eq.tipo, classeNumero: eq.classeNumero },
+      create: { ...eq, areaId: areaCaldeira.id },
     })
   }
 
   // ── Equipamentos Limeira ───────────────────────────────────────────────────
-  const equipsLimeira = ['PRD-BOM-001', 'PRD-VAL-002', 'PRD-SEN-010', 'PRD-MOT-003']
-  for (const tag of equipsLimeira) {
+  const equipsLimeiraData = [
+    { tag: 'PRD-BOM-001', descricao: 'Bomba de alimentação principal', funcaoProtegida: 'Proteção contra sobrecarga', tipo: 'FISICO', classeNumero: 2 },
+    { tag: 'PRD-VAL-002', descricao: 'Válvula de controle de pressão', funcaoProtegida: 'Alívio de sobrepressão', tipo: 'LOGICO', classeNumero: 3 },
+    { tag: 'PRD-SEN-010', descricao: 'Sensor de temperatura do forno', funcaoProtegida: 'Trip de sobretemperatura', tipo: 'LOGICO', classeNumero: 3 },
+    { tag: 'PRD-MOT-003', descricao: 'Motor principal do misturador', funcaoProtegida: 'Proteção de sobrecarga do motor', tipo: 'FISICO', classeNumero: 4 },
+  ]
+  for (const eq of equipsLimeiraData) {
     await prisma.equipamento.upsert({
-      where: { tag },
-      update: {},
-      create: { tag, descricao: `Intertravamento ${tag}`, areaId: areaLimeira.id },
+      where: { tag: eq.tag },
+      update: { funcaoProtegida: eq.funcaoProtegida, tipo: eq.tipo, classeNumero: eq.classeNumero },
+      create: { ...eq, areaId: areaLimeira.id },
     })
   }
 
@@ -111,9 +135,9 @@ async function main() {
       cargoId: 'cargo-7',
     },
   })
-  await prisma.usuarioPerfil.create({
-    data: { userId: admin.id, perfil: 'ADMINISTRADOR', plantaId: planta.id },
-  }).catch(() => {})
+  await upsertPerfil(
+    { userId: admin.id, perfil: 'ADMINISTRADOR', plantaId: planta.id },
+  )
 
   // Solicitante
   const solicitante = await prisma.user.upsert({
@@ -127,23 +151,23 @@ async function main() {
       cargoId: 'cargo-1',
     },
   })
-  await prisma.usuarioPerfil.create({
-    data: { userId: solicitante.id, perfil: 'SOLICITANTE', plantaId: planta.id, areaId: areaFibras.id },
-  }).catch(() => {})
+  await upsertPerfil(
+    { userId: solicitante.id, perfil: 'SOLICITANTE', plantaId: planta.id, areaId: areaFibras.id },
+  )
   // Demo: João também tem perfil APROVADOR e EXECUTANTE para testar o switcher
-  await prisma.usuarioPerfil.create({
-    data: { userId: solicitante.id, perfil: 'APROVADOR', plantaId: planta.id },
-  }).catch(() => {})
-  await prisma.usuarioPerfil.create({
-    data: { userId: solicitante.id, perfil: 'EXECUTANTE', plantaId: planta.id, areaId: areaFibras.id },
-  }).catch(() => {})
+  await upsertPerfil(
+    { userId: solicitante.id, perfil: 'APROVADOR', plantaId: planta.id },
+  )
+  await upsertPerfil(
+    { userId: solicitante.id, perfil: 'EXECUTANTE', plantaId: planta.id, areaId: areaFibras.id },
+  )
   // Demo: João também acessa Limeira (segunda planta) como Solicitante e Executante
-  await prisma.usuarioPerfil.create({
-    data: { userId: solicitante.id, perfil: 'SOLICITANTE', plantaId: plantaLimeira.id, areaId: areaLimeira.id },
-  }).catch(() => {})
-  await prisma.usuarioPerfil.create({
-    data: { userId: solicitante.id, perfil: 'EXECUTANTE', plantaId: plantaLimeira.id, areaId: areaLimeira.id },
-  }).catch(() => {})
+  await upsertPerfil(
+    { userId: solicitante.id, perfil: 'SOLICITANTE', plantaId: plantaLimeira.id, areaId: areaLimeira.id },
+  )
+  await upsertPerfil(
+    { userId: solicitante.id, perfil: 'EXECUTANTE', plantaId: plantaLimeira.id, areaId: areaLimeira.id },
+  )
 
   // Executante
   const executante = await prisma.user.upsert({
@@ -157,9 +181,9 @@ async function main() {
       cargoId: 'cargo-2',
     },
   })
-  await prisma.usuarioPerfil.create({
-    data: { userId: executante.id, perfil: 'EXECUTANTE', plantaId: planta.id, areaId: areaFibras.id },
-  }).catch(() => {})
+  await upsertPerfil(
+    { userId: executante.id, perfil: 'EXECUTANTE', plantaId: planta.id, areaId: areaFibras.id },
+  )
 
   // Aprovador nível 1 — Coordenador de Área
   const aprovador1 = await prisma.user.upsert({
@@ -173,9 +197,9 @@ async function main() {
       cargoId: 'cargo-3',
     },
   })
-  await prisma.usuarioPerfil.create({
-    data: { userId: aprovador1.id, perfil: 'APROVADOR', plantaId: planta.id, areaId: areaFibras.id },
-  }).catch(() => {})
+  await upsertPerfil(
+    { userId: aprovador1.id, perfil: 'APROVADOR', plantaId: planta.id, areaId: areaFibras.id },
+  )
 
   // Aprovador nível 2 — Gerente de Área
   const aprovador2 = await prisma.user.upsert({
@@ -189,9 +213,9 @@ async function main() {
       cargoId: 'cargo-5',
     },
   })
-  await prisma.usuarioPerfil.create({
-    data: { userId: aprovador2.id, perfil: 'APROVADOR', plantaId: planta.id, areaId: areaFibras.id },
-  }).catch(() => {})
+  await upsertPerfil(
+    { userId: aprovador2.id, perfil: 'APROVADOR', plantaId: planta.id, areaId: areaFibras.id },
+  )
 
   // Gestor SMS
   const gestor = await prisma.user.upsert({
@@ -205,9 +229,9 @@ async function main() {
       cargoId: 'cargo-6',
     },
   })
-  await prisma.usuarioPerfil.create({
-    data: { userId: gestor.id, perfil: 'GESTOR_SMS', plantaId: planta.id },
-  }).catch(() => {})
+  await upsertPerfil(
+    { userId: gestor.id, perfil: 'GESTOR_SMS', plantaId: planta.id },
+  )
 
   // ── Alçadas de aprovação — todas as classes, todas as plantas ─────────────
   const todasClasses = await prisma.classe.findMany({ where: { ativa: true, numero: { lte: 4 } } })
@@ -237,18 +261,18 @@ async function main() {
           create: { plantaId: plantaItem.id, classeId: classeItem.id, nivel: 3, userId: gestor.id },
         })
         // Perfil APROVADOR para gestor também (para que possa aprovar)
-        await prisma.usuarioPerfil.create({
-          data: { userId: gestor.id, perfil: 'APROVADOR', plantaId: plantaItem.id },
-        }).catch(() => {})
+        await upsertPerfil(
+          { userId: gestor.id, perfil: 'APROVADOR', plantaId: plantaItem.id },
+        )
       }
     }
     // Garantir que aprovador1 e aprovador2 têm perfil APROVADOR na planta Limeira também
-    await prisma.usuarioPerfil.create({
-      data: { userId: aprovador1.id, perfil: 'APROVADOR', plantaId: plantaItem.id },
-    }).catch(() => {})
-    await prisma.usuarioPerfil.create({
-      data: { userId: aprovador2.id, perfil: 'APROVADOR', plantaId: plantaItem.id },
-    }).catch(() => {})
+    await upsertPerfil(
+      { userId: aprovador1.id, perfil: 'APROVADOR', plantaId: plantaItem.id },
+    )
+    await upsertPerfil(
+      { userId: aprovador2.id, perfil: 'APROVADOR', plantaId: plantaItem.id },
+    )
   }
 
   // ── Medidas contingenciais — 16 medidas gerais, 4 obrigatórias ───────────
@@ -527,15 +551,19 @@ async function main() {
 
   // Equipamentos Ribas
   const equipsRibas = [
-    { tag: 'REC-VLV-001', descricao: 'Válvula de bloqueio caldeira de recuperação', areaId: areaRecuperacao.id },
-    { tag: 'REC-SEN-012', descricao: 'Sensor de nível tanque de licor', areaId: areaRecuperacao.id },
-    { tag: 'REC-PMP-005', descricao: 'Bomba de licor verde', areaId: areaRecuperacao.id },
-    { tag: 'CEL-MOT-008', descricao: 'Motor principal do lavador', areaId: areaCelulose.id },
-    { tag: 'CEL-SEN-021', descricao: 'Sensor de consistência da polpa', areaId: areaCelulose.id },
-    { tag: 'CEL-VLV-015', descricao: 'Válvula de segurança do digestor', areaId: areaCelulose.id },
+    { tag: 'REC-VLV-001', descricao: 'Válvula de bloqueio caldeira de recuperação', areaId: areaRecuperacao.id, funcaoProtegida: 'Bloqueio de alimentação caldeira de recuperação', tipo: 'LOGICO', classeNumero: 3 },
+    { tag: 'REC-SEN-012', descricao: 'Sensor de nível tanque de licor', areaId: areaRecuperacao.id, funcaoProtegida: 'Trip de nível alto do tanque de licor', tipo: 'LOGICO', classeNumero: 3 },
+    { tag: 'REC-PMP-005', descricao: 'Bomba de licor verde', areaId: areaRecuperacao.id, funcaoProtegida: 'Intertravamento de proteção da bomba de licor verde', tipo: 'LOGICO', classeNumero: 2 },
+    { tag: 'CEL-MOT-008', descricao: 'Motor principal do lavador', areaId: areaCelulose.id, funcaoProtegida: 'Proteção do motor principal do lavador', tipo: 'FISICO', classeNumero: 2 },
+    { tag: 'CEL-SEN-021', descricao: 'Sensor de consistência da polpa', areaId: areaCelulose.id, funcaoProtegida: 'Controle de consistência da polpa', tipo: 'DISPOSITIVO_SEGURANCA', classeNumero: 3 },
+    { tag: 'CEL-VLV-015', descricao: 'Válvula de segurança do digestor', areaId: areaCelulose.id, funcaoProtegida: 'Válvula de segurança do digestor — alívio de pressão', tipo: 'FISICO', classeNumero: 4 },
   ]
   for (const eq of equipsRibas) {
-    await prisma.equipamento.upsert({ where: { tag: eq.tag }, update: {}, create: eq })
+    await prisma.equipamento.upsert({
+      where: { tag: eq.tag },
+      update: { funcaoProtegida: eq.funcaoProtegida, tipo: eq.tipo, classeNumero: eq.classeNumero },
+      create: eq,
+    })
   }
 
   const eqRec1 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'REC-VLV-001' } })
@@ -546,18 +574,18 @@ async function main() {
   const eqCel3 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'CEL-VLV-015' } })
 
   // Perfis para Ribas (reaproveitar os mesmos usuários)
-  await prisma.usuarioPerfil.create({
-    data: { userId: admin.id, perfil: 'ADMINISTRADOR', plantaId: plantaRibas.id },
-  }).catch(() => {})
-  await prisma.usuarioPerfil.create({
-    data: { userId: solicitante.id, perfil: 'SOLICITANTE', plantaId: plantaRibas.id, areaId: areaRecuperacao.id },
-  }).catch(() => {})
-  await prisma.usuarioPerfil.create({
-    data: { userId: solicitante.id, perfil: 'EXECUTANTE', plantaId: plantaRibas.id, areaId: areaRecuperacao.id },
-  }).catch(() => {})
-  await prisma.usuarioPerfil.create({
-    data: { userId: executante.id, perfil: 'EXECUTANTE', plantaId: plantaRibas.id, areaId: areaCelulose.id },
-  }).catch(() => {})
+  await upsertPerfil(
+    { userId: admin.id, perfil: 'ADMINISTRADOR', plantaId: plantaRibas.id },
+  )
+  await upsertPerfil(
+    { userId: solicitante.id, perfil: 'SOLICITANTE', plantaId: plantaRibas.id, areaId: areaRecuperacao.id },
+  )
+  await upsertPerfil(
+    { userId: solicitante.id, perfil: 'EXECUTANTE', plantaId: plantaRibas.id, areaId: areaRecuperacao.id },
+  )
+  await upsertPerfil(
+    { userId: executante.id, perfil: 'EXECUTANTE', plantaId: plantaRibas.id, areaId: areaCelulose.id },
+  )
 
   // Alçadas para Ribas
   for (const classeItem of todasClasses) {
@@ -581,18 +609,18 @@ async function main() {
       })
     }
   }
-  await prisma.usuarioPerfil.create({
-    data: { userId: aprovador1.id, perfil: 'APROVADOR', plantaId: plantaRibas.id },
-  }).catch(() => {})
-  await prisma.usuarioPerfil.create({
-    data: { userId: aprovador2.id, perfil: 'APROVADOR', plantaId: plantaRibas.id },
-  }).catch(() => {})
-  await prisma.usuarioPerfil.create({
-    data: { userId: gestor.id, perfil: 'APROVADOR', plantaId: plantaRibas.id },
-  }).catch(() => {})
-  await prisma.usuarioPerfil.create({
-    data: { userId: gestor.id, perfil: 'GESTOR_SMS', plantaId: plantaRibas.id },
-  }).catch(() => {})
+  await upsertPerfil(
+    { userId: aprovador1.id, perfil: 'APROVADOR', plantaId: plantaRibas.id },
+  )
+  await upsertPerfil(
+    { userId: aprovador2.id, perfil: 'APROVADOR', plantaId: plantaRibas.id },
+  )
+  await upsertPerfil(
+    { userId: gestor.id, perfil: 'APROVADOR', plantaId: plantaRibas.id },
+  )
+  await upsertPerfil(
+    { userId: gestor.id, perfil: 'GESTOR_SMS', plantaId: plantaRibas.id },
+  )
 
   // ── Solicitações Ribas — C2×1, C3×3, C4×2 com status variados ────
   const seedSolicitacoesRibas = [

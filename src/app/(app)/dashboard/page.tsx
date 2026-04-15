@@ -176,7 +176,8 @@ export default async function DashboardPage({
 
   // ── Parse search params ──
   const search = searchParams.search?.trim() || undefined
-  const classes = (searchParams.classe ?? '').split(',').map(Number).filter(n => n >= 1 && n <= 4)
+  const classeParam = Number(searchParams.classe)
+  const classes = classeParam >= 1 && classeParam <= 4 ? [classeParam] : []
   const areaId = searchParams.areaId || undefined
   const sort = searchParams.sort || 'recentes'
   const tipo = searchParams.tipo || undefined

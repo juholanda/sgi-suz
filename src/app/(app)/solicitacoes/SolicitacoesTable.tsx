@@ -77,10 +77,10 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
   }
 
   const COLS: { key: string; label: string; sortable: boolean }[] = [
+    { key: 'classe',    label: 'Classe',     sortable: true },
     { key: 'protocolo', label: 'Protocolo', sortable: true },
     { key: 'tag',       label: 'TAG',        sortable: true },
     { key: 'tipo',      label: 'Tipo',       sortable: true },
-    { key: 'classe',    label: 'Classe',     sortable: true },
     { key: 'status',    label: 'Status',     sortable: true },
     { key: 'solicitante', label: 'Solicitante', sortable: true },
     { key: 'updatedAt', label: 'Atualizado em', sortable: true },
@@ -131,6 +131,9 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
               style={{ borderColor: '#F1F5F9', cursor: 'pointer', background: '#FFFFFF' }}
               onClick={() => router.push(`/solicitacoes/${s.id}`)}
             >
+              <td className="px-4 py-3 whitespace-nowrap">
+                {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
+              </td>
               <td className="px-4 py-3 font-sans text-xs font-semibold whitespace-nowrap" style={{ color: '#374151' }}>
                 #{s.protocolo}
               </td>
@@ -143,9 +146,6 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
                   : s.tipo
                     ? TIPO_LABELS[s.tipo] ?? s.tipo
                     : '—'}
-              </td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <StatusBadge status={s.status as StatusSolicitacao} size="sm" />

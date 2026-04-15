@@ -68,12 +68,15 @@ model Area {
 }
 
 model Equipamento {
-  id          String   @id @default(cuid())
-  tag         String   @unique
-  descricao   String
-  ativo       Boolean  @default(true)
-  areaId      String
-  createdAt   DateTime @default(now())
+  id              String   @id @default(cuid())
+  tag             String   @unique
+  descricao       String
+  ativo           Boolean  @default(true)
+  areaId          String
+  funcaoProtegida String?
+  tipo            String?
+  classeNumero    Int?
+  createdAt       DateTime @default(now())
 
   area         Area         @relation(fields: [areaId], references: [id])
   solicitacoes Solicitacao[]
