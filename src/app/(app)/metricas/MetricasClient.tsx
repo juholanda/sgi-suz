@@ -30,7 +30,6 @@ interface TopEquip {
 }
 
 interface ClasseCount { classe: number; count: number }
-interface SlaCompliance { classe: number; dentro: number; excedido: number; total: number; pct: number }
 interface AreaData { area: string; total: number; c1: number; c2: number; c3: number; c4: number; c5: number }
 interface AreaViolacao { area: string; count: number; mediaExcessoDias: number; classePredominante: number }
 interface CicloVida { classe: number; aprovacao: number; execucao: number; desabilitado: number; reabilitacao: number }
@@ -40,7 +39,6 @@ interface MetricasData {
   kpis: KPIs
   topEquipamentos: TopEquip[]
   porClasse: ClasseCount[]
-  complianceSla: SlaCompliance[]
   porArea: AreaData[]
   areasViolacao: AreaViolacao[]
   cicloVida: CicloVida[]
@@ -72,6 +70,7 @@ const CLASSE_BG: Record<number, string> = {
 
 const PERIODOS = [
   { value: '7d', label: 'Últimos 7 dias' },
+  { value: '1m', label: 'Último mês' },
   { value: '3m', label: 'Últimos 3 meses' },
   { value: '6m', label: 'Últimos 6 meses' },
   { value: '1a', label: 'Último ano' },
@@ -230,7 +229,7 @@ export default function MetricasClient({ data, periodo }: Props) {
     router.push(`${pathname}?periodo=${newPeriodo}`)
   }
 
-  const { kpis, topEquipamentos, porClasse, complianceSla, porArea, areasViolacao, cicloVida, tendencia } = data
+  const { kpis, topEquipamentos, porClasse, porArea, areasViolacao, cicloVida, tendencia } = data
 
   // Preparar dados para donut
   const donutData = porClasse.map(d => ({
@@ -257,7 +256,7 @@ export default function MetricasClient({ data, periodo }: Props) {
           </p>
         </div>
 
-        {/* ── BLOCO: Situação atual (hoje) ─────────────────────────── */}
+        {/* ── BLOCO: Situação atual da planta (hoje) ─────────────────────────── */}
         <div style={{ marginBottom: 36, marginTop: 8 }}>
           <div className="flex items-center gap-2" style={{ marginBottom: 10 }}>
             <span
@@ -271,7 +270,7 @@ export default function MetricasClient({ data, periodo }: Props) {
               }}
             />
             <h2 style={{ fontSize: 14, fontWeight: 600, color: '#0F172A', margin: 0 }}>
-              Situação atual
+              Situação atual da planta
             </h2>
             <span style={{ fontSize: 11, color: '#94A3B8', fontWeight: 400 }}>
               — tempo real
@@ -380,7 +379,7 @@ export default function MetricasClient({ data, periodo }: Props) {
           )}
         </SectionCard>
 
-        {/* ── SEÇÃO 3: Classe + SLA (2 colunas) ───────────────────── */}
+        {/* ── SEÇÃO 3: Solicitações por classe + por área ────────── */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Donut: solicitações por classe */}
           <SectionCard title="Solicitações por classe" icon="donut_small">
@@ -432,57 +431,6 @@ export default function MetricasClient({ data, periodo }: Props) {
             )}
           </SectionCard>
 
-          {/* Compliance SLA por classe */}
-          <SectionCard title="Compliance de SLA por classe" icon="verified">
-            {complianceSla.length === 0 ? (
-              <p style={{ color: '#94A3B8', fontSize: 13, fontStyle: 'italic' }}>Sem dados no período</p>
-            ) : (
-              <>
-                <ResponsiveContainer width="100%" height={240}>
-                  <BarChart data={complianceSla} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
-                    <XAxis
-                      dataKey="classe"
-                      tickFormatter={v => `Classe ${v}`}
-                      tick={{ fontSize: 11, fill: '#64748B' }}
-                    />
-                    <YAxis tick={{ fontSize: 11, fill: '#94A3B8' }} allowDecimals={false} />
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend
-                      wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-                    />
-                    <Bar dataKey="dentro" name="Dentro do prazo" fill="#16A34A" radius={[4, 4, 0, 0]} barSize={28} />
-                    <Bar dataKey="excedido" name="Prazo excedido" fill="#DC2626" radius={[4, 4, 0, 0]} barSize={28} />
-                  </BarChart>
-                </ResponsiveContainer>
-                {/* Compliance % cards */}
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 12 }}>
-                  {complianceSla.map(s => (
-                    <div
-                      key={s.classe}
-                      style={{
-                        flex: '1 1 0',
-                        minWidth: 80,
-                        padding: '8px 10px',
-                        borderRadius: 6,
-                        background: s.pct >= 80 ? '#F0FDF4' : s.pct >= 50 ? '#FEF5E5' : '#FEF2F2',
-                        textAlign: 'center',
-                      }}
-                    >
-                      <div style={{ fontSize: 18, fontWeight: 700, color: s.pct >= 80 ? '#16A34A' : s.pct >= 50 ? '#AC6F00' : '#DC2626' }}>
-                        {s.pct}%
-                      </div>
-                      <div style={{ fontSize: 10, color: '#64748B', marginTop: 1 }}>Classe {s.classe}</div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-          </SectionCard>
-        </div>
-
-        {/* ── SEÇÃO 4: Área (2 colunas) ───────────────────────────── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           {/* Solicitações por área (stacked) */}
           <SectionCard title="Solicitações por área" icon="location_on">
             {porAreaTop.length === 0 ? (
@@ -513,9 +461,10 @@ export default function MetricasClient({ data, periodo }: Props) {
               </ResponsiveContainer>
             )}
           </SectionCard>
+        </div>
 
-          {/* Áreas com prazo excedido */}
-          <SectionCard title="Áreas com prazo de reabilitação excedido" icon="timer_off">
+        {/* ── SEÇÃO 4: Áreas com prazo excedido ───────────────────── */}
+        <SectionCard title="Áreas com prazo de reabilitação excedido" icon="timer_off" className="mb-6">
             {areasViolacao.length === 0 ? (
               <p style={{ color: '#94A3B8', fontSize: 13, fontStyle: 'italic' }}>Nenhuma violação no período</p>
             ) : (
@@ -561,7 +510,6 @@ export default function MetricasClient({ data, periodo }: Props) {
               </table>
             )}
           </SectionCard>
-        </div>
 
         {/* ── SEÇÃO 5: Tempo médio do ciclo de vida ────────────────── */}
         <SectionCard title="Tempo médio por etapa do ciclo (dias)" icon="avg_pace" className="mb-6">
@@ -619,7 +567,7 @@ export default function MetricasClient({ data, periodo }: Props) {
         </SectionCard>
 
         {/* ── SEÇÃO 6: Tendência mensal ────────────────────────────── */}
-        <SectionCard title="Tendência mensal (últimos 12 meses)" icon="trending_up" className="mb-6">
+        <SectionCard title="Tendência mensal" icon="trending_up" className="mb-6">
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={tendencia} margin={{ top: 10, right: 20, bottom: 0, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />

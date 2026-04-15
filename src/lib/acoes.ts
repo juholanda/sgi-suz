@@ -150,13 +150,13 @@ export function getAcoesPermitidas(opts: {
     if (status === 'EXECUCAO_AUTORIZADA') {
       acoes.push({
         id: 'INICIAR_EXECUCAO',
-        label: 'Iniciar execução',
+        label: 'Registrar execução',
         icon: 'play_arrow',
         variant: 'primary',
         requiresConfirmation: true,
         requiresJustificativa: false,
-        confirmTitle: 'Iniciar execução?',
-        confirmDescription: 'Confirma o início da execução de campo para desabilitação do intertravamento.',
+        confirmTitle: 'Registrar execução?',
+        confirmDescription: 'Confirma o registro da execução de campo para desabilitação do intertravamento.',
       })
     }
 

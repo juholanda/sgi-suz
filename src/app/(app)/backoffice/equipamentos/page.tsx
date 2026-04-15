@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/db'
+import ImportarExcelButton from './ImportarExcelButton'
 
 async function getEquipamentos() {
   return prisma.equipamento.findMany({
@@ -18,9 +19,7 @@ export default async function EquipamentosPage() {
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>Backoffice · TAGs e intertravamentos cadastrados</p>
         </div>
         <div className="flex gap-2">
-          <button className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: '4px', color: '#475569' }}>
-            Importar Excel
-          </button>
+          <ImportarExcelButton />
           <button className="px-4 py-2 text-sm font-medium text-white" style={{ background: '#0038A8', borderRadius: '4px' }}>
             + Novo Equipamento
           </button>

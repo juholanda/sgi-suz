@@ -8,6 +8,7 @@ function periodToDate(periodo: string): Date {
   const now = new Date()
   switch (periodo) {
     case '7d':  return new Date(now.getTime() - 7 * 86400000)
+    case '1m':  return new Date(now.getFullYear(), now.getMonth() - 1, now.getDate())
     case '3m':  return new Date(now.getFullYear(), now.getMonth() - 3, now.getDate())
     case '6m':  return new Date(now.getFullYear(), now.getMonth() - 6, now.getDate())
     case '1a':  return new Date(now.getFullYear() - 1, now.getMonth(), now.getDate())
@@ -348,14 +349,20 @@ async function getMetricasData(plantaId: string, periodo: string) {
     }))
     .sort((a, b) => a.classe - b.classe)
 
-  // ── 8. Tendência mensal (últimos 12 meses) ─────────────────────
-  const doze = new Date()
-  doze.setMonth(doze.getMonth() - 12)
-  doze.setDate(1)
-  doze.setHours(0, 0, 0, 0)
+  // ── 8. Tendência mensal (segue o período selecionado) ───────────
+  // Calcula quantos meses o período abrange
+  const now = new Date()
+  const mesesPeriodo = Math.max(
+    1,
+    (now.getFullYear() - desde.getFullYear()) * 12 + (now.getMonth() - desde.getMonth()) + 1
+  )
+
+  const tendenciaStart = new Date(desde)
+  tendenciaStart.setDate(1)
+  tendenciaStart.setHours(0, 0, 0, 0)
 
   const tendenciaRaw = await prisma.solicitacao.findMany({
-    where: { createdAt: { gte: doze }, ...scope },
+    where: { createdAt: { gte: tendenciaStart }, ...scope },
     select: {
       createdAt: true,
       prazoMaximoAtingido: true,
@@ -364,10 +371,9 @@ async function getMetricasData(plantaId: string, periodo: string) {
   })
 
   const tendenciaMap: Record<string, { criadas: number; violacoes: number; encerradas: number }> = {}
-  // Initialize all 12 months
-  for (let i = 0; i < 12; i++) {
-    const d = new Date()
-    d.setMonth(d.getMonth() - (11 - i))
+  for (let i = 0; i < mesesPeriodo; i++) {
+    const d = new Date(tendenciaStart)
+    d.setMonth(d.getMonth() + i)
     const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
     tendenciaMap[key] = { criadas: 0, violacoes: 0, encerradas: 0 }
   }
@@ -391,7 +397,7 @@ async function getMetricasData(plantaId: string, periodo: string) {
   const tendencia = Object.entries(tendenciaMap)
     .sort(([a], [b]) => a.localeCompare(b))
     .map(([key, val]) => ({
-      mes: MESES_PT[key.split('-')[1]] ?? key,
+      mes: `${MESES_PT[key.split('-')[1]] ?? key}/${key.split('-')[0].slice(2)}`,
       ...val,
     }))
 

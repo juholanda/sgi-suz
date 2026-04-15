@@ -170,7 +170,13 @@ export default function NovaSolicitacaoPage() {
   })
 
   useEffect(() => {
-    fetch('/api/areas')
+    // Read active planta from cookie to filter areas
+    const plantaCookie = document.cookie
+      .split('; ')
+      .find(c => c.startsWith('sgi_planta_ativa='))
+      ?.split('=')[1]
+    const qs = plantaCookie ? `?plantaId=${plantaCookie}` : ''
+    fetch(`/api/areas${qs}`)
       .then(r => r.json())
       .then(data => { setAreas(data); setLoadingAreas(false) })
       .catch(() => setLoadingAreas(false))

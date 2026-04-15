@@ -13,10 +13,10 @@ interface NavItem {
 
 const commonItems: NavItem[] = [
   { href: '/dashboard',    label: 'Início',       icon: 'home' },
+  { href: '/metricas',     label: 'Métricas',     icon: 'insights' },
   { href: '/solicitacoes', label: 'Solicitações', icon: 'description' },
 ]
 const bottomItems: NavItem[] = [
-  { href: '/metricas',     label: 'Métricas',     icon: 'insights' },
   { href: '/perfil',       label: 'Perfil',       icon: 'manage_accounts' },
 ]
 

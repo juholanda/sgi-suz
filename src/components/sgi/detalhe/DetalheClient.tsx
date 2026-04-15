@@ -7,7 +7,6 @@ import Breadcrumb from './Breadcrumb'
 import DetalheHeader from './DetalheHeader'
 import AcoesFooter from './AcoesFooter'
 import TabDetalhes from './tabs/TabDetalhes'
-import TabAprovacoes from './tabs/TabAprovacoes'
 import TabLinhaDoTempo from './tabs/TabLinhaDoTempo'
 import TabAnexos from './tabs/TabAnexos'
 
@@ -15,7 +14,6 @@ import TabAnexos from './tabs/TabAnexos'
 
 const TABS = [
   { key: 'detalhes',   label: 'Detalhes',       icon: 'info' },
-  { key: 'aprovacoes', label: 'Aprovações',      icon: 'task_alt' },
   { key: 'timeline',   label: 'Linha do Tempo',  icon: 'timeline' },
   { key: 'anexos',     label: 'Anexos',           icon: 'attach_file' },
 ] as const
@@ -119,7 +117,6 @@ export default function DetalheClient({ solicitacao: s, acoes, conflict, userId,
               const isActive = activeTab === tab.key
               // Show count badges for some tabs
               let count: number | null = null
-              if (tab.key === 'aprovacoes') count = s.aprovacoes.filter(a => a.tipo === 'DESABILITACAO').length
               if (tab.key === 'anexos') count = s.anexos.length
 
               return (
@@ -175,7 +172,6 @@ export default function DetalheClient({ solicitacao: s, acoes, conflict, userId,
           {/* ── Tab content ── */}
           <div className="px-4 md:px-6 pb-6">
             {activeTab === 'detalhes' && <TabDetalhes s={s} />}
-            {activeTab === 'aprovacoes' && <TabAprovacoes aprovacoes={s.aprovacoes} status={s.status} />}
             {activeTab === 'timeline' && <TabLinhaDoTempo eventos={s.eventos} />}
             {activeTab === 'anexos' && <TabAnexos anexos={s.anexos} />}
           </div>
