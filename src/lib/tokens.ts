@@ -60,7 +60,7 @@ export const tokens = {
 
       // Retorno à segurança — reabilitação em curso (teal)
       EM_REABILITACAO:               { bg: '#F0FDFA', text: '#0F766E', border: '#5EEAD4', dot: '#0D9488' },
-      EM_VALIDACAO_DA_REABILITACAO:  { bg: '#CCFBF1', text: '#0F766E', border: '#2DD4BF', dot: '#0F766E' },
+      EM_VALIDACAO_DA_REABILITACAO:  { bg: '#FEF5E5', text: '#AC6F00', border: '#F9D89C', dot: '#AC6F00' },
 
       // Terminal positivo — encerrado com sucesso (verde)
       ENCERRADA: { bg: '#F0FDF4', text: '#14532D', border: '#86EFAC', dot: '#16A34A' },
