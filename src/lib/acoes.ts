@@ -277,18 +277,6 @@ export function getAcoesPermitidas(opts: {
     }
   }
 
-  // ─── Export (ENCERRADA) ──────────────────────────────────────────────
-  if (status === 'ENCERRADA') {
-    acoes.push({
-      id: 'EXPORTAR_PDF',
-      label: 'Exportar formulário',
-      icon: 'picture_as_pdf',
-      variant: 'secondary',
-      requiresConfirmation: false,
-      requiresJustificativa: false,
-    })
-  }
-
   // ─── Sort: primary first, then secondary, then danger ────────────────
   const order: Record<AcaoVariant, number> = { primary: 0, secondary: 1, danger: 2 }
   acoes.sort((a, b) => order[a.variant] - order[b.variant])

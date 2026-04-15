@@ -75,11 +75,31 @@ export default function DetalheClient({ solicitacao: s, acoes, conflict, userId,
 
             {/* Mobile protocol */}
             <span
-              className="md:hidden text-sm font-mono font-semibold"
+              className="md:hidden text-sm font-semibold"
               style={{ color: '#0F172A' }}
             >
               {s.protocolo}
             </span>
+
+            {/* Exportar formulário — only for ENCERRADA */}
+            {s.status === 'ENCERRADA' && (
+              <a
+                href={`/api/solicitacoes/${s.id}/pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="ml-auto flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium border"
+                style={{
+                  borderColor: '#E2E8F0',
+                  borderRadius: 4,
+                  color: '#475569',
+                  background: '#FFFFFF',
+                  textDecoration: 'none',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 15, lineHeight: 1 }}>picture_as_pdf</span>
+                Exportar formulário
+              </a>
+            )}
           </div>
 
           {/* ── Header ── */}
