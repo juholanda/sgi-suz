@@ -31,13 +31,16 @@ async function getMetricasData(plantaId: string, periodo: string) {
   const scope = buildPlantaScope(plantaId)
   const desde = periodToDate(periodo)
 
-  // ── 1. KPIs em tempo real ──────────────────────────────────────
+  // ── 1. KPIs ────────────────────────────────────────────────────
+  // Tempo real (não dependem do filtro de período)
+  // + Período (dependem do filtro)
   const [
     desabilitadosAgora,
     emAprovacao,
     emExecucao,
     aguardandoReab,
-    prazosExcedidos,
+    prazosExcedidosAgora,
+    desabilitacoesPeriodo,
     encerradasPeriodo,
     totalPeriodo,
   ] = await Promise.all([
@@ -49,6 +52,12 @@ async function getMetricasData(plantaId: string, periodo: string) {
       where: {
         prazoMaximoAtingido: true,
         status: { in: ANDAMENTO_STATUSES },
+        ...scope,
+      },
+    }),
+    prisma.solicitacao.count({
+      where: {
+        dataDesabilitacao: { not: null, gte: desde },
         ...scope,
       },
     }),
@@ -384,7 +393,8 @@ async function getMetricasData(plantaId: string, periodo: string) {
       emAprovacao,
       emExecucao,
       aguardandoReab,
-      prazosExcedidos,
+      prazosExcedidosAgora,
+      desabilitacoesPeriodo,
       encerradasPeriodo,
       totalPeriodo,
     },

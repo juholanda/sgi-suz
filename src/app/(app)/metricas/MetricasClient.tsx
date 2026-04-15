@@ -14,7 +14,8 @@ interface KPIs {
   emAprovacao: number
   emExecucao: number
   aguardandoReab: number
-  prazosExcedidos: number
+  prazosExcedidosAgora: number
+  desabilitacoesPeriodo: number
   encerradasPeriodo: number
   totalPeriodo: number
 }
@@ -247,22 +248,47 @@ export default function MetricasClient({ data, periodo }: Props) {
     <div style={{ minHeight: '100vh', background: '#F8FAFC' }}>
       <div className="max-w-7xl mx-auto w-full px-4 md:px-6 py-4 md:py-6">
 
-        {/* ── Header + filtro ─────────────────────────────────────── */}
-        <div className="flex flex-wrap items-center justify-between gap-3" style={{ marginBottom: 20 }}>
-          <div>
-            <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', margin: 0 }}>
-              Métricas
-            </h1>
-            <p style={{ fontSize: 13, color: '#64748B', margin: '2px 0 0' }}>
-              Panorama operacional da gestão de intertravamentos
-            </p>
-          </div>
+        {/* ── Header ───────────────────────────────────────────────── */}
+        <div style={{ marginBottom: 16 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#0F172A', margin: 0 }}>
+            Métricas
+          </h1>
+          <p style={{ fontSize: 13, color: '#64748B', margin: '2px 0 0' }}>
+            Panorama operacional da gestão de intertravamentos
+          </p>
+        </div>
+
+        {/* ── KPIs em tempo real ──────────────────────────────────── */}
+        <div
+          className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3"
+          style={{ marginBottom: 20 }}
+        >
+          <KpiCard label="Desabilitados agora" value={kpis.desabilitadosAgora} icon="warning" color="#EA580C" bgColor="#FFF7ED" />
+          <KpiCard label="Em aprovação" value={kpis.emAprovacao} icon="hourglass_top" color="#AC6F00" bgColor="#FEF5E5" />
+          <KpiCard label="Em execução" value={kpis.emExecucao} icon="engineering" color="#1E40AF" bgColor="#EFF6FF" />
+          <KpiCard label="Aguardando reabilitação" value={kpis.aguardandoReab} icon="replay" color="#0D9488" bgColor="#F0FDFA" />
+          <KpiCard label="Prazos excedidos" value={kpis.prazosExcedidosAgora} icon="alarm" color="#DC2626" bgColor="#FEF2F2" />
+        </div>
+
+        {/* ── Filtro de período ───────────────────────────────────── */}
+        <div
+          className="flex flex-wrap items-center justify-between gap-3"
+          style={{
+            marginBottom: 16,
+            padding: '10px 0',
+            borderTop: '1px solid #E2E8F0',
+            borderBottom: '1px solid #E2E8F0',
+          }}
+        >
+          <span style={{ fontSize: 13, fontWeight: 500, color: '#64748B' }}>
+            Dados do período
+          </span>
           <select
             value={periodo}
             onChange={e => handlePeriodoChange(e.target.value)}
             style={{
-              padding: '8px 14px',
-              borderRadius: 8,
+              padding: '6px 12px',
+              borderRadius: 6,
               border: '1px solid #E2E8F0',
               background: '#FFFFFF',
               fontSize: 13,
@@ -278,18 +304,14 @@ export default function MetricasClient({ data, periodo }: Props) {
           </select>
         </div>
 
-        {/* ── SEÇÃO 1: KPIs em tempo real ─────────────────────────── */}
+        {/* ── KPIs do período ─────────────────────────────────────── */}
         <div
-          className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3"
+          className="grid grid-cols-2 md:grid-cols-3 gap-3"
           style={{ marginBottom: 24 }}
         >
-          <KpiCard label="Desabilitados agora" value={kpis.desabilitadosAgora} icon="warning" color="#EA580C" bgColor="#FFF7ED" />
-          <KpiCard label="Em aprovação" value={kpis.emAprovacao} icon="hourglass_top" color="#AC6F00" bgColor="#FEF5E5" />
-          <KpiCard label="Em execução" value={kpis.emExecucao} icon="engineering" color="#1E40AF" bgColor="#EFF6FF" />
-          <KpiCard label="Aguardando reabilitação" value={kpis.aguardandoReab} icon="replay" color="#0D9488" bgColor="#F0FDFA" />
-          <KpiCard label="Prazos excedidos" value={kpis.prazosExcedidos} icon="alarm" color="#DC2626" bgColor="#FEF2F2" />
-          <KpiCard label="Encerradas no período" value={kpis.encerradasPeriodo} icon="check_circle" color="#16A34A" bgColor="#F0FDF4" />
-          <KpiCard label="Total no período" value={kpis.totalPeriodo} icon="list_alt" color="#0038A8" bgColor="#EBF0FB" />
+          <KpiCard label="Desabilitações realizadas" value={kpis.desabilitacoesPeriodo} icon="toggle_off" color="#EA580C" bgColor="#FFF7ED" />
+          <KpiCard label="Encerradas" value={kpis.encerradasPeriodo} icon="check_circle" color="#16A34A" bgColor="#F0FDF4" />
+          <KpiCard label="Total de solicitações" value={kpis.totalPeriodo} icon="list_alt" color="#0038A8" bgColor="#EBF0FB" />
         </div>
 
         {/* ── SEÇÃO 2: Top equipamentos recorrentes ───────────────── */}
