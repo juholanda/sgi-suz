@@ -15,17 +15,21 @@ export default async function SelecionarPlantaPage() {
     prisma.user.findUnique({ where: { id: userId }, select: { nome: true, email: true, matricula: true } }),
   ])
 
-  // Group by plant
-  const plantaMap = new Map<string, { id: string; nome: string; perfis: string[] }>()
+  // Group by plant and deduplicate perfis
+  const plantaMap = new Map<string, { id: string; nome: string; perfis: Set<string> }>()
   for (const p of perfisReais) {
     if (!p.plantaId || !p.planta) continue
     if (!plantaMap.has(p.plantaId)) {
-      plantaMap.set(p.plantaId, { id: p.plantaId, nome: p.planta.nome, perfis: [] })
+      plantaMap.set(p.plantaId, { id: p.plantaId, nome: p.planta.nome, perfis: new Set() })
     }
-    plantaMap.get(p.plantaId)!.perfis.push(p.perfil)
+    plantaMap.get(p.plantaId)!.perfis.add(p.perfil)
   }
 
-  const plantas = Array.from(plantaMap.values())
+  const plantas = Array.from(plantaMap.values()).map(p => ({
+    id: p.id,
+    nome: p.nome,
+    perfis: Array.from(p.perfis),
+  }))
 
   if (plantas.length === 1) redirect('/dashboard')
   if (plantas.length === 0) redirect('/dashboard')
