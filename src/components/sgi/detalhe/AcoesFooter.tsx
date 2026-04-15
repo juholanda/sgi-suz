@@ -238,14 +238,12 @@ export default function AcoesFooter({
 
   return (
     <>
-      {/* Fixed footer — always visible at the bottom */}
+      {/* Sticky footer — visible at the bottom, respects sidebar */}
       <div
         className="fixed-footer-actions"
         style={{
-          position: 'fixed',
-          bottom: 60, // above mobile nav bar (60px height)
-          left: 0,
-          right: 0,
+          position: 'sticky',
+          bottom: 0,
           zIndex: 40,
           background: '#FFFFFF',
           borderTop: '1px solid #E2E8F0',

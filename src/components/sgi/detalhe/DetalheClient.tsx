@@ -43,7 +43,7 @@ export default function DetalheClient({ solicitacao: s, acoes, conflict, userId,
       <div
         style={{
           flex: 1,
-          paddingBottom: hasFooter ? 140 : 0, // space for fixed footer (62px) + mobile nav bar (60px) + gap
+          paddingBottom: hasFooter ? 20 : 0,
         }}
       >
         <div className="max-w-5xl mx-auto w-full">
