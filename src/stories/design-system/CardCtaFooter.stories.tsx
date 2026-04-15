@@ -48,9 +48,9 @@ import { ClickableCard } from '@/components/design-system/ClickableCard'
 | Acao | bg | color | Quando usar |
 |---|---|---|---|
 | Primary | \`#0038A8\` | \`#FFFFFF\` | Acao principal (Analisar, Executar) |
-| Secondary | \`#EBF0FB\` | \`#0038A8\` | Acao alternativa (Acompanhar) |
-| Success | \`#16A34A\` | \`#FFFFFF\` | Confirmacao positiva (Validar, Reabilitar) |
-| Danger | \`#DC2626\` | \`#FFFFFF\` | Alerta / urgencia (Ver agora) |
+| Success | \`#16A34A\` | \`#FFFFFF\` | Aprovar, Validar, Reabilitar |
+| Danger | \`#DC2626\` | \`#FFFFFF\` | Rejeitar, alertas de urgencia |
+| Neutro | \`#F1F5F9\` | \`#374151\` | Acompanhar (acao discreta, sem destaque) |
         `,
       },
     },
@@ -152,12 +152,12 @@ export const Danger: Story = {
   ),
 }
 
-export const Secondary: Story = {
-  name: 'Secondary — Acompanhar',
+export const Neutro: Story = {
+  name: 'Neutro — Acompanhar',
   render: () => (
     <DemoCard>
       <CardBody tag="PRD-MOT-009" description="Em execucao de campo" />
-      <CardCtaFooter href="#" label="Acompanhar" bg="#EBF0FB" color="#0038A8" />
+      <CardCtaFooter href="#" label="Acompanhar" bg="#F1F5F9" color="#374151" />
     </DemoCard>
   ),
 }
@@ -183,7 +183,7 @@ export const TodasVariantes: Story = {
 
       <DemoCard>
         <CardBody tag="PRD-MOT-009" description="Em execucao de campo" />
-        <CardCtaFooter href="#" label="Acompanhar" bg="#EBF0FB" color="#0038A8" />
+        <CardCtaFooter href="#" label="Acompanhar" bg="#F1F5F9" color="#374151" />
       </DemoCard>
     </div>
   ),
