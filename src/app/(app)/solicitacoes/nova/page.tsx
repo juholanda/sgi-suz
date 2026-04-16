@@ -551,9 +551,9 @@ export default function NovaSolicitacaoPage() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#FFFFFF' }}>
 
       {/* I — Structured header with protocol info and tabs */}
-      <div style={{ padding: '24px 24px 0 24px', background: '#FFFFFF' }}>
+      <div className="px-4 md:px-6 pt-4 md:pt-6" style={{ background: '#FFFFFF' }}>
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 mb-4">
+        <div className="flex items-center gap-2 mb-3 md:mb-4">
           <a
             href="/solicitacoes"
             className="flex items-center gap-1 text-sm"
@@ -567,9 +567,9 @@ export default function NovaSolicitacaoPage() {
         </div>
 
         {/* Protocol / title row */}
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex items-start justify-between mb-4 md:mb-6">
           <div>
-            <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>{isEditMode ? `Editar rascunho${editProtocolo ? ` #${editProtocolo}` : ''}` : 'Nova solicitação de desabilitação'}</h1>
+            <h1 className="text-lg md:text-xl font-bold" style={{ color: '#0F172A' }}>{isEditMode ? `Editar rascunho${editProtocolo ? ` #${editProtocolo}` : ''}` : 'Nova solicitação de desabilitação'}</h1>
           </div>
           <span
             className="text-xs font-semibold px-2.5 py-1 shrink-0"
@@ -582,7 +582,7 @@ export default function NovaSolicitacaoPage() {
       </div>
 
       {/* Scrollable content area */}
-      <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', padding: '24px', minHeight: 0 }}>
+      <div ref={scrollRef} className="px-4 py-4 md:px-6 md:py-6" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
         <div className="w-full max-w-4xl mx-auto">
 
           {/* ── Wizard stepper ── */}
@@ -591,14 +591,11 @@ export default function NovaSolicitacaoPage() {
               background: '#F0F4F8',
               border: '1px solid #E2E8F0',
               borderRadius: 12,
-              padding: '20px 32px',
               marginBottom: 20,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
             }}
+            className="p-3 md:p-5"
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0 }}>
               {ETAPAS.map((e, idx) => {
                 const isActive = etapa === e.num
                 const isDone   = etapa > e.num
@@ -608,6 +605,7 @@ export default function NovaSolicitacaoPage() {
                     <button
                       type="button"
                       onClick={() => { if (isDone) setEtapa(e.num as Etapa) }}
+                      className="px-2 py-2 md:px-5 md:py-3"
                       style={{
                         display: 'flex',
                         flexDirection: 'column',
@@ -616,15 +614,13 @@ export default function NovaSolicitacaoPage() {
                         background: '#EEF2F7',
                         border: 'none',
                         borderRadius: 10,
-                        padding: '12px 20px',
                         cursor: isDone ? 'pointer' : 'default',
                       }}
                     >
                       {/* Circle */}
                       <div
+                        className="w-8 h-8 md:w-9 md:h-9"
                         style={{
-                          width: 36,
-                          height: 36,
                           borderRadius: '50%',
                           display: 'flex',
                           alignItems: 'center',
@@ -636,15 +632,16 @@ export default function NovaSolicitacaoPage() {
                         }}
                       >
                         {isDone ? (
-                          <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#FFFFFF', lineHeight: 1 }}>check</span>
+                          <span className="material-symbols-outlined" style={{ fontSize: 16, color: '#FFFFFF', lineHeight: 1 }}>check</span>
                         ) : (
-                          <span style={{ fontSize: 14, fontWeight: 700, color: isActive ? '#FFFFFF' : '#94A3B8', lineHeight: 1 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: isActive ? '#FFFFFF' : '#94A3B8', lineHeight: 1 }}>
                             {e.num}
                           </span>
                         )}
                       </div>
-                      {/* Label */}
+                      {/* Label — hidden on mobile, shown on md+ */}
                       <span
+                        className="hidden md:block"
                         style={{
                           fontSize: 12,
                           fontWeight: isActive ? 600 : 400,
@@ -656,15 +653,29 @@ export default function NovaSolicitacaoPage() {
                       >
                         {e.label}
                       </span>
+                      {/* Short label on mobile */}
+                      <span
+                        className="md:hidden"
+                        style={{
+                          fontSize: 10,
+                          fontWeight: isActive ? 600 : 400,
+                          color: isDone ? '#16A34A' : isActive ? '#0038A8' : '#94A3B8',
+                          whiteSpace: 'nowrap',
+                          lineHeight: 1.2,
+                          textAlign: 'center',
+                        }}
+                      >
+                        Etapa {e.num}
+                      </span>
                     </button>
 
                     {/* Connector line between steps */}
                     {idx < ETAPAS.length - 1 && (
                       <div
+                        className="w-6 md:w-20"
                         style={{
-                          width: 80,
                           height: 2,
-                          marginBottom: 22, // align with circle center (label takes ~22px below)
+                          marginBottom: 22,
                           background: etapa > e.num ? '#16A34A' : '#CBD5E1',
                           transition: 'background 0.2s',
                           flexShrink: 0,
@@ -677,14 +688,14 @@ export default function NovaSolicitacaoPage() {
             </div>
           </div>
 
-          <div className="bg-white border p-6" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
+          <div className="bg-white border p-4 md:p-6" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
 
             {/* ETAPA 1 — Identificação */}
             {etapa === 1 && (
               <div className="space-y-5">
                 <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 1 — Equipamento e contexto</h2>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Select
                     label="Área *"
                     value={form.areaId}
@@ -726,7 +737,7 @@ export default function NovaSolicitacaoPage() {
                         Informações do intertravamento
                       </span>
                     </div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <InfoRow icon="description" label="Nome do equipamento" value={equipSelecionado.descricao} />
                       <InfoRow icon="security" label="Função do intertravamento" value={equipSelecionado.funcaoProtegida ?? '—'} />
                       <InfoRow icon="location_on" label="Área" value={equipSelecionado.area.nome} />
@@ -750,7 +761,7 @@ export default function NovaSolicitacaoPage() {
 
                 {/* A — Tipo de intertravamento: cards */}
                 <Field label="Tipo de intertravamento *" error={errors.tipo}>
-                  <div className="flex gap-3">
+                  <div className="flex flex-col sm:flex-row gap-3">
                     {TIPO_OPTIONS.map(opt => {
                       const isSelected = form.tipo === opt.value
                       return (
@@ -812,7 +823,7 @@ export default function NovaSolicitacaoPage() {
 
                 {/* Seletor de Classe — RF-012: Classe 5 desabilitada */}
                 <Field label="Classe *" error={errors.classeNumero}>
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-2 sm:flex gap-2">
                     {([1, 2, 3, 4] as ClasseNum[]).map(c => (
                       <button
                         key={c}
@@ -877,7 +888,7 @@ export default function NovaSolicitacaoPage() {
                   errorMessage={errors.motivoDesabilitacao}
                 />
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
                     label="Período início *"
                     type="datetime-local"
@@ -932,9 +943,8 @@ export default function NovaSolicitacaoPage() {
                   ) : (
                     <>
                       <div
+                        className="grid grid-cols-1 md:grid-cols-2"
                         style={{
-                          display: 'grid',
-                          gridTemplateColumns: '1fr 1fr',
                           gap: '8px 24px',
                           marginBottom: 12,
                         }}
@@ -1241,27 +1251,27 @@ export default function NovaSolicitacaoPage() {
 
       {/* G — Sticky footer, always at bottom */}
       <div
+        className="px-4 py-3 md:px-6 md:py-4"
         style={{
           flexShrink: 0,
           background: 'white',
           borderTop: '1px solid #E2E8F0',
-          padding: '16px 24px',
           zIndex: 30,
           boxShadow: '0 -4px 16px rgba(0,0,0,0.07)',
         }}
       >
-        <div className="flex items-center justify-between w-full max-w-4xl mx-auto">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full max-w-4xl mx-auto">
           <div className="flex gap-2">
             {/* B — Cancelar styled exactly like Anterior (same white/gray border style) */}
             <button
               type="button"
               onClick={() => router.push('/solicitacoes')}
+              className="text-xs sm:text-sm"
               style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
-                padding: '8px 16px',
-                fontSize: 14,
+                padding: '8px 12px',
                 fontWeight: 500,
                 borderRadius: '6px',
                 border: '1px solid #E2E8F0',
@@ -1276,12 +1286,12 @@ export default function NovaSolicitacaoPage() {
               <button
                 type="button"
                 onClick={() => setEtapa(e => (e - 1) as Etapa)}
+                className="text-xs sm:text-sm"
                 style={{
                   display: 'inline-flex',
                   alignItems: 'center',
                   gap: 6,
-                  padding: '8px 16px',
-                  fontSize: 14,
+                  padding: '8px 12px',
                   fontWeight: 500,
                   borderRadius: '6px',
                   border: '1px solid #E2E8F0',
@@ -1304,7 +1314,8 @@ export default function NovaSolicitacaoPage() {
               disabled={loading}
               leadingIcon="save"
             >
-              Salvar rascunho
+              <span className="hidden sm:inline">Salvar rascunho</span>
+              <span className="sm:hidden">Rascunho</span>
             </Button>
             {etapa < 3 ? (
               <Button
@@ -1313,8 +1324,10 @@ export default function NovaSolicitacaoPage() {
                 size="md"
                 onClick={avancar}
                 trailingIcon="arrow_forward"
+                fullWidth
               >
-                Próximo: {ETAPAS[etapa].label}
+                <span className="hidden sm:inline">Próximo: {ETAPAS[etapa].label}</span>
+                <span className="sm:hidden">Próximo</span>
               </Button>
             ) : (
               /* F — "Enviar solicitação" with send icon on the right */
@@ -1326,6 +1339,7 @@ export default function NovaSolicitacaoPage() {
                 disabled={!form.cienteRiscos}
                 loading={loading}
                 trailingIcon={loading ? undefined : 'send'}
+                fullWidth
               >
                 {loading ? 'Enviando...' : 'Enviar solicitação'}
               </Button>
