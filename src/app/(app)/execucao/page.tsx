@@ -10,7 +10,7 @@ async function getSolicitacoesExecucao() {
   const cookieStore = await cookies()
   const plantaId = cookieStore.get('sgi_planta_ativa')?.value ?? ''
   return prisma.solicitacao.findMany({
-    where: { status: { in: ['EXECUCAO_AUTORIZADA', 'EM_EXECUCAO', 'DESABILITADO', 'EM_REABILITACAO'] }, ...buildPlantaScope(plantaId) },
+    where: { status: { in: ['EXECUCAO_AUTORIZADA', 'DESABILITADO'] }, ...buildPlantaScope(plantaId) },
     include: {
       equipamento: true,
       area: { include: { planta: true } },

@@ -112,30 +112,25 @@ export async function POST(req: NextRequest, { params }: Params) {
     return NextResponse.json({ ok: true })
   }
 
-  // ── INICIAR EXECUÇÃO ─── RF-052 ────────────────────────────────────────────
-  if (tipo === 'INICIAR_EXECUCAO') {
-    await prisma.solicitacao.update({ where: { id }, data: { status: 'EM_EXECUCAO' } })
-    await registrarEvento(id, userId, 'EXECUCAO_INICIADA', '')
-    return NextResponse.json({ ok: true })
-  }
-
   // ── CONFIRMAR DESABILITAÇÃO (com checklist) ─── RF-058 ────────────────────
-  if (tipo === 'CONFIRMAR_DESABILITACAO') {
+  if (tipo === 'INICIAR_EXECUCAO' || tipo === 'CONFIRMAR_DESABILITACAO') {
     const items: { numero: number; descricao: string; resposta: string; observacao?: string }[] = checklistItems ?? []
 
-    // Salva checklist
-    await prisma.checklistItem.deleteMany({ where: { solicitacaoId: id, tipo: 'DESABILITACAO' } })
-    for (const item of items) {
-      await prisma.checklistItem.create({
-        data: {
-          solicitacaoId: id,
-          numero: item.numero,
-          descricao: item.descricao,
-          resposta: item.resposta,
-          tipo: 'DESABILITACAO',
-          observacao: item.observacao,
-        },
-      })
+    // Salva checklist se houver
+    if (items.length > 0) {
+      await prisma.checklistItem.deleteMany({ where: { solicitacaoId: id, tipo: 'DESABILITACAO' } })
+      for (const item of items) {
+        await prisma.checklistItem.create({
+          data: {
+            solicitacaoId: id,
+            numero: item.numero,
+            descricao: item.descricao,
+            resposta: item.resposta,
+            tipo: 'DESABILITACAO',
+            observacao: item.observacao,
+          },
+        })
+      }
     }
 
     await prisma.solicitacao.update({
@@ -143,19 +138,6 @@ export async function POST(req: NextRequest, { params }: Params) {
       data: { status: 'DESABILITADO', dataDesabilitacao: new Date() },
     })
     await registrarEvento(id, userId, 'DESABILITACAO_CONFIRMADA', 'Checklist de desabilitação preenchido')
-    return NextResponse.json({ ok: true })
-  }
-
-  // ── INICIAR REABILITAÇÃO ─── RF-070 ───────────────────────────────────────
-  if (tipo === 'INICIAR_REABILITACAO') {
-    await prisma.solicitacao.update({
-      where: { id },
-      data: {
-        status: 'EM_REABILITACAO',
-        executanteId: executanteReabilitacaoId || solicitacao.executanteId,
-      },
-    })
-    await registrarEvento(id, userId, 'REABILITACAO_INICIADA', '')
     return NextResponse.json({ ok: true })
   }
 

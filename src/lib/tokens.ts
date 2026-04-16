@@ -52,14 +52,12 @@ export const tokens = {
 
       // Em andamento — trabalho ativo (azul)
       EXECUCAO_AUTORIZADA: { bg: '#EFF6FF', text: '#1E40AF', border: '#93C5FD', dot: '#2563EB' },
-      EM_EXECUCAO:         { bg: '#EBF0FB', text: '#002D8A', border: '#93C5FD', dot: '#0038A8' },
 
       // Alerta operacional — ⚠ intertravamento DESABILITADO (laranja forte)
       // Este é o estado mais crítico do ponto de vista de segurança
       DESABILITADO: { bg: '#FFF7ED', text: '#7C2D12', border: '#FB923C', dot: '#EA580C' },
 
-      // Retorno à segurança — reabilitação em curso (teal)
-      EM_REABILITACAO:               { bg: '#F0FDFA', text: '#0F766E', border: '#5EEAD4', dot: '#0D9488' },
+      // Retorno à segurança — validação da reabilitação (âmbar)
       EM_VALIDACAO_DA_REABILITACAO:  { bg: '#FEF5E5', text: '#AC6F00', border: '#F9D89C', dot: '#AC6F00' },
 
       // Terminal positivo — encerrado com sucesso (verde)
@@ -78,9 +76,7 @@ export type StatusSolicitacao =
   | 'RASCUNHO'
   | 'EM_APROVACAO'
   | 'EXECUCAO_AUTORIZADA'
-  | 'EM_EXECUCAO'
   | 'DESABILITADO'
-  | 'EM_REABILITACAO'
   | 'EM_VALIDACAO_DA_REABILITACAO'
   | 'ENCERRADA'
   | 'REJEITADA'
@@ -91,9 +87,7 @@ export const STATUS_LABELS: Record<StatusSolicitacao, string> = {
   RASCUNHO:                     'Rascunho',
   EM_APROVACAO:                 'Em aprovação',
   EXECUCAO_AUTORIZADA:          'Execução autorizada',
-  EM_EXECUCAO:                  'Em execução',
   DESABILITADO:                 'Desabilitado',
-  EM_REABILITACAO:              'Em reabilitação',
   EM_VALIDACAO_DA_REABILITACAO: 'Em validação da reabilitação',
   ENCERRADA:                    'Encerrada',
   REJEITADA:                    'Rejeitada',

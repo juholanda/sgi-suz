@@ -17,7 +17,6 @@ const STEPS: Step[] = [
   { label: 'Execução', icon: 'engineering' },
   { label: 'Desabilitado', icon: 'lock_open' },
   { label: 'Reabilitação', icon: 'replay' },
-  { label: 'Validação', icon: 'verified' },
   { label: 'Encerrada', icon: 'check_circle' },
 ]
 
@@ -28,17 +27,15 @@ function getStepIndex(status: string): number {
     case 'EM_APROVACAO':
       return 1
     case 'EXECUCAO_AUTORIZADA':
-    case 'EM_EXECUCAO':
       return 2
     case 'DESABILITADO':
     case 'EXTENSAO_EM_ANALISE':
       return 3
-    case 'EM_REABILITACAO':
-      return 4
     case 'EM_VALIDACAO_DA_REABILITACAO':
-      return 5
+      return 4
     case 'ENCERRADA':
-      return 6
+      return 5
+    // EM_EXECUCAO e EM_REABILITACAO removidos do fluxo
     case 'REJEITADA':
       return 1
     case 'CANCELADA':

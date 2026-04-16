@@ -124,7 +124,7 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
             {COLS.map(col => (
               <th
                 key={col.key}
-                className="text-left px-4 py-3 text-xs font-semibold whitespace-nowrap"
+                className="text-left px-4 py-3.5 text-xs font-semibold whitespace-nowrap"
                 style={{
                   color: sortCol === col.key ? '#0038A8' : '#64748B',
                   cursor: col.sortable ? 'pointer' : 'default',
@@ -138,7 +138,7 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
             ))}
             {/* Sticky "Ações" header */}
             <th
-              className="text-left px-4 py-3 text-xs font-semibold"
+              className="text-left px-4 py-3.5 text-xs font-semibold"
               style={{
                 position: 'sticky',
                 right: 0,
@@ -157,27 +157,27 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
             <tr
               key={s.id}
               className="border-b hover:bg-slate-50 transition-colors"
-              style={{ borderColor: '#F1F5F9', cursor: 'pointer', background: '#FFFFFF' }}
+              style={{ borderColor: '#E5E7EB', cursor: 'pointer', background: '#FFFFFF' }}
               onClick={() => router.push(`/solicitacoes/${s.id}`)}
             >
-              <td className="px-4 py-3 font-sans text-sm font-semibold whitespace-nowrap" style={{ color: '#374151' }}>
+              <td className="px-4 py-3.5 font-sans text-sm whitespace-nowrap" style={{ color: '#1F2937' }}>
                 #{s.protocolo}
               </td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                <span className="font-sans text-sm font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
+              <td className="px-4 py-3.5 whitespace-nowrap">
+                <span className="font-sans text-sm" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
               </td>
-              <td className="px-4 py-3 whitespace-nowrap">
+              <td className="px-4 py-3.5 whitespace-nowrap">
                 {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
               </td>
-              <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#6B7280' }}>
+              <td className="px-4 py-3.5 text-sm whitespace-nowrap" style={{ color: '#4B5563' }}>
                 {s.equipamento.tipo
                   ? TIPO_LABELS[s.equipamento.tipo] ?? s.equipamento.tipo
                   : s.tipo
                     ? TIPO_LABELS[s.tipo] ?? s.tipo
                     : '—'}
               </td>
-              <td className="px-4 py-3 whitespace-nowrap">
-                <div className="text-sm" style={{ color: '#6B7280' }}>
+              <td className="px-4 py-3.5 whitespace-nowrap">
+                <div className="text-sm" style={{ color: '#4B5563' }}>
                   {s.periodoInicio
                     ? `${format(s.periodoInicio, 'dd/MM/yy', { locale: ptBR })} → ${s.periodoFim ? format(s.periodoFim, 'dd/MM/yy', { locale: ptBR }) : '—'}`
                     : '—'}
@@ -186,28 +186,28 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
                   const prazo = getPrazoIndicator(s)
                   if (!prazo) return null
                   return (
-                    <div className="flex items-center gap-1 mt-0.5" style={{ fontSize: 10, color: prazo.color, fontWeight: 500, lineHeight: 1.2 }}>
+                    <div className="flex items-center gap-1" style={{ fontSize: 12, fontFamily: 'Inter, sans-serif', color: prazo.color, fontWeight: 500, lineHeight: 1.2, marginTop: 4 }}>
                       <span style={{ width: 6, height: 6, borderRadius: '50%', background: prazo.dot, flexShrink: 0 }} />
                       {prazo.text}
                     </div>
                   )
                 })()}
               </td>
-              <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#6B7280' }}>
+              <td className="px-4 py-3.5 text-sm whitespace-nowrap" style={{ color: '#4B5563' }}>
                 {format(s.updatedAt, "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
               </td>
-              <td className="px-4 py-3 whitespace-nowrap">
+              <td className="px-4 py-3.5 whitespace-nowrap">
                 <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
               </td>
               {/* Sticky "Ver" cell */}
               <td
-                className="px-4 py-3 whitespace-nowrap"
+                className="px-4 py-3.5 whitespace-nowrap"
                 style={{
                   position: 'sticky',
                   right: 0,
                   background: 'white',
                   zIndex: 1,
-                  boxShadow: '-1px 0 0 #F1F5F9',
+                  boxShadow: '-1px 0 0 #E5E7EB',
                 }}
                 onClick={e => e.stopPropagation()}
               >

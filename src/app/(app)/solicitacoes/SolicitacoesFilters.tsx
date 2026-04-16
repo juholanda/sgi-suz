@@ -19,9 +19,7 @@ interface Props {
 const STATUS_OPTIONS = [
   { value: 'EM_APROVACAO', label: 'Em aprovação' },
   { value: 'EXECUCAO_AUTORIZADA', label: 'Exec. autorizada' },
-  { value: 'EM_EXECUCAO', label: 'Em execução' },
   { value: 'DESABILITADO', label: 'Desabilitado' },
-  { value: 'EM_REABILITACAO', label: 'Em reabilitação' },
   { value: 'EM_VALIDACAO_DA_REABILITACAO', label: 'Validação reab.' },
   { value: 'ENCERRADA', label: 'Encerrada' },
   { value: 'CANCELADA', label: 'Cancelada' },

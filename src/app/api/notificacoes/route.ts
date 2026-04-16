@@ -103,7 +103,7 @@ export async function GET(req: NextRequest) {
     const solicitacoes = await prisma.solicitacao.findMany({
       where: {
         executanteId: userId,
-        status: { in: ['EXECUCAO_AUTORIZADA', 'EM_EXECUCAO'] },
+        status: { in: ['EXECUCAO_AUTORIZADA', 'DESABILITADO'] },
         ...buildPlantaScope(plantaId),
       },
       include: {

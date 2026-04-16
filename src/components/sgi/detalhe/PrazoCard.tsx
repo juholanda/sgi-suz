@@ -226,23 +226,6 @@ export default function PrazoCard(props: PrazoCardProps) {
     )
   }
 
-  // EM_EXECUCAO
-  if (status === 'EM_EXECUCAO') {
-    const inicio = toDate(periodoInicio) ?? toDate(dataAprovacaoFinal) ?? now
-    return (
-      <div style={wrapStyle}>
-        <div style={leftStyle}>
-          <span className="material-symbols-outlined" style={iconStyle}>
-            engineering
-          </span>
-          <span style={textPrimaryStyle}>
-            Em execução desde {formatShort(inicio)}
-          </span>
-        </div>
-      </div>
-    )
-  }
-
   // DESABILITADO
   if (status === 'DESABILITADO' || status === 'EXTENSAO_EM_ANALISE') {
     const desab = toDate(dataDesabilitacao) ?? now
@@ -299,23 +282,6 @@ export default function PrazoCard(props: PrazoCardProps) {
               </>
             )}
           </div>
-        </div>
-      </div>
-    )
-  }
-
-  // EM_REABILITACAO
-  if (status === 'EM_REABILITACAO') {
-    const ref = toDate(dataDesabilitacao) ?? now
-    return (
-      <div style={wrapStyle}>
-        <div style={leftStyle}>
-          <span className="material-symbols-outlined" style={iconStyle}>
-            replay
-          </span>
-          <span style={textPrimaryStyle}>
-            Em reabilitação desde {formatShort(ref)}
-          </span>
         </div>
       </div>
     )

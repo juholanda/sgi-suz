@@ -12,7 +12,7 @@ async function getRelatorio() {
   const plantaId = cookieStore.get('sgi_planta_ativa')?.value ?? ''
   return prisma.solicitacao.findMany({
     where: {
-      status: { in: ['ENCERRADA', 'EM_REABILITACAO', 'EM_VALIDACAO_DA_REABILITACAO'] },
+      status: { in: ['ENCERRADA', 'EM_VALIDACAO_DA_REABILITACAO'] },
       dataDesabilitacao: { not: null },
       ...buildPlantaScope(plantaId),
     },

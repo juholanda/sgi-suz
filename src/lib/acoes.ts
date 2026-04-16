@@ -160,33 +160,7 @@ export function getAcoesPermitidas(opts: {
       })
     }
 
-    if (status === 'EM_EXECUCAO') {
-      acoes.push({
-        id: 'CONFIRMAR_DESABILITACAO',
-        label: 'Confirmar desabilitação',
-        icon: 'check_circle',
-        variant: 'primary',
-        requiresConfirmation: true,
-        requiresJustificativa: false,
-        confirmTitle: 'Confirmar desabilitação?',
-        confirmDescription: 'Preencha o checklist de campo e confirme a desabilitação.',
-      })
-    }
-
     if (status === 'DESABILITADO') {
-      acoes.push({
-        id: 'INICIAR_REABILITACAO',
-        label: 'Iniciar reabilitação',
-        icon: 'replay',
-        variant: 'primary',
-        requiresConfirmation: true,
-        requiresJustificativa: false,
-        confirmTitle: 'Iniciar reabilitação?',
-        confirmDescription: 'Confirma o início do processo de reabilitação do intertravamento.',
-      })
-    }
-
-    if (status === 'EM_REABILITACAO') {
       acoes.push({
         id: 'CONCLUIR_REABILITACAO',
         label: 'Enviar para validação',
