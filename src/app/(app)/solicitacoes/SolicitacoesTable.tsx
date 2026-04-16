@@ -21,6 +21,7 @@ type Solicitacao = {
   periodoInicio: Date | null
   periodoFim: Date | null
   updatedAt: Date
+  dataDesabilitacao: Date | null
   equipamento: { tag: string; tipo?: string | null }
   area: { nome: string; planta: { nome: string } }
   classe: { numero: number; prazoMaximoDias: number | null } | null
@@ -32,12 +33,41 @@ type SortDir = 'asc' | 'desc'
 const SORTABLE_COLS: Record<string, string> = {
   protocolo: 'Protocolo',
   tag: 'TAG',
-  tipo: 'Tipo',
   classe: 'Classe',
-  status: 'Status',
-  solicitante: 'Solicitante',
-  updatedAt: 'Atualizado em',
+  tipo: 'Tipo',
   periodo: 'Período',
+  updatedAt: 'Atualizado em',
+  status: 'Status',
+}
+
+/** Calcula indicador de prazo de reabilitação (só para DESABILITADO) */
+function getPrazoIndicator(s: Solicitacao): { text: string; color: string; dot: string } | null {
+  if (s.status !== 'DESABILITADO') return null
+  if (!s.dataDesabilitacao || !s.classe?.prazoMaximoDias) return null
+
+  const now = new Date()
+  const desab = new Date(s.dataDesabilitacao)
+  const limite = new Date(desab)
+  limite.setDate(limite.getDate() + s.classe.prazoMaximoDias)
+
+  const diffMs = limite.getTime() - now.getTime()
+  const diffDias = Math.ceil(diffMs / 86_400_000)
+
+  if (diffDias < 0) {
+    const atraso = Math.abs(diffDias)
+    return { text: `Reabilitação atrasada ${atraso}d`, color: '#DC2626', dot: '#DC2626' }
+  }
+  if (diffDias === 0) {
+    return { text: 'Reabilitar hoje', color: '#EA580C', dot: '#EA580C' }
+  }
+  if (diffDias === 1) {
+    return { text: 'Reabilitar até amanhã', color: '#D97706', dot: '#D97706' }
+  }
+  if (diffDias <= 2) {
+    return { text: `Reabilitar em ${diffDias}d`, color: '#D97706', dot: '#D97706' }
+  }
+  // Prazo ok, sem indicador
+  return null
 }
 
 interface Props {
@@ -77,18 +107,17 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
   }
 
   const COLS: { key: string; label: string; sortable: boolean }[] = [
-    { key: 'classe',    label: 'Classe',     sortable: true },
     { key: 'protocolo', label: 'Protocolo', sortable: true },
     { key: 'tag',       label: 'TAG',        sortable: true },
+    { key: 'classe',    label: 'Classe',     sortable: true },
     { key: 'tipo',      label: 'Tipo',       sortable: true },
-    { key: 'status',    label: 'Status',     sortable: true },
-    { key: 'solicitante', label: 'Solicitante', sortable: true },
-    { key: 'updatedAt', label: 'Atualizado em', sortable: true },
     { key: 'periodo',   label: 'Período',    sortable: true },
+    { key: 'updatedAt', label: 'Atualizado em', sortable: true },
+    { key: 'status',    label: 'Status',     sortable: true },
   ]
 
   return (
-    <div className="hidden sm:block overflow-x-auto bg-white border" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
+    <div className="hidden sm:block overflow-x-auto bg-white border" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
       <table className="w-full text-sm border-collapse" style={{ minWidth: '900px' }}>
         <thead>
           <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
@@ -107,7 +136,7 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
                 {col.sortable && <SortChevron col={col.key} />}
               </th>
             ))}
-            {/* Sticky "Ver" header */}
+            {/* Sticky "Ações" header */}
             <th
               className="text-left px-4 py-3 text-xs font-semibold"
               style={{
@@ -119,7 +148,7 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
                 boxShadow: '-1px 0 0 #E2E8F0',
               }}
             >
-              Ver
+              Ações
             </th>
           </tr>
         </thead>
@@ -131,14 +160,14 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
               style={{ borderColor: '#F1F5F9', cursor: 'pointer', background: '#FFFFFF' }}
               onClick={() => router.push(`/solicitacoes/${s.id}`)}
             >
-              <td className="px-4 py-3 whitespace-nowrap">
-                {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
-              </td>
               <td className="px-4 py-3 font-sans text-xs font-semibold whitespace-nowrap" style={{ color: '#374151' }}>
                 #{s.protocolo}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 <span className="font-sans text-xs font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
+              </td>
+              <td className="px-4 py-3 whitespace-nowrap">
+                {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
               </td>
               <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: '#6B7280' }}>
                 {s.equipamento.tipo
@@ -148,18 +177,27 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
                     : '—'}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
-                <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
-              </td>
-              <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: '#6B7280' }}>
-                {s.solicitante.nome}
+                <div className="text-xs" style={{ color: '#6B7280' }}>
+                  {s.periodoInicio
+                    ? `${format(s.periodoInicio, 'dd/MM/yy', { locale: ptBR })} → ${s.periodoFim ? format(s.periodoFim, 'dd/MM/yy', { locale: ptBR }) : '—'}`
+                    : '—'}
+                </div>
+                {(() => {
+                  const prazo = getPrazoIndicator(s)
+                  if (!prazo) return null
+                  return (
+                    <div className="flex items-center gap-1 mt-0.5" style={{ fontSize: 10, color: prazo.color, fontWeight: 500, lineHeight: 1.2 }}>
+                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: prazo.dot, flexShrink: 0 }} />
+                      {prazo.text}
+                    </div>
+                  )
+                })()}
               </td>
               <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: '#6B7280' }}>
                 {format(s.updatedAt, "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
               </td>
-              <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: '#6B7280' }}>
-                {s.periodoInicio
-                  ? `${format(s.periodoInicio, 'dd/MM/yy', { locale: ptBR })} → ${s.periodoFim ? format(s.periodoFim, 'dd/MM/yy', { locale: ptBR }) : '—'}`
-                  : '—'}
+              <td className="px-4 py-3 whitespace-nowrap">
+                <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
               </td>
               {/* Sticky "Ver" cell */}
               <td
