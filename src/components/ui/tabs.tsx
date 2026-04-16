@@ -30,7 +30,7 @@ const TabsTrigger = React.forwardRef<
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
-      "group outline-none py-1.5 border-b-2 border-transparent",
+      "group outline-none py-1.5 border-b-2 border-transparent rounded-none",
       "text-[#64748B] data-[state=active]:border-[#0038A8] data-[state=active]:text-[#0038A8]",
       "disabled:pointer-events-none disabled:opacity-50",
       className,

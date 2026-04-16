@@ -169,8 +169,10 @@
 }
 /* TOKENS:END */
 
-* {
-  border-radius: var(--radius);
+@layer base {
+  * {
+    border-radius: var(--radius);
+  }
 }
 
 body {
