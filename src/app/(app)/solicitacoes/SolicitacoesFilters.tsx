@@ -82,10 +82,10 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         {/* Left: search + filters */}
         <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, flex: 1, minWidth: 280 }}>
-          <div style={{ maxWidth: 320, flex: '1 1 auto' }}>
+          <div style={{ maxWidth: 360, flex: '1 1 auto' }}>
             <Input
               leadingIcon="search"
-              size="sm"
+              size="md"
               value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Buscar por TAG, protocolo ou solicitante..."
@@ -94,7 +94,7 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
           {search && (
             <Button
               variant="outline"
-              size="sm"
+              size="md"
               type="button"
               onClick={() => { setSearch(''); navigate({ search: null }) }}
               leadingIcon="close"
@@ -103,7 +103,7 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
           )}
           <Button
             variant={open || hasActiveFilters ? 'secondary' : 'outline'}
-            size="sm"
+            size="md"
             type="button"
             onClick={() => setOpen(v => !v)}
             leadingIcon="tune"
@@ -134,12 +134,12 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
         {/* Right: sort + view toggle */}
         <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <span style={{ fontSize: 12, color: '#64748B', whiteSpace: 'nowrap' }}>Ordenar por</span>
+            <span style={{ fontSize: 14, color: '#64748B', whiteSpace: 'nowrap' }}>Ordenar por</span>
             <select
               value={currentSort}
               onChange={e => navigate({ sort: e.target.value })}
               className="field-input"
-              style={{ minWidth: 140, height: 32, fontSize: 13 }}
+              style={{ minWidth: 150, height: 40, fontSize: 14 }}
             >
               <option value="recentes">Mais recentes</option>
               <option value="antigas">Mais antigas</option>

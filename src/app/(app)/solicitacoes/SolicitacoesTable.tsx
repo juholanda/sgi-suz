@@ -118,7 +118,7 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
 
   return (
     <div className="hidden sm:block overflow-x-auto bg-white border" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
-      <table className="w-full text-sm border-collapse" style={{ minWidth: '900px' }}>
+      <table className="w-full text-sm border-collapse" style={{ minWidth: '960px' }}>
         <thead>
           <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
             {COLS.map(col => (
@@ -160,16 +160,16 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
               style={{ borderColor: '#F1F5F9', cursor: 'pointer', background: '#FFFFFF' }}
               onClick={() => router.push(`/solicitacoes/${s.id}`)}
             >
-              <td className="px-4 py-3 font-sans text-xs font-semibold whitespace-nowrap" style={{ color: '#374151' }}>
+              <td className="px-4 py-3 font-sans text-sm font-semibold whitespace-nowrap" style={{ color: '#374151' }}>
                 #{s.protocolo}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
-                <span className="font-sans text-xs font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
+                <span className="font-sans text-sm font-bold" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
                 {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
               </td>
-              <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: '#6B7280' }}>
+              <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#6B7280' }}>
                 {s.equipamento.tipo
                   ? TIPO_LABELS[s.equipamento.tipo] ?? s.equipamento.tipo
                   : s.tipo
@@ -177,7 +177,7 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
                     : '—'}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
-                <div className="text-xs" style={{ color: '#6B7280' }}>
+                <div className="text-sm" style={{ color: '#6B7280' }}>
                   {s.periodoInicio
                     ? `${format(s.periodoInicio, 'dd/MM/yy', { locale: ptBR })} → ${s.periodoFim ? format(s.periodoFim, 'dd/MM/yy', { locale: ptBR }) : '—'}`
                     : '—'}
@@ -193,7 +193,7 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
                   )
                 })()}
               </td>
-              <td className="px-4 py-3 text-xs whitespace-nowrap" style={{ color: '#6B7280' }}>
+              <td className="px-4 py-3 text-sm whitespace-nowrap" style={{ color: '#6B7280' }}>
                 {format(s.updatedAt, "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
               </td>
               <td className="px-4 py-3 whitespace-nowrap">
@@ -213,7 +213,7 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
               >
                 <Link
                   href={`/solicitacoes/${s.id}`}
-                  className="text-xs font-medium"
+                  className="text-sm font-medium"
                   style={{ color: '#0038A8' }}
                 >
                   Ver →
