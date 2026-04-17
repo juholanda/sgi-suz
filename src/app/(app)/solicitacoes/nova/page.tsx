@@ -324,6 +324,13 @@ export default function NovaSolicitacaoPage() {
 
   function validateEtapa2(): boolean {
     const e: FieldError = {}
+    const faltando = medidas.filter(m => m.obrigatoria && !form.medidasIds.includes(m.id))
+    if (faltando.length > 0) {
+      e.medidasIds =
+        faltando.length === 1
+          ? 'Marque a medida obrigatória antes de prosseguir.'
+          : `Marque as ${faltando.length} medidas obrigatórias antes de prosseguir.`
+    }
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -978,6 +985,7 @@ export default function NovaSolicitacaoPage() {
                         {medidas.map(medida => {
                           const isSelected = form.medidasIds.includes(medida.id)
                           const isObrigatorio = medida.obrigatoria
+                          const hasError = !!errors.medidasIds && isObrigatorio && !isSelected
                           return (
                             <label
                               key={medida.id}
@@ -1005,7 +1013,7 @@ export default function NovaSolicitacaoPage() {
                                   alignItems: 'center',
                                   justifyContent: 'center',
                                   borderRadius: 4,
-                                  border: `1.5px solid ${isSelected ? '#0038A8' : '#CBD5E1'}`,
+                                  border: `1.5px solid ${isSelected ? '#0038A8' : hasError ? '#DC2626' : '#CBD5E1'}`,
                                   background: isSelected ? '#0038A8' : 'white',
                                   marginTop: 1,
                                   flexShrink: 0,
