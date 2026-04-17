@@ -549,14 +549,53 @@ async function main() {
     create: { id: 'area-rrp-celulose', nome: 'Linha de Celulose', codigo: 'CEL', plantaId: plantaRibas.id },
   })
 
-  // Equipamentos Ribas
+  // 4 novas áreas Ribas
+  const areaPatio = await prisma.area.upsert({
+    where: { id: 'area-rrp-patio' },
+    update: {},
+    create: { id: 'area-rrp-patio', nome: 'Pátio de Madeira', codigo: 'PAT', plantaId: plantaRibas.id },
+  })
+
+  const areaSecagem = await prisma.area.upsert({
+    where: { id: 'area-rrp-secagem' },
+    update: {},
+    create: { id: 'area-rrp-secagem', nome: 'Secagem', codigo: 'SEC', plantaId: plantaRibas.id },
+  })
+
+  const areaDigestor = await prisma.area.upsert({
+    where: { id: 'area-rrp-digestor' },
+    update: {},
+    create: { id: 'area-rrp-digestor', nome: 'Digestor e Cozimento', codigo: 'DIG', plantaId: plantaRibas.id },
+  })
+
+  const areaEta = await prisma.area.upsert({
+    where: { id: 'area-rrp-eta' },
+    update: {},
+    create: { id: 'area-rrp-eta', nome: 'ETA / ETE', codigo: 'ETA', plantaId: plantaRibas.id },
+  })
+
+  // Equipamentos Ribas (existentes + novos)
   const equipsRibas = [
+    // Recuperação e Utilidades
     { tag: 'REC-VLV-001', descricao: 'Válvula de bloqueio caldeira de recuperação', areaId: areaRecuperacao.id, funcaoProtegida: 'Bloqueio de alimentação caldeira de recuperação', tipo: 'LOGICO', classeNumero: 3 },
     { tag: 'REC-SEN-012', descricao: 'Sensor de nível tanque de licor', areaId: areaRecuperacao.id, funcaoProtegida: 'Trip de nível alto do tanque de licor', tipo: 'LOGICO', classeNumero: 3 },
     { tag: 'REC-PMP-005', descricao: 'Bomba de licor verde', areaId: areaRecuperacao.id, funcaoProtegida: 'Intertravamento de proteção da bomba de licor verde', tipo: 'LOGICO', classeNumero: 2 },
+    // Linha de Celulose
     { tag: 'CEL-MOT-008', descricao: 'Motor principal do lavador', areaId: areaCelulose.id, funcaoProtegida: 'Proteção do motor principal do lavador', tipo: 'FISICO', classeNumero: 2 },
     { tag: 'CEL-SEN-021', descricao: 'Sensor de consistência da polpa', areaId: areaCelulose.id, funcaoProtegida: 'Controle de consistência da polpa', tipo: 'DISPOSITIVO_SEGURANCA', classeNumero: 3 },
     { tag: 'CEL-VLV-015', descricao: 'Válvula de segurança do digestor', areaId: areaCelulose.id, funcaoProtegida: 'Válvula de segurança do digestor — alívio de pressão', tipo: 'FISICO', classeNumero: 4 },
+    // Pátio de Madeira
+    { tag: 'PAT-EST-001', descricao: 'Esteira transportadora de cavacos', areaId: areaPatio.id, funcaoProtegida: 'Proteção de parada de emergência da esteira', tipo: 'FISICO', classeNumero: 2 },
+    { tag: 'PAT-DET-003', descricao: 'Detector de metais na linha de cavacos', areaId: areaPatio.id, funcaoProtegida: 'Bloqueio por detecção de corpo metálico', tipo: 'DISPOSITIVO_SEGURANCA', classeNumero: 3 },
+    // Secagem
+    { tag: 'SEC-SEN-007', descricao: 'Sensor de temperatura do secador', areaId: areaSecagem.id, funcaoProtegida: 'Trip por sobretemperatura do secador', tipo: 'LOGICO', classeNumero: 3 },
+    { tag: 'SEC-VLV-010', descricao: 'Válvula de vapor da máquina de secagem', areaId: areaSecagem.id, funcaoProtegida: 'Bloqueio de vapor na máquina de celulose', tipo: 'LOGICO', classeNumero: 2 },
+    // Digestor e Cozimento
+    { tag: 'DIG-PSV-002', descricao: 'Válvula de alívio de pressão do digestor', areaId: areaDigestor.id, funcaoProtegida: 'Alívio de sobrepressão do digestor contínuo', tipo: 'FISICO', classeNumero: 4 },
+    { tag: 'DIG-SEN-006', descricao: 'Sensor de nível do digestor', areaId: areaDigestor.id, funcaoProtegida: 'Trip de nível alto do digestor', tipo: 'LOGICO', classeNumero: 3 },
+    // ETA / ETE
+    { tag: 'ETA-PMP-004', descricao: 'Bomba dosadora de produto químico', areaId: areaEta.id, funcaoProtegida: 'Intertravamento de dosagem química', tipo: 'LOGICO', classeNumero: 2 },
+    { tag: 'ETA-SEN-009', descricao: 'Sensor de pH do efluente', areaId: areaEta.id, funcaoProtegida: 'Bloqueio por pH fora da faixa', tipo: 'DISPOSITIVO_SEGURANCA', classeNumero: 3 },
   ]
   for (const eq of equipsRibas) {
     await prisma.equipamento.upsert({
@@ -572,20 +611,29 @@ async function main() {
   const eqCel1 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'CEL-MOT-008' } })
   const eqCel2 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'CEL-SEN-021' } })
   const eqCel3 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'CEL-VLV-015' } })
+  // Novos equipamentos
+  const eqPat1 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'PAT-EST-001' } })
+  const eqPat2 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'PAT-DET-003' } })
+  const eqSec1 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'SEC-SEN-007' } })
+  const eqSec2 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'SEC-VLV-010' } })
+  const eqDig1 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'DIG-PSV-002' } })
+  const eqDig2 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'DIG-SEN-006' } })
+  const eqEta1 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'ETA-PMP-004' } })
+  const eqEta2 = await prisma.equipamento.findUniqueOrThrow({ where: { tag: 'ETA-SEN-009' } })
 
-  // Perfis para Ribas (reaproveitar os mesmos usuários)
+  // Perfis para Ribas (reaproveitar os mesmos usuários — todas as áreas)
   await upsertPerfil(
     { userId: admin.id, perfil: 'ADMINISTRADOR', plantaId: plantaRibas.id },
   )
-  await upsertPerfil(
-    { userId: solicitante.id, perfil: 'SOLICITANTE', plantaId: plantaRibas.id, areaId: areaRecuperacao.id },
-  )
-  await upsertPerfil(
-    { userId: solicitante.id, perfil: 'EXECUTANTE', plantaId: plantaRibas.id, areaId: areaRecuperacao.id },
-  )
-  await upsertPerfil(
-    { userId: executante.id, perfil: 'EXECUTANTE', plantaId: plantaRibas.id, areaId: areaCelulose.id },
-  )
+  // João: Solicitante + Executante em Recuperação, Pátio, Digestor
+  for (const areaRibas of [areaRecuperacao, areaPatio, areaDigestor]) {
+    await upsertPerfil({ userId: solicitante.id, perfil: 'SOLICITANTE', plantaId: plantaRibas.id, areaId: areaRibas.id })
+    await upsertPerfil({ userId: solicitante.id, perfil: 'EXECUTANTE', plantaId: plantaRibas.id, areaId: areaRibas.id })
+  }
+  // Carlos: Executante em Celulose, Secagem, ETA
+  for (const areaRibas of [areaCelulose, areaSecagem, areaEta]) {
+    await upsertPerfil({ userId: executante.id, perfil: 'EXECUTANTE', plantaId: plantaRibas.id, areaId: areaRibas.id })
+  }
 
   // Alçadas para Ribas
   for (const classeItem of todasClasses) {
@@ -828,7 +876,247 @@ async function main() {
     }
   }
 
-  console.log('✓ 6 solicitações de demonstração criadas para Ribas do Rio Pardo (C2×1, C3×3, C4×2)')
+  // ── Solicitações novas áreas Ribas — 2 por área, status variados ────────────
+
+  const seedSolNovasAreas = [
+    // Pátio de Madeira — 1 DESABILITADO, 1 EM_APROVACAO
+    {
+      id: 'seed-sol-rrp-pat-01',
+      protocolo: 'SGI-20260414-P001',
+      status: 'DESABILITADO',
+      areaId: areaPatio.id,
+      equipamentoId: eqPat1.id,
+      classeId: classe2.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'FISICO',
+      funcaoIntertravamento: 'Proteção de parada de emergência da esteira',
+      motivoDesabilitacao: 'Substituição de sensor de velocidade da esteira transportadora',
+      medidasContingenciais: 'Monitoramento visual contínuo, operador dedicado',
+      periodoInicio: daysAgo(3),
+      periodoFim: daysAgo(-4),
+      dataEnvio: daysAgo(5),
+      dataAprovacaoFinal: daysAgo(4),
+      dataDesabilitacao: daysAgo(3),
+      createdAt: daysAgo(5),
+    },
+    {
+      id: 'seed-sol-rrp-pat-02',
+      protocolo: 'SGI-20260415-P002',
+      status: 'EM_APROVACAO',
+      areaId: areaPatio.id,
+      equipamentoId: eqPat2.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'DISPOSITIVO_SEGURANCA',
+      funcaoIntertravamento: 'Bloqueio por detecção de corpo metálico',
+      motivoDesabilitacao: 'Recalibração do detector de metais após alarmes falsos',
+      medidasContingenciais: 'Inspeção visual manual dos cavacos, barreira na entrada',
+      periodoInicio: daysAgo(0),
+      periodoFim: daysAgo(-3),
+      dataEnvio: daysAgo(1),
+      createdAt: daysAgo(1),
+    },
+    // Secagem — 1 EXECUCAO_AUTORIZADA, 1 ENCERRADA
+    {
+      id: 'seed-sol-rrp-sec-01',
+      protocolo: 'SGI-20260413-S001',
+      status: 'EXECUCAO_AUTORIZADA',
+      areaId: areaSecagem.id,
+      equipamentoId: eqSec1.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'Trip por sobretemperatura do secador',
+      motivoDesabilitacao: 'Manutenção preventiva no termopar e fiação',
+      medidasContingenciais: 'Medição manual de temperatura a cada 30 min',
+      periodoInicio: daysAgo(0),
+      periodoFim: daysAgo(-2),
+      dataEnvio: daysAgo(3),
+      dataAprovacaoFinal: daysAgo(1),
+      createdAt: daysAgo(3),
+    },
+    {
+      id: 'seed-sol-rrp-sec-02',
+      protocolo: 'SGI-20260410-S002',
+      status: 'ENCERRADA',
+      areaId: areaSecagem.id,
+      equipamentoId: eqSec2.id,
+      classeId: classe2.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'Bloqueio de vapor na máquina de celulose',
+      motivoDesabilitacao: 'Troca de válvula solenóide de vapor',
+      medidasContingenciais: 'Controle manual da válvula, operador dedicado',
+      periodoInicio: daysAgo(12),
+      periodoFim: daysAgo(8),
+      dataEnvio: daysAgo(14),
+      dataAprovacaoFinal: daysAgo(13),
+      dataDesabilitacao: daysAgo(12),
+      dataReabilitacao: daysAgo(9),
+      dataEncerramento: daysAgo(8),
+      createdAt: daysAgo(14),
+    },
+    // Digestor e Cozimento — 1 RASCUNHO, 1 EM_VALIDACAO_DA_REABILITACAO
+    {
+      id: 'seed-sol-rrp-dig-01',
+      protocolo: 'SGI-20260416-D001',
+      status: 'RASCUNHO',
+      areaId: areaDigestor.id,
+      equipamentoId: eqDig1.id,
+      classeId: classe4.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'FISICO',
+      funcaoIntertravamento: 'Alívio de sobrepressão do digestor contínuo',
+      motivoDesabilitacao: 'Teste de integridade da válvula PSV',
+      medidasContingenciais: 'Redução de pressão operacional, monitoramento contínuo',
+      periodoInicio: daysAgo(0),
+      periodoFim: daysAgo(-1),
+      createdAt: daysAgo(0),
+    },
+    {
+      id: 'seed-sol-rrp-dig-02',
+      protocolo: 'SGI-20260411-D002',
+      status: 'EM_VALIDACAO_DA_REABILITACAO',
+      areaId: areaDigestor.id,
+      equipamentoId: eqDig2.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'Trip de nível alto do digestor',
+      motivoDesabilitacao: 'Substituição de transmissor de nível com erro de medição',
+      medidasContingenciais: 'Leitura manual do visor de nível, operador dedicado',
+      periodoInicio: daysAgo(6),
+      periodoFim: daysAgo(2),
+      dataEnvio: daysAgo(8),
+      dataAprovacaoFinal: daysAgo(7),
+      dataDesabilitacao: daysAgo(6),
+      dataReabilitacao: daysAgo(3),
+      createdAt: daysAgo(8),
+    },
+    // ETA / ETE — 1 CANCELADA, 1 DESABILITADO
+    {
+      id: 'seed-sol-rrp-eta-01',
+      protocolo: 'SGI-20260409-E001',
+      status: 'CANCELADA',
+      areaId: areaEta.id,
+      equipamentoId: eqEta1.id,
+      classeId: classe2.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'LOGICO',
+      funcaoIntertravamento: 'Intertravamento de dosagem química',
+      motivoDesabilitacao: 'Calibração da bomba dosadora',
+      medidasContingenciais: 'Dosagem manual, monitoramento de pH',
+      periodoInicio: daysAgo(10),
+      periodoFim: daysAgo(8),
+      dataEnvio: daysAgo(11),
+      createdAt: daysAgo(11),
+    },
+    {
+      id: 'seed-sol-rrp-eta-02',
+      protocolo: 'SGI-20260414-E002',
+      status: 'DESABILITADO',
+      areaId: areaEta.id,
+      equipamentoId: eqEta2.id,
+      classeId: classe3.id,
+      solicitanteId: solicitante.id,
+      executanteId: executante.id,
+      tipo: 'DISPOSITIVO_SEGURANCA',
+      funcaoIntertravamento: 'Bloqueio por pH fora da faixa',
+      motivoDesabilitacao: 'Troca de eletrodo de pH com leitura errática',
+      medidasContingenciais: 'Coleta manual de amostras a cada 2h, análise laboratorial',
+      periodoInicio: daysAgo(2),
+      periodoFim: daysAgo(-3),
+      dataEnvio: daysAgo(4),
+      dataAprovacaoFinal: daysAgo(3),
+      dataDesabilitacao: daysAgo(2),
+      createdAt: daysAgo(4),
+    },
+  ]
+
+  for (const sol of seedSolNovasAreas) {
+    await prisma.solicitacao.upsert({
+      where: { id: sol.id },
+      update: {},
+      create: sol,
+    })
+  }
+
+  // Aprovações novas áreas
+  const seedAprovacoesNovasAreas = [
+    // PAT-01 (DESABILITADO): aprovada
+    { solicitacaoId: 'seed-sol-rrp-pat-01', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(4) },
+    { solicitacaoId: 'seed-sol-rrp-pat-01', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(4) },
+    // PAT-02 (EM_APROVACAO): Ana pendente
+    { solicitacaoId: 'seed-sol-rrp-pat-02', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'PENDENTE' },
+    { solicitacaoId: 'seed-sol-rrp-pat-02', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'AGUARDANDO' },
+    // SEC-01 (EXECUCAO_AUTORIZADA): aprovada
+    { solicitacaoId: 'seed-sol-rrp-sec-01', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(2) },
+    { solicitacaoId: 'seed-sol-rrp-sec-01', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(1) },
+    // SEC-02 (ENCERRADA): aprovada
+    { solicitacaoId: 'seed-sol-rrp-sec-02', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(13) },
+    { solicitacaoId: 'seed-sol-rrp-sec-02', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(13) },
+    // DIG-02 (EM_VALIDACAO): aprovada
+    { solicitacaoId: 'seed-sol-rrp-dig-02', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(7) },
+    { solicitacaoId: 'seed-sol-rrp-dig-02', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(7) },
+    // ETA-01 (CANCELADA): foi aprovada mas depois cancelada
+    { solicitacaoId: 'seed-sol-rrp-eta-01', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(10) },
+    { solicitacaoId: 'seed-sol-rrp-eta-01', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(10) },
+    // ETA-02 (DESABILITADO): aprovada
+    { solicitacaoId: 'seed-sol-rrp-eta-02', aprovadorId: aprovador1.id, nivel: 1, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(3) },
+    { solicitacaoId: 'seed-sol-rrp-eta-02', aprovadorId: aprovador2.id, nivel: 2, tipo: 'DESABILITACAO', status: 'APROVADO', respondidaEm: daysAgo(3) },
+  ]
+
+  for (const aprov of seedAprovacoesNovasAreas) {
+    const existing = await prisma.aprovacao.findFirst({
+      where: { solicitacaoId: aprov.solicitacaoId, aprovadorId: aprov.aprovadorId, nivel: aprov.nivel },
+    })
+    if (!existing) {
+      await prisma.aprovacao.create({ data: aprov })
+    }
+  }
+
+  // Eventos novas áreas
+  const seedEventosNovasAreas = [
+    { solicitacaoId: 'seed-sol-rrp-pat-01', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(5) },
+    { solicitacaoId: 'seed-sol-rrp-pat-01', userId: aprovador1.id, acao: 'APROVADO', createdAt: daysAgo(4) },
+    { solicitacaoId: 'seed-sol-rrp-pat-01', userId: executante.id, acao: 'DESABILITACAO_CONFIRMADA', createdAt: daysAgo(3) },
+    { solicitacaoId: 'seed-sol-rrp-pat-02', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(1) },
+    { solicitacaoId: 'seed-sol-rrp-sec-01', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(3) },
+    { solicitacaoId: 'seed-sol-rrp-sec-01', userId: aprovador1.id, acao: 'APROVADO', createdAt: daysAgo(2) },
+    { solicitacaoId: 'seed-sol-rrp-sec-02', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(14) },
+    { solicitacaoId: 'seed-sol-rrp-sec-02', userId: aprovador1.id, acao: 'APROVADO', createdAt: daysAgo(13) },
+    { solicitacaoId: 'seed-sol-rrp-sec-02', userId: executante.id, acao: 'DESABILITACAO_CONFIRMADA', createdAt: daysAgo(12) },
+    { solicitacaoId: 'seed-sol-rrp-sec-02', userId: executante.id, acao: 'REABILITACAO_CONCLUIDA', createdAt: daysAgo(9) },
+    { solicitacaoId: 'seed-sol-rrp-sec-02', userId: aprovador1.id, acao: 'REABILITACAO_VALIDADA', createdAt: daysAgo(8) },
+    { solicitacaoId: 'seed-sol-rrp-dig-01', userId: solicitante.id, acao: 'RASCUNHO_CRIADO', createdAt: daysAgo(0) },
+    { solicitacaoId: 'seed-sol-rrp-dig-02', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(8) },
+    { solicitacaoId: 'seed-sol-rrp-dig-02', userId: aprovador1.id, acao: 'APROVADO', createdAt: daysAgo(7) },
+    { solicitacaoId: 'seed-sol-rrp-dig-02', userId: executante.id, acao: 'DESABILITACAO_CONFIRMADA', createdAt: daysAgo(6) },
+    { solicitacaoId: 'seed-sol-rrp-dig-02', userId: executante.id, acao: 'REABILITACAO_CONCLUIDA', createdAt: daysAgo(3) },
+    { solicitacaoId: 'seed-sol-rrp-eta-01', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(11) },
+    { solicitacaoId: 'seed-sol-rrp-eta-01', userId: solicitante.id, acao: 'CANCELADA', detalhes: 'Equipamento substituído, não precisa mais calibrar', createdAt: daysAgo(9) },
+    { solicitacaoId: 'seed-sol-rrp-eta-02', userId: solicitante.id, acao: 'SOLICITACAO_ENVIADA', createdAt: daysAgo(4) },
+    { solicitacaoId: 'seed-sol-rrp-eta-02', userId: aprovador1.id, acao: 'APROVADO', createdAt: daysAgo(3) },
+    { solicitacaoId: 'seed-sol-rrp-eta-02', userId: executante.id, acao: 'DESABILITACAO_CONFIRMADA', createdAt: daysAgo(2) },
+  ]
+
+  for (const evt of seedEventosNovasAreas) {
+    const existing = await prisma.eventoAuditoria.findFirst({
+      where: { solicitacaoId: evt.solicitacaoId, acao: evt.acao, userId: evt.userId },
+    })
+    if (!existing) {
+      await prisma.eventoAuditoria.create({ data: evt })
+    }
+  }
+
+  console.log('✓ 14 solicitações Ribas do Rio Pardo (6 áreas: Recuperação, Celulose, Pátio, Secagem, Digestor, ETA)')
 
   // ── Histórico de solicitações (meses anteriores) — Aracruz + Ribas ────────
   // Popula gráficos de tendência, compliance e ciclo de vida com dados reais

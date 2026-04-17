@@ -4,8 +4,6 @@ import { prisma } from '@/lib/db'
 import { buildPlantaScope } from '@/lib/scope'
 import { cookies } from 'next/headers'
 import { z } from 'zod'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
 
 const dataSchema = z.object({
   areaId: z.string().min(1),
@@ -112,25 +110,24 @@ export async function POST(req: NextRequest) {
     },
   })
 
-  // Salvar arquivos — RF-016
+  // Salvar arquivos no banco — RF-016
   if (files.length > 0) {
-    const uploadDir = join(process.cwd(), 'public', 'uploads', solicitacao.id)
-    await mkdir(uploadDir, { recursive: true })
-
     for (const f of files) {
-      const safeName = f.name.replace(/[^a-zA-Z0-9._-]/g, '_')
-      const filePath = join(uploadDir, safeName)
-      await writeFile(filePath, f.buffer)
-
-      await prisma.anexo.create({
+      const anexo = await prisma.anexo.create({
         data: {
           solicitacaoId: solicitacao.id,
           nome: f.name,
-          url: `/uploads/${solicitacao.id}/${safeName}`,
+          url: '', // será preenchido abaixo
           tamanho: f.size,
           mimeType: f.mimeType,
+          dados: Buffer.from(f.buffer),
           uploadadoPor: userId,
         },
+      })
+      // URL aponta para a rota de download
+      await prisma.anexo.update({
+        where: { id: anexo.id },
+        data: { url: `/api/anexos/${anexo.id}` },
       })
     }
   }

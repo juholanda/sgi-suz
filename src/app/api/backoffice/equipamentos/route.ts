@@ -18,15 +18,20 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = await req.json()
-  const { tag, descricao, areaId } = body
+  const { tag, descricao, funcaoProtegida, areaId } = body
 
   if (!tag?.trim()) return NextResponse.json({ error: 'TAG é obrigatória' }, { status: 400 })
-  if (!descricao?.trim()) return NextResponse.json({ error: 'Descrição é obrigatória' }, { status: 400 })
+  if (!descricao?.trim()) return NextResponse.json({ error: 'Nome é obrigatório' }, { status: 400 })
   if (!areaId) return NextResponse.json({ error: 'Área é obrigatória' }, { status: 400 })
 
   try {
     const equipamento = await prisma.equipamento.create({
-      data: { tag: tag.trim(), descricao: descricao.trim(), areaId },
+      data: {
+        tag: tag.trim(),
+        descricao: descricao.trim(),
+        funcaoProtegida: funcaoProtegida?.trim() || null,
+        areaId,
+      },
       include: { area: { include: { planta: true } } },
     })
     return NextResponse.json(equipamento, { status: 201 })
