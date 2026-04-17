@@ -1,5 +1,20 @@
 'use client'
 
+import { useEffect } from 'react'
+
+const RELOAD_FLAG = 'sgi:chunk-reloaded'
+
+function isChunkLoadError(error: Error) {
+  const msg = error?.message || ''
+  const name = error?.name || ''
+  return (
+    name === 'ChunkLoadError' ||
+    /Loading chunk [\w-]+ failed/i.test(msg) ||
+    /Loading CSS chunk [\w-]+ failed/i.test(msg) ||
+    /Failed to fetch dynamically imported module/i.test(msg)
+  )
+}
+
 export default function AppError({
   error,
   reset,
@@ -7,6 +22,26 @@ export default function AppError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  const chunkError = isChunkLoadError(error)
+  const alreadyReloaded =
+    typeof window !== 'undefined' && sessionStorage.getItem(RELOAD_FLAG) === '1'
+
+  useEffect(() => {
+    if (!chunkError || alreadyReloaded || typeof window === 'undefined') return
+    sessionStorage.setItem(RELOAD_FLAG, '1')
+    window.location.reload()
+  }, [chunkError, alreadyReloaded])
+
+  // Se o chunk error foi um incidente isolado, limpa a flag pra proximas navegacoes.
+  useEffect(() => {
+    if (!chunkError && typeof window !== 'undefined') {
+      sessionStorage.removeItem(RELOAD_FLAG)
+    }
+  }, [chunkError])
+
+  // Enquanto recarrega, nao mostra nada (evita flash da tela de erro).
+  if (chunkError && !alreadyReloaded) return null
+
   return (
     <div className="min-h-screen flex items-center justify-center p-8" style={{ background: '#F0F4F8' }}>
       <div className="bg-white border p-8 max-w-md w-full text-center" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
