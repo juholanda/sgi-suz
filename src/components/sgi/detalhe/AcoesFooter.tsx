@@ -347,7 +347,7 @@ export default function AcoesFooter({
 
                 {/* ── Desktop: par APROVAR/REJEITAR com Rejeitar (esq, vermelho) + Aprovar (dir, verde) ── */}
                 {isAprovarRejeitarPair ? (
-                  <div className="hidden sm:flex items-center gap-2">
+                  <div className="hidden sm:flex items-center justify-end gap-2">
                     <button
                       onClick={() => handleAcaoClick(rejeitarAcao!)}
                       disabled={loading}
@@ -399,7 +399,7 @@ export default function AcoesFooter({
                   /* ── Desktop: demais ações (não é par APROVAR/REJEITAR) ── */
                   <div
                     className="flex"
-                    style={{ flexWrap: 'wrap', gap: 8, alignItems: 'center' }}
+                    style={{ flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'flex-end' }}
                   >
                     {acoes.map(acao => {
                       const style = getButtonStyle(acao.variant)
