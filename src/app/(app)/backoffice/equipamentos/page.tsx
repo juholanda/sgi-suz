@@ -29,7 +29,7 @@ export default async function EquipamentosPage() {
       <div className="bg-white border" style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}>
         <div className="px-4 py-3 border-b flex gap-3" style={{ borderColor: '#E2E8F0' }}>
           <input
-            placeholder="Buscar por TAG ou descrição..."
+            placeholder="Buscar por TAG, nome ou função..."
             className="flex-1 px-3 py-1.5 border text-sm outline-none"
             style={{ borderColor: '#E2E8F0', borderRadius: '4px' }}
           />
@@ -37,14 +37,14 @@ export default async function EquipamentosPage() {
         <table className="w-full">
           <thead>
             <tr style={{ background: '#F8FAFC' }}>
-              {['TAG', 'Descrição', 'Planta', 'Área', 'Status', 'Ações'].map(h => (
+              {['TAG', 'Nome', 'Função', 'Planta', 'Área', 'Status', 'Ações'].map(h => (
                 <th key={h} className="text-left px-4 py-3 text-xs font-medium" style={{ color: '#6B7280' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {equipamentos.length === 0 ? (
-              <tr><td colSpan={6} className="text-center py-8 text-sm" style={{ color: '#94A3B8' }}>Nenhum equipamento cadastrado</td></tr>
+              <tr><td colSpan={7} className="text-center py-8 text-sm" style={{ color: '#94A3B8' }}>Nenhum equipamento cadastrado</td></tr>
             ) : equipamentos.map(e => (
               <tr key={e.id} className="border-t" style={{ borderColor: '#F1F5F9' }}>
                 <td className="px-4 py-3">
@@ -53,6 +53,7 @@ export default async function EquipamentosPage() {
                   </span>
                 </td>
                 <td className="px-4 py-3 text-sm" style={{ color: '#0F172A' }}>{e.descricao}</td>
+                <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>{e.funcaoProtegida ?? '—'}</td>
                 <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>{e.area.planta.nome}</td>
                 <td className="px-4 py-3 text-sm" style={{ color: '#475569' }}>{e.area.nome}</td>
                 <td className="px-4 py-3">

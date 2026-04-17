@@ -1,7 +1,7 @@
 import Link from 'next/link'
 
 const relatorios = [
-  { href: '/relatorios/violacao-sla',           label: 'Violação de SLA',              desc: 'Solicitações que excederam SLA. Uso: Compliance, Segurança do Processo.', icon: '⚠' },
+  { href: '/relatorios/violacao-sla',           label: 'Prazo Excedido',               desc: 'Solicitações que excederam o prazo máximo. Uso: Compliance, Segurança do Processo.', icon: '⚠' },
   { href: '/relatorios/execucao-reabilitacao',  label: 'Execução e Reabilitação',       desc: 'Tempos, checklists cumpridos, disciplina operacional.',                   icon: '⚙' },
   { href: '/relatorios/auditoria',              label: 'Auditoria End-to-End',           desc: 'Linha do tempo completa. "Documento ouro" para auditorias formais.',       icon: '📋' },
 ]

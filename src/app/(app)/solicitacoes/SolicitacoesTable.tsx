@@ -7,10 +7,10 @@ import { StatusBadge } from '@/components/sgi/StatusBadge'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
 import { StatusSolicitacao, ClasseNum } from '@/lib/tokens'
 
-const TIPO_LABELS: Record<string, string> = {
-  LOGICO: 'Lógico',
-  FISICO: 'Físico',
-  DISPOSITIVO_SEGURANCA: 'Disp. Segurança',
+const TIPO_LABELS: Record<string, { label: string; icon: string }> = {
+  LOGICO: { label: 'Lógico', icon: 'memory' },
+  FISICO: { label: 'Físico', icon: 'precision_manufacturing' },
+  DISPOSITIVO_SEGURANCA: { label: 'Disp. Segurança', icon: 'shield' },
 }
 
 type Solicitacao = {
@@ -22,6 +22,9 @@ type Solicitacao = {
   periodoFim: Date | null
   updatedAt: Date
   dataDesabilitacao: Date | null
+  dataReabilitacao?: Date | null
+  prazoMaximoAtingido?: boolean
+  prazoPrevitoAtingido?: boolean
   equipamento: { tag: string; tipo?: string | null }
   area: { nome: string; planta: { nome: string } }
   classe: { numero: number; prazoMaximoDias: number | null } | null
@@ -33,40 +36,78 @@ type SortDir = 'asc' | 'desc'
 const SORTABLE_COLS: Record<string, string> = {
   protocolo: 'Protocolo',
   tag: 'TAG',
+  area: 'Área',
   classe: 'Classe',
   tipo: 'Tipo',
   periodo: 'Período',
-  updatedAt: 'Atualizado em',
   status: 'Status',
+  updatedAt: 'Atualizado em',
 }
 
-/** Calcula indicador de prazo de reabilitação (só para DESABILITADO) */
-function getPrazoIndicator(s: Solicitacao): { text: string; color: string; dot: string } | null {
-  if (s.status !== 'DESABILITADO') return null
-  if (!s.dataDesabilitacao || !s.classe?.prazoMaximoDias) return null
-
+/** Calcula indicador de prazo (DESABILITADO, EXECUCAO_AUTORIZADA, EM_VALIDACAO_DA_REABILITACAO) */
+function getPrazoIndicator(s: Solicitacao): { text: string; color: string; dot: string; pulse: boolean } | null {
   const now = new Date()
-  const desab = new Date(s.dataDesabilitacao)
-  const limite = new Date(desab)
-  limite.setDate(limite.getDate() + s.classe.prazoMaximoDias)
+  // Texto sempre em cinza escuro — a urgência vem pelo dot colorido + pulse
+  const TEXT_COLOR = '#334155'
 
-  const diffMs = limite.getTime() - now.getTime()
-  const diffDias = Math.ceil(diffMs / 86_400_000)
+  // Para DESABILITADO: calcula baseado em dataDesabilitacao + prazoMaximoDias
+  if (s.status === 'DESABILITADO' && s.dataDesabilitacao && s.classe?.prazoMaximoDias) {
+    const desab = new Date(s.dataDesabilitacao)
+    const limite = new Date(desab)
+    limite.setDate(limite.getDate() + s.classe.prazoMaximoDias)
+    const diffMs = limite.getTime() - now.getTime()
+    const diffHoras = Math.ceil(diffMs / 3_600_000)
 
-  if (diffDias < 0) {
-    const atraso = Math.abs(diffDias)
-    return { text: `Reabilitação atrasada ${atraso}d`, color: '#DC2626', dot: '#DC2626' }
+    // Atrasado
+    if (diffMs < 0) {
+      const atrasoH = Math.abs(diffHoras)
+      if (atrasoH < 24) return { text: `Reabilitação atrasada ${atrasoH}h`, color: TEXT_COLOR, dot: '#DC2626', pulse: true }
+      const atrasoD = Math.ceil(atrasoH / 24)
+      return { text: `Reabilitação atrasada ${atrasoD}d`, color: TEXT_COLOR, dot: '#DC2626', pulse: true }
+    }
+    // Últimas 24h
+    if (diffHoras <= 24) {
+      return { text: `Faltam ${diffHoras}h para reabilitar`, color: TEXT_COLOR, dot: '#DC2626', pulse: true }
+    }
+    // 24-48h → "até amanhã"
+    if (diffHoras <= 48) {
+      return { text: 'Reabilitar até amanhã', color: TEXT_COLOR, dot: '#D97706', pulse: false }
+    }
+    // 48h+ → não mostra nada (sem ruído visual)
+    return null
   }
-  if (diffDias === 0) {
-    return { text: 'Reabilitar hoje', color: '#EA580C', dot: '#EA580C' }
+
+  // Para EXECUCAO_AUTORIZADA: verifica se já passou do periodoFim
+  if (s.status === 'EXECUCAO_AUTORIZADA' && s.periodoFim) {
+    const fim = new Date(s.periodoFim)
+    const diffMs = fim.getTime() - now.getTime()
+    const diffHoras = Math.ceil(diffMs / 3_600_000)
+
+    if (diffMs < 0) {
+      const atrasoH = Math.abs(diffHoras)
+      if (atrasoH < 24) return { text: `Execução atrasada ${atrasoH}h`, color: TEXT_COLOR, dot: '#DC2626', pulse: true }
+      const atrasoD = Math.ceil(atrasoH / 24)
+      return { text: `Execução atrasada ${atrasoD}d`, color: TEXT_COLOR, dot: '#DC2626', pulse: true }
+    }
+    if (diffHoras <= 24) {
+      return { text: `Faltam ${diffHoras}h para executar`, color: TEXT_COLOR, dot: '#DC2626', pulse: true }
+    }
+    if (diffHoras <= 48) {
+      return { text: 'Executar até amanhã', color: TEXT_COLOR, dot: '#D97706', pulse: false }
+    }
+    // 48h+ → não mostra nada
+    return null
   }
-  if (diffDias === 1) {
-    return { text: 'Reabilitar até amanhã', color: '#D97706', dot: '#D97706' }
+
+  // Para EM_VALIDACAO_DA_REABILITACAO — só mostra se passou de 3 dias aguardando
+  if (s.status === 'EM_VALIDACAO_DA_REABILITACAO' && s.dataReabilitacao) {
+    const reab = new Date(s.dataReabilitacao)
+    const dias = Math.floor((now.getTime() - reab.getTime()) / 86_400_000)
+    if (dias > 3) {
+      return { text: `Aguardando validação há ${dias}d`, color: TEXT_COLOR, dot: '#94A3B8', pulse: false }
+    }
   }
-  if (diffDias <= 2) {
-    return { text: `Reabilitar em ${diffDias}d`, color: '#D97706', dot: '#D97706' }
-  }
-  // Prazo ok, sem indicador
+
   return null
 }
 
@@ -99,7 +140,7 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
     return (
       <span
         className="material-symbols-outlined ml-1 align-middle select-none"
-        style={{ fontSize: 13, lineHeight: 1, color: active ? '#0038A8' : '#CBD5E1', verticalAlign: 'middle' }}
+        style={{ fontSize: 13, lineHeight: 1, color: active ? '#0038A8' : '#64748B', verticalAlign: 'middle' }}
       >
         {active && sortDir === 'desc' ? 'arrow_downward' : 'arrow_upward'}
       </span>
@@ -109,11 +150,12 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
   const COLS: { key: string; label: string; sortable: boolean }[] = [
     { key: 'protocolo', label: 'Protocolo', sortable: true },
     { key: 'tag',       label: 'TAG',        sortable: true },
+    { key: 'area',      label: 'Área',       sortable: true },
     { key: 'classe',    label: 'Classe',     sortable: true },
     { key: 'tipo',      label: 'Tipo',       sortable: true },
     { key: 'periodo',   label: 'Período',    sortable: true },
-    { key: 'updatedAt', label: 'Atualizado em', sortable: true },
     { key: 'status',    label: 'Status',     sortable: true },
+    { key: 'updatedAt', label: 'Atualizado em', sortable: true },
   ]
 
   return (
@@ -124,9 +166,9 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
             {COLS.map(col => (
               <th
                 key={col.key}
-                className="text-left px-4 py-3.5 text-xs font-semibold whitespace-nowrap"
+                className="text-left px-4 py-3.5 text-sm font-semibold whitespace-nowrap"
                 style={{
-                  color: sortCol === col.key ? '#0038A8' : '#64748B',
+                  color: sortCol === col.key ? '#0038A8' : '#1E293B',
                   cursor: col.sortable ? 'pointer' : 'default',
                   userSelect: 'none',
                 }}
@@ -138,13 +180,13 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
             ))}
             {/* Sticky "Ações" header */}
             <th
-              className="text-left px-4 py-3.5 text-xs font-semibold"
+              className="text-left px-4 py-3.5 text-sm font-semibold"
               style={{
                 position: 'sticky',
                 right: 0,
                 background: '#F8FAFC',
                 zIndex: 1,
-                color: '#64748B',
+                color: '#1E293B',
                 boxShadow: '-1px 0 0 #E2E8F0',
               }}
             >
@@ -166,15 +208,24 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
               <td className="px-4 py-3.5 whitespace-nowrap">
                 <span className="font-sans text-sm" style={{ color: '#0F172A' }}>{s.equipamento.tag}</span>
               </td>
+              <td className="px-4 py-3.5 text-sm whitespace-nowrap" style={{ color: '#4B5563' }}>
+                {s.area.nome}
+              </td>
               <td className="px-4 py-3.5 whitespace-nowrap">
                 {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} size="sm" />}
               </td>
               <td className="px-4 py-3.5 text-sm whitespace-nowrap" style={{ color: '#4B5563' }}>
-                {s.equipamento.tipo
-                  ? TIPO_LABELS[s.equipamento.tipo] ?? s.equipamento.tipo
-                  : s.tipo
-                    ? TIPO_LABELS[s.tipo] ?? s.tipo
-                    : '—'}
+                {(() => {
+                  const tipo = s.equipamento.tipo ?? s.tipo
+                  const info = tipo ? TIPO_LABELS[tipo] : null
+                  if (!info) return '—'
+                  return (
+                    <span className="flex items-center gap-1.5">
+                      <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1, color: '#64748B' }}>{info.icon}</span>
+                      {info.label}
+                    </span>
+                  )
+                })()}
               </td>
               <td className="px-4 py-3.5 whitespace-nowrap">
                 <div className="text-sm" style={{ color: '#4B5563' }}>
@@ -182,12 +233,19 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
                     ? `${format(s.periodoInicio, 'dd/MM/yy', { locale: ptBR })} → ${s.periodoFim ? format(s.periodoFim, 'dd/MM/yy', { locale: ptBR }) : '—'}`
                     : '—'}
                 </div>
+              </td>
+              <td className="px-4 py-3.5 whitespace-nowrap">
+                <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
                 {(() => {
                   const prazo = getPrazoIndicator(s)
                   if (!prazo) return null
                   return (
-                    <div className="flex items-center gap-1" style={{ fontSize: 12, fontFamily: 'Inter, sans-serif', color: prazo.color, fontWeight: 500, lineHeight: 1.2, marginTop: 4 }}>
-                      <span style={{ width: 6, height: 6, borderRadius: '50%', background: prazo.dot, flexShrink: 0 }} />
+                    <div className="flex items-center gap-1" style={{ fontSize: 10, fontWeight: 400, fontFamily: 'Inter, sans-serif', color: prazo.color, lineHeight: 1.2, marginTop: 6 }}>
+                      <span
+                        style={{
+                          width: 7, height: 7, borderRadius: '50%', background: prazo.dot, flexShrink: 0,
+                        }}
+                      />
                       {prazo.text}
                     </div>
                   )
@@ -195,9 +253,6 @@ export default function SolicitacoesTable({ solicitacoes }: Props) {
               </td>
               <td className="px-4 py-3.5 text-sm whitespace-nowrap" style={{ color: '#4B5563' }}>
                 {format(s.updatedAt, "dd/MM/yy 'às' HH:mm", { locale: ptBR })}
-              </td>
-              <td className="px-4 py-3.5 whitespace-nowrap">
-                <StatusBadge status={s.status as StatusSolicitacao} size="sm" />
               </td>
               {/* Sticky "Ver" cell */}
               <td

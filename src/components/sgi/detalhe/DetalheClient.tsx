@@ -6,6 +6,7 @@ import type { DetalheClientProps } from './types'
 import Breadcrumb from './Breadcrumb'
 import DetalheHeader from './DetalheHeader'
 import AcoesFooter from './AcoesFooter'
+import PrazoInlineBar from './PrazoInlineBar'
 import TabDetalhes from './tabs/TabDetalhes'
 import TabLinhaDoTempo from './tabs/TabLinhaDoTempo'
 import TabAnexos from './tabs/TabAnexos'
@@ -25,49 +26,48 @@ export default function DetalheClient({ solicitacao: s, acoes, conflict, userId,
         background: '#F8FAFC',
       }}
     >
-      {/* Scrollable content area */}
+      {/* Scrollable content area — extra padding when footer is present so content isn't hidden behind it */}
       <div
         style={{
           flex: 1,
-          paddingBottom: hasFooter ? 20 : 0,
+          paddingBottom: hasFooter ? 88 : 0,
         }}
       >
         <div className="max-w-5xl mx-auto w-full">
 
-          {/* ── Navigation bar ── */}
-          <div className="flex items-center gap-3 px-4 md:px-6 pt-4 md:pt-6" style={{ marginBottom: 16 }}>
-            {/* Mobile back button */}
+          {/* ── Mobile native top bar ── */}
+          <div
+            className="md:hidden flex items-center px-3 shrink-0"
+            style={{ height: 52, background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}
+          >
             <Link
               href="/solicitacoes"
-              className="md:hidden flex items-center justify-center shrink-0"
-              style={{
-                width: 36,
-                height: 36,
-                background: '#F1F5F9',
-                borderRadius: 8,
-                color: '#475569',
-              }}
+              style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, color: '#0F172A' }}
               aria-label="Voltar"
             >
-              <span className="material-symbols-outlined" style={{ fontSize: 20, lineHeight: 1 }}>
-                arrow_back
-              </span>
+              <span className="material-symbols-outlined" style={{ fontSize: 24, lineHeight: 1 }}>arrow_back</span>
             </Link>
-
-            {/* Desktop breadcrumb */}
-            <div className="hidden md:block">
-              <Breadcrumb protocolo={s.protocolo} />
-            </div>
-
-            {/* Mobile protocol */}
-            <span
-              className="md:hidden text-sm font-semibold"
-              style={{ color: '#0F172A' }}
-            >
-              {s.protocolo}
+            <span className="flex-1 text-center text-sm font-semibold truncate px-2" style={{ color: '#0F172A' }}>
+              {s.equipamento.tag}
             </span>
+            {s.status === 'ENCERRADA' ? (
+              <a
+                href={`/api/solicitacoes/${s.id}/pdf`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, color: '#475569' }}
+                aria-label="Exportar PDF"
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 22, lineHeight: 1 }}>picture_as_pdf</span>
+              </a>
+            ) : (
+              <div style={{ width: 36 }} /> /* Placeholder para manter título centralizado */
+            )}
+          </div>
 
-            {/* Exportar formulário — only for ENCERRADA */}
+          {/* ── Desktop navigation bar ── */}
+          <div className="hidden md:flex items-center gap-3 px-6 pt-6" style={{ marginBottom: 16 }}>
+            <Breadcrumb protocolo={s.protocolo} />
             {s.status === 'ENCERRADA' && (
               <a
                 href={`/api/solicitacoes/${s.id}/pdf`}
@@ -89,8 +89,22 @@ export default function DetalheClient({ solicitacao: s, acoes, conflict, userId,
           </div>
 
           {/* ── Header ── */}
-          <div className="px-4 md:px-6" style={{ marginBottom: 20 }}>
+          <div className="px-4 pt-5 md:pt-0 md:px-6" style={{ marginBottom: 20 }}>
             <DetalheHeader s={s} />
+          </div>
+
+          {/* ── Prazo inline (apenas DESABILITADO e EM_VALIDACAO_DA_REABILITACAO) ── */}
+          <div className="px-4 md:px-6" style={{ marginBottom: 20 }}>
+            <PrazoInlineBar
+              status={s.status}
+              dataDesabilitacao={s.dataDesabilitacao}
+              dataReabilitacao={s.dataReabilitacao}
+              periodoInicio={s.periodoInicio}
+              periodoFim={s.periodoFim}
+              classe={s.classe}
+              prazoMaximoAtingido={s.prazoMaximoAtingido}
+              prazoPrevitoAtingido={s.prazoPrevitoAtingido}
+            />
           </div>
 
           {/* ── Tabs ── */}

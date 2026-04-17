@@ -45,12 +45,28 @@ const PRISMA_INCLUDE = {
   },
 }
 
-function applyCommonFilters(where: any, opts: { search?: string; classes?: number[]; areaId?: string; tipo?: string; statusFiltro?: string }) {
+function applyCommonFilters(where: any, opts: { search?: string; classes?: number[]; areaId?: string; tipo?: string; statusFiltro?: string; prazo?: string }) {
   if (opts.statusFiltro) where = { AND: [where, { status: opts.statusFiltro }] }
   if (opts.tipo) where = { AND: [where, { tipo: opts.tipo }] }
   if (opts.areaId) where = { AND: [where, { areaId: opts.areaId }] }
   if (opts.classes && opts.classes.length > 0) {
     where = { AND: [where, { classe: { numero: { in: opts.classes } } }] }
+  }
+  if (opts.prazo === 'excedido') {
+    // Excedido: prazo máximo de reabilitação atingido (DESABILITADO antigo)
+    // OU EXECUCAO_AUTORIZADA com periodoFim vencido (executante não desabilitou no prazo)
+    where = {
+      AND: [where, {
+        OR: [
+          { prazoMaximoAtingido: true },
+          { AND: [{ status: 'EXECUCAO_AUTORIZADA' }, { periodoFim: { lt: new Date() } }] },
+        ],
+      }],
+    }
+  } else if (opts.prazo === 'proximo') {
+    where = { AND: [where, { prazoPrevitoAtingido: true, prazoMaximoAtingido: false }] }
+  } else if (opts.prazo === 'dentro') {
+    where = { AND: [where, { prazoMaximoAtingido: false, prazoPrevitoAtingido: false, status: { in: ['DESABILITADO', 'EXECUCAO_AUTORIZADA', 'EM_VALIDACAO_DA_REABILITACAO'] } }] }
   }
   if (opts.search) {
     const s = opts.search
@@ -88,14 +104,18 @@ function getTabWhere(tab: TabKey): any {
 }
 
 function getBaseWhere(perfilAtivo: string | undefined, userId: string, plantaId: string): any {
-  // Solicitante/Executante only see their own
+  // Solicitante/Executante only see their own solicitations (but can create in any area)
   if (!perfilAtivo || perfilAtivo === 'SOLICITANTE' || perfilAtivo === 'EXECUTANTE') {
     return {
       OR: [{ solicitanteId: userId }, { executanteId: userId }],
       ...buildPlantaScope(plantaId),
     }
   }
-  // Aprovador, Gestor, Admin see all in planta
+  // Aprovador/Gestor: vê tudo na planta EXCETO rascunhos (pertencem ao solicitante)
+  if (perfilAtivo === 'APROVADOR' || perfilAtivo === 'GESTOR_SMS') {
+    return { ...buildPlantaScope(plantaId), status: { not: 'RASCUNHO' } }
+  }
+  // Admin sees everything including drafts
   return { ...buildPlantaScope(plantaId) }
 }
 
@@ -110,6 +130,7 @@ async function getSolicitacoes(opts: {
   sort?: string
   tipo?: string
   statusFiltro?: string
+  prazo?: string
 }) {
   const baseWhere = getBaseWhere(opts.perfilAtivo, opts.userId, opts.plantaId)
   const tabWhere = getTabWhere(opts.tab)
@@ -152,6 +173,7 @@ export default async function SolicitacoesPage({
     view?: string
     tipo?: string
     statusFiltro?: string
+    prazo?: string
     sortCol?: string
     sortDir?: string
   }
@@ -164,6 +186,9 @@ export default async function SolicitacoesPage({
   const isSolicitante = ['SOLICITANTE', 'EXECUTANTE'].includes(perfilAtivo ?? '')
   const isExecutante = ['EXECUTANTE', 'ADMINISTRADOR'].includes(perfilAtivo ?? '')
   const isAprovador = ['APROVADOR', 'GESTOR_SMS', 'ADMINISTRADOR'].includes(perfilAtivo ?? '')
+  // Aprovadores não criam rascunhos — ocultar a tab para não gerar confusão
+  const ocultaRascunhos = ['APROVADOR', 'GESTOR_SMS'].includes(perfilAtivo ?? '')
+  const visibleTabs = ocultaRascunhos ? TABS.filter(t => t.key !== 'rascunhos') : TABS
 
   const search = searchParams.search?.trim() || undefined
   const classes = (searchParams.classe ?? '').split(',').map(Number).filter(n => n >= 1 && n <= 4)
@@ -172,6 +197,7 @@ export default async function SolicitacoesPage({
   const view = searchParams.view || 'table'
   const tipo = searchParams.tipo || undefined
   const statusFiltro = searchParams.statusFiltro || undefined
+  const prazo = searchParams.prazo || undefined
 
   // ── Planta scope ──
   const plantaId = cookieStore.get('sgi_planta_ativa')?.value ?? ''
@@ -197,6 +223,7 @@ export default async function SolicitacoesPage({
       sort,
       tipo,
       statusFiltro,
+      prazo,
     }),
     getTabCounts(baseWhere),
   ])
@@ -222,8 +249,9 @@ export default async function SolicitacoesPage({
         )}
       </div>
 
-      {/* Tabs + filtros (bloco branco) */}
+      {/* Desktop: tabs + filtros em bloco branco */}
       <div
+        className="hidden sm:block"
         style={{
           background: '#FFFFFF',
           border: '1px solid #E2E8F0',
@@ -232,17 +260,28 @@ export default async function SolicitacoesPage({
           marginBottom: 16,
         }}
       >
-        {/* Tabs */}
         <NavigationTabs
-          tabs={TABS.map(t => ({ key: t.key, label: t.label, icon: t.icon, count: tabCounts[t.key] }))}
+          tabs={visibleTabs.map(t => ({ key: t.key, label: t.label, icon: t.icon, count: tabCounts[t.key] }))}
           activeTab={activeTab}
           defaultTab="todas"
         />
-
-        {/* Search + filters + view toggle */}
         <div style={{ paddingTop: 16 }}>
           <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} showViewToggle />
         </div>
+      </div>
+
+      {/* Mobile: filtros/busca em linha própria + chips em linha separada (sem bloco branco) */}
+      <div className="sm:hidden" style={{ marginBottom: 16 }}>
+        {/* Linha dos ícones de busca/filtro */}
+        <div style={{ marginBottom: 12 }}>
+          <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} showViewToggle />
+        </div>
+        {/* Linha dos chips */}
+        <NavigationTabs
+          tabs={visibleTabs.map(t => ({ key: t.key, label: t.label, icon: t.icon, count: tabCounts[t.key] }))}
+          activeTab={activeTab}
+          defaultTab="todas"
+        />
       </div>
 
       {/* Results */}

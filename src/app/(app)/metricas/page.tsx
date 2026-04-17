@@ -313,26 +313,30 @@ async function getMetricasData(plantaId: string, periodo: string) {
     },
   })
 
-  const cicloByClasse: Record<number, { aprovacao: number[]; execucao: number[]; desabilitado: number[]; reabilitacao: number[] }> = {}
+  // Só contabiliza solicitações com TODAS as 5 datas preenchidas — garante que
+  // as médias das fases sejam comparáveis e somem exatamente o ciclo completo
+  const cicloByClasse: Record<number, { aprovacao: number[]; espera: number[]; execucao: number[]; validacao: number[]; total: number[]; n: number }> = {}
   cicloData.forEach(s => {
     const cn = s.classe?.numero ?? 0
     if (cn === 0) return
-    if (!cicloByClasse[cn]) cicloByClasse[cn] = { aprovacao: [], execucao: [], desabilitado: [], reabilitacao: [] }
+    if (!s.dataEnvio || !s.dataAprovacaoFinal || !s.dataDesabilitacao || !s.dataReabilitacao || !s.dataEncerramento) return
+    if (!cicloByClasse[cn]) cicloByClasse[cn] = { aprovacao: [], espera: [], execucao: [], validacao: [], total: [], n: 0 }
 
-    const diffDays = (a: Date | null, b: Date | null) => {
-      if (!a || !b) return null
-      return (new Date(b).getTime() - new Date(a).getTime()) / 86400000
-    }
+    const diffDays = (a: Date, b: Date) => (new Date(b).getTime() - new Date(a).getTime()) / 86400000
 
-    const tAprov = diffDays(s.dataEnvio, s.dataAprovacaoFinal)
-    const tExec = diffDays(s.dataAprovacaoFinal, s.dataDesabilitacao)
-    const tDesab = diffDays(s.dataDesabilitacao, s.dataReabilitacao)
-    const tReab = diffDays(s.dataReabilitacao, s.dataEncerramento)
+    // Fases do ciclo (todas não-negativas; se houver inconsistência de data, zera)
+    const tAprov = Math.max(0, diffDays(s.dataEnvio, s.dataAprovacaoFinal))
+    const tEspera = Math.max(0, diffDays(s.dataAprovacaoFinal, s.dataDesabilitacao))
+    const tExec = Math.max(0, diffDays(s.dataDesabilitacao, s.dataReabilitacao))
+    const tValid = Math.max(0, diffDays(s.dataReabilitacao, s.dataEncerramento))
+    const tTotal = Math.max(0, diffDays(s.dataEnvio, s.dataEncerramento))
 
-    if (tAprov !== null && tAprov >= 0) cicloByClasse[cn].aprovacao.push(tAprov)
-    if (tExec !== null && tExec >= 0) cicloByClasse[cn].execucao.push(tExec)
-    if (tDesab !== null && tDesab >= 0) cicloByClasse[cn].desabilitado.push(tDesab)
-    if (tReab !== null && tReab >= 0) cicloByClasse[cn].reabilitacao.push(tReab)
+    cicloByClasse[cn].aprovacao.push(tAprov)
+    cicloByClasse[cn].espera.push(tEspera)
+    cicloByClasse[cn].execucao.push(tExec)
+    cicloByClasse[cn].validacao.push(tValid)
+    cicloByClasse[cn].total.push(tTotal)
+    cicloByClasse[cn].n++
   })
 
   const avg = (arr: number[]) => arr.length > 0 ? Math.round((arr.reduce((a, b) => a + b, 0) / arr.length) * 10) / 10 : 0
@@ -341,9 +345,11 @@ async function getMetricasData(plantaId: string, periodo: string) {
     .map(([k, v]) => ({
       classe: Number(k),
       aprovacao: avg(v.aprovacao),
+      espera: avg(v.espera),
       execucao: avg(v.execucao),
-      desabilitado: avg(v.desabilitado),
-      reabilitacao: avg(v.reabilitacao),
+      validacao: avg(v.validacao),
+      total: avg(v.total),
+      n: v.n,
     }))
     .sort((a, b) => a.classe - b.classe)
 

@@ -34,7 +34,7 @@ export default function DetalheHeader({ s }: DetalheHeaderProps) {
           >
             {s.equipamento.tag}
           </h1>
-          <StatusBadge status={s.status as StatusSolicitacao} />
+          <StatusBadge status={s.status as StatusSolicitacao} size="lg" />
           {s.classe && <ClasseBadge classe={s.classe.numero as ClasseNum} showPrazo />}
         </div>
 

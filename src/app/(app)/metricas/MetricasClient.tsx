@@ -4,6 +4,7 @@ import { useRouter, usePathname } from 'next/navigation'
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
   PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line,
+  ComposedChart,
 } from 'recharts'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
@@ -32,7 +33,7 @@ interface TopEquip {
 interface ClasseCount { classe: number; count: number }
 interface AreaData { area: string; total: number; c1: number; c2: number; c3: number; c4: number; c5: number }
 interface AreaViolacao { area: string; count: number; mediaExcessoDias: number; classePredominante: number }
-interface CicloVida { classe: number; aprovacao: number; execucao: number; desabilitado: number; reabilitacao: number }
+interface CicloVida { classe: number; aprovacao: number; espera: number; execucao: number; validacao: number; total: number; n: number }
 interface Tendencia { mes: string; criadas: number; violacoes: number; encerradas: number }
 
 interface MetricasData {
@@ -277,7 +278,7 @@ export default function MetricasClient({ data, periodo }: Props) {
             </span>
           </div>
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
-            <KpiCard label="Desabilitados agora" value={kpis.desabilitadosAgora} icon="warning" color="#EA580C" bgColor="#FFF7ED" />
+            <KpiCard label="Desabilitados agora" value={kpis.desabilitadosAgora} icon="warning" color="#DC2626" bgColor="#FEE2E2" />
             <KpiCard label="Em aprovação" value={kpis.emAprovacao} icon="hourglass_top" color="#AC6F00" bgColor="#FEF5E5" />
             <KpiCard label="Execução autorizada" value={kpis.execucaoAutorizada} icon="engineering" color="#1E40AF" bgColor="#EFF6FF" />
             <KpiCard label="Aguardando validação" value={kpis.aguardandoValidacao} icon="verified" color="#0D9488" bgColor="#F0FDFA" />
@@ -314,7 +315,7 @@ export default function MetricasClient({ data, periodo }: Props) {
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <KpiCard label="Desabilitações realizadas" value={kpis.desabilitacoesPeriodo} icon="toggle_off" color="#EA580C" bgColor="#FFF7ED" />
             <KpiCard label="Reabilitados dentro do prazo" value={kpis.reabilitadosDentroPrazo} icon="check_circle" color="#16A34A" bgColor="#F0FDF4" />
             <KpiCard label="Prazos estendidos" value={kpis.extensoesPeriodo} icon="event_repeat" color="#AC6F00" bgColor="#FEF5E5" />
@@ -512,13 +513,13 @@ export default function MetricasClient({ data, periodo }: Props) {
           </SectionCard>
 
         {/* ── SEÇÃO 5: Tempo médio do ciclo de vida ────────────────── */}
-        <SectionCard title="Tempo médio por etapa do ciclo (dias)" icon="avg_pace" className="mb-6">
+        <SectionCard title="Tempo médio por etapa do ciclo (dias)" icon="schedule" className="mb-6">
           {cicloVida.length === 0 ? (
             <p style={{ color: '#94A3B8', fontSize: 13, fontStyle: 'italic' }}>Sem dados no período</p>
           ) : (
             <>
               <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={cicloVida} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
+                <ComposedChart data={cicloVida} margin={{ top: 10, right: 10, bottom: 0, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
                   <XAxis
                     dataKey="classe"
@@ -530,13 +531,58 @@ export default function MetricasClient({ data, periodo }: Props) {
                     label={{ value: 'dias', angle: -90, position: 'insideLeft', style: { fontSize: 11, fill: '#94A3B8' } }}
                   />
                   <Tooltip content={<CustomTooltip />} />
-                  <Legend wrapperStyle={{ fontSize: 11, paddingTop: 8 }} />
-                  <Bar dataKey="aprovacao" name="Aprovação" fill="#AC6F00" radius={[4, 4, 0, 0]} barSize={22} />
-                  <Bar dataKey="execucao" name="Execução" fill="#1E40AF" radius={[4, 4, 0, 0]} barSize={22} />
-                  <Bar dataKey="desabilitado" name="Desabilitado" fill="#EA580C" radius={[4, 4, 0, 0]} barSize={22} />
-                  <Bar dataKey="reabilitacao" name="Reabilitação" fill="#0D9488" radius={[4, 4, 0, 0]} barSize={22} />
-                </BarChart>
+                  <Bar dataKey="aprovacao" name="Aprovação" fill="#AC6F00" radius={[4, 4, 0, 0]} barSize={18} />
+                  <Bar dataKey="espera" name="Espera de execução" fill="#94A3B8" radius={[4, 4, 0, 0]} barSize={18} />
+                  <Bar dataKey="execucao" name="Execução" fill="#1E40AF" radius={[4, 4, 0, 0]} barSize={18} />
+                  <Bar dataKey="validacao" name="Validação" fill="#0D9488" radius={[4, 4, 0, 0]} barSize={18} />
+                  <Line
+                    type="monotone"
+                    dataKey="total"
+                    name="Ciclo completo"
+                    stroke="#0038A8"
+                    strokeWidth={2.5}
+                    dot={{ fill: '#0038A8', r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
+              {/* Legend: what each stage measures */}
+              <div
+                style={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  gap: '8px 20px',
+                  marginTop: 16,
+                  padding: '10px 14px',
+                  background: '#F8FAFC',
+                  borderRadius: 6,
+                  fontSize: 11,
+                  color: '#64748B',
+                  lineHeight: 1.5,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: '#AC6F00', flexShrink: 0 }} />
+                  <span><strong style={{ color: '#0F172A' }}>Aprovação</strong> — envio até aprovação final</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: '#94A3B8', flexShrink: 0 }} />
+                  <span><strong style={{ color: '#0F172A' }}>Espera de execução</strong> — aprovação até desabilitação</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: '#1E40AF', flexShrink: 0 }} />
+                  <span><strong style={{ color: '#0F172A' }}>Execução</strong> — desabilitação até reabilitação</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: '#0D9488', flexShrink: 0 }} />
+                  <span><strong style={{ color: '#0F172A' }}>Validação</strong> — reabilitação até encerramento</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: '#0038A8', flexShrink: 0 }} />
+                  <span><strong style={{ color: '#0F172A' }}>Ciclo completo</strong> — envio até encerramento</span>
+                </div>
+              </div>
+
               {/* Summary table */}
               <div style={{ overflowX: 'auto', marginTop: 12 }}>
                 <table style={{ width: '100%', fontSize: 12, borderCollapse: 'collapse' }}>
@@ -544,9 +590,11 @@ export default function MetricasClient({ data, periodo }: Props) {
                     <tr style={{ borderBottom: '2px solid #E2E8F0' }}>
                       <th style={{ textAlign: 'left', padding: '6px 10px', color: '#64748B' }}>Classe</th>
                       <th style={{ textAlign: 'center', padding: '6px 10px', color: '#AC6F00' }}>Aprovação</th>
+                      <th style={{ textAlign: 'center', padding: '6px 10px', color: '#64748B' }}>Espera de exec.</th>
                       <th style={{ textAlign: 'center', padding: '6px 10px', color: '#1E40AF' }}>Execução</th>
-                      <th style={{ textAlign: 'center', padding: '6px 10px', color: '#EA580C' }}>Desabilitado</th>
-                      <th style={{ textAlign: 'center', padding: '6px 10px', color: '#0D9488' }}>Reabilitação</th>
+                      <th style={{ textAlign: 'center', padding: '6px 10px', color: '#0D9488' }}>Validação</th>
+                      <th style={{ textAlign: 'center', padding: '6px 10px', color: '#0038A8', fontWeight: 700 }}>Ciclo completo</th>
+                      <th style={{ textAlign: 'center', padding: '6px 10px', color: '#94A3B8', fontWeight: 500 }}>N</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -554,9 +602,11 @@ export default function MetricasClient({ data, periodo }: Props) {
                       <tr key={c.classe} style={{ borderBottom: '1px solid #F1F5F9' }}>
                         <td style={{ padding: '8px 10px' }}><ClasseBadge classe={c.classe} /></td>
                         <td style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 500 }}>{c.aprovacao}d</td>
+                        <td style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 500, color: '#64748B' }}>{c.espera}d</td>
                         <td style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 500 }}>{c.execucao}d</td>
-                        <td style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 600, color: '#EA580C' }}>{c.desabilitado}d</td>
-                        <td style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 500 }}>{c.reabilitacao}d</td>
+                        <td style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 500 }}>{c.validacao}d</td>
+                        <td style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 700, color: '#0038A8' }}>{c.total}d</td>
+                        <td style={{ textAlign: 'center', padding: '8px 10px', fontWeight: 500, color: '#94A3B8', fontSize: 11 }}>{c.n}</td>
                       </tr>
                     ))}
                   </tbody>

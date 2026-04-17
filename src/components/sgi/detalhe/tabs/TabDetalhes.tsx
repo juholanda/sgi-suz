@@ -1,6 +1,6 @@
 'use client'
 
-import { format } from 'date-fns'
+import { format, differenceInHours } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import PrazoCard from '../PrazoCard'
 import type { SolicitacaoDetalhe } from '../types'
@@ -14,6 +14,22 @@ const TIPO_LABELS: Record<string, string> = {
 function fmt(d: string | null | undefined) {
   if (!d) return '\u2014'
   return format(new Date(d), "dd/MM/yyyy 'as' HH:mm", { locale: ptBR })
+}
+
+/** Formata duração em horas como "3d 5h", "5h", "2d" */
+function fmtDuracao(horas: number): string {
+  if (horas <= 0) return '—'
+  const d = Math.floor(horas / 24)
+  const h = horas % 24
+  if (d > 0 && h > 0) return `${d}d ${h}h`
+  if (d > 0) return `${d}d`
+  return `${h}h`
+}
+
+/** Calcula duração entre duas datas ISO (em horas inteiras) */
+function duracaoHoras(inicio: string | null | undefined, fim: string | null | undefined): number {
+  if (!inicio || !fim) return 0
+  return Math.max(0, differenceInHours(new Date(fim), new Date(inicio)))
 }
 
 // ── Section card ─────────────────────────────────────────────────────────────
@@ -69,21 +85,12 @@ function Row({ label, value, mono, highlight }: { label: string; value?: string 
 
 function ChecklistSection({ tipo, items }: { tipo: string; items: SolicitacaoDetalhe['checklists'] }) {
   const label = tipo === 'DESABILITACAO' ? 'Desabilitação' : 'Reabilitação'
-  const accentColor = tipo === 'DESABILITACAO' ? '#EA580C' : '#0D9488'
+  const dotColor = tipo === 'DESABILITACAO' ? '#EA580C' : '#0D9488'
 
   return (
     <div style={{ marginBottom: 12 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
-        <span
-          style={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            background: accentColor,
-            flexShrink: 0,
-          }}
-        />
-        <span style={{ fontSize: 13, fontWeight: 600, color: accentColor }}>{label}</span>
+        <span style={{ fontSize: 13, fontWeight: 600, color: '#0F172A' }}>{label}</span>
         <span style={{ fontSize: 11, color: '#94A3B8' }}>({items.length} itens)</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -179,32 +186,28 @@ export default function TabDetalhes({ s }: TabDetalhesProps) {
         {/* Período e Prazos + Checklists (empilhados na coluna direita) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
           <Section title="Período e Prazos" icon="schedule">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <PrazoCard
-                status={s.status}
-                periodoInicio={s.periodoInicio}
-                periodoFim={s.periodoFim}
-                dataEnvio={s.dataEnvioAprovacao}
-                dataDesabilitacao={s.dataDesabilitacao}
-                dataAprovacaoFinal={null}
-                prazoMaximoDias={s.classe?.prazoMaximoDias ?? null}
-                prazoPrevitoAtingido={s.prazoPrevitoAtingido}
-                prazoMaximoAtingido={s.prazoMaximoAtingido}
-                createdAt={s.createdAt}
-                embedded
+            <dl style={{ display: 'flex', flexDirection: 'column' }}>
+              <Row label="Início previsto" value={fmt(s.periodoInicio)} />
+              <Row label="Fim previsto" value={fmt(s.periodoFim)} />
+              <Row
+                label="Prazo previsto"
+                value={fmtDuracao(duracaoHoras(s.periodoInicio, s.periodoFim))}
               />
-              <dl style={{ display: 'flex', flexDirection: 'column' }}>
-                <Row label="Início previsto" value={fmt(s.periodoInicio)} />
-                <Row label="Fim previsto" value={fmt(s.periodoFim)} />
-                <Row
-                  label="Prazo máximo"
-                  value={s.classe?.prazoMaximoDias ? `${s.classe.prazoMaximoDias} dia(s)` : 'Não forçável'}
-                />
-                <Row label="Desabilitado em" value={fmt(s.dataDesabilitacao)} />
-                <Row label="Reabilitado em" value={fmt(s.dataReabilitacao)} />
-                <Row label="Encerrado em" value={fmt(s.dataEncerramento)} />
-              </dl>
-            </div>
+              <Row
+                label="Prazo máximo"
+                value={s.classe?.prazoMaximoDias ? `${s.classe.prazoMaximoDias} dia(s)` : 'Não forçável'}
+              />
+              <Row
+                label="Tempo real"
+                value={fmtDuracao(duracaoHoras(
+                  s.dataDesabilitacao,
+                  s.dataReabilitacao ?? s.dataEncerramento ?? undefined
+                ))}
+              />
+              <Row label="Desabilitado em" value={fmt(s.dataDesabilitacao)} />
+              <Row label="Reabilitado em" value={fmt(s.dataReabilitacao)} />
+              <Row label="Encerrado em" value={fmt(s.dataEncerramento)} />
+            </dl>
           </Section>
 
           {/* Checklists de campo — abaixo de Período e Prazos */}

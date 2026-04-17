@@ -113,42 +113,77 @@ export function SolicitacaoCard({
     >
       {/* ── Body ── */}
       <div style={{ padding: '12px 16px 0' }}>
-        {/* Line 1: Classe badge · Protocolo · progress pill · Status badge */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-          {classe && (
-            <ClasseBadge classe={classe.numero as ClasseNum} size="sm" />
-          )}
-          <span style={{ fontSize: 12, fontWeight: 600, color: '#0038A8' }}>
-            #{protocolo}
-          </span>
-          {status === 'EM_APROVACAO' && totalAprovacoes > 0 && (
-            <span
-              style={{
-                fontSize: 12,
-                fontWeight: 600,
-                padding: '2px 6px',
-                background: '#FEF5E5',
-                color: '#AC6F00',
-                borderRadius: 4,
-              }}
-            >
-              {aprovAprovadas}/{totalAprovacoes}
+        {/* ─── Desktop header (linhas 1 e 2) ─── */}
+        <div className="hidden sm:block">
+          {/* L1: Classe · #protocolo · [X/Y] + Status */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            {classe && <ClasseBadge classe={classe.numero as ClasseNum} size="sm" />}
+            <span style={{ fontSize: 12, fontWeight: 500, color: '#64748B' }}>
+              #{protocolo}
             </span>
-          )}
-          <div style={{ marginLeft: 'auto' }}>
-            <StatusBadge status={status as any} size="sm" />
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+              {status === 'EM_APROVACAO' && totalAprovacoes > 1 && (
+                <span
+                  style={{
+                    fontSize: 12, fontWeight: 600, padding: '2px 6px',
+                    background: '#FEF5E5', color: '#AC6F00', borderRadius: 4,
+                  }}
+                >
+                  {aprovAprovadas}/{totalAprovacoes}
+                </span>
+              )}
+              <StatusBadge status={status as any} size="sm" />
+            </div>
+          </div>
+          {/* L2: TAG */}
+          <div style={{ marginBottom: 2 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: '#0F172A' }}>
+              {equipamento.tag}
+            </span>
           </div>
         </div>
 
-        {/* Line 2: TAG */}
-        <div style={{ marginBottom: 2 }}>
-          <span style={{ fontWeight: 700, fontSize: 14, color: '#0F172A' }}>
-            {equipamento.tag}
-          </span>
+        {/* ─── Mobile header (linhas 1 a 4) ─── */}
+        <div className="sm:hidden">
+          {/* L1: Classe (esquerda) · [X/Y] + Status (direita) */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            {classe && <ClasseBadge classe={classe.numero as ClasseNum} size="sm" />}
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 8 }}>
+              {status === 'EM_APROVACAO' && totalAprovacoes > 1 && (
+                <span
+                  style={{
+                    fontSize: 12, fontWeight: 600, padding: '2px 8px',
+                    background: '#FEF5E5', color: '#AC6F00', borderRadius: 4,
+                  }}
+                >
+                  {aprovAprovadas}/{totalAprovacoes}
+                </span>
+              )}
+              <StatusBadge status={status as any} size="sm" />
+            </div>
+          </div>
+          {/* L2: TAG */}
+          <div style={{ marginBottom: 4 }}>
+            <span style={{ fontWeight: 700, fontSize: 16, color: '#0F172A' }}>
+              {equipamento.tag}
+            </span>
+          </div>
+          {/* L3: Função (descrição) */}
+          {equipamento.descricao && (
+            <div style={{ marginBottom: 4, fontSize: 14, color: '#374151' }}>
+              {equipamento.descricao}
+            </div>
+          )}
+          {/* L4: Tipo · Área (sem planta) — Classe subiu pra L1 */}
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 4, fontSize: 12, color: '#6B7280' }}>
+            {tipo && TIPO_LABEL[tipo] && <span>{TIPO_LABEL[tipo]}</span>}
+            {tipo && TIPO_LABEL[tipo] && area?.nome && <span style={{ color: '#D1D5DB' }}>·</span>}
+            {area?.nome && <span>{area.nome}</span>}
+          </div>
         </div>
 
-        {/* Line 3: descricao · tipo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 14, color: '#374151', marginBottom: 4 }}>
+        {/* Line 3: descricao · tipo — DESKTOP ONLY (mobile já tem no bloco acima) */}
+        <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 8, fontSize: 14, color: '#374151', marginBottom: 4 }}>
           <span>{equipamento.descricao}</span>
           {tipo && TIPO_LABEL[tipo] && (
             <>
@@ -158,12 +193,12 @@ export function SolicitacaoCard({
           )}
         </div>
 
-        {/* Line 4: location_on icon + Area · Planta */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 12, color: '#6B7280', marginBottom: 8 }}>
+        {/* Line 4: location_on icon + Area · Planta — DESKTOP ONLY */}
+        <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 4, fontSize: 12, color: '#6B7280', marginBottom: 8 }}>
           <span className="material-symbols-outlined" style={{ fontSize: 13, lineHeight: 1 }}>location_on</span>
           <span>
             {area.nome}
-            {planta ? ` · ${planta.nome}` : ''}
+            {planta && ` · ${planta.nome}`}
           </span>
         </div>
 
@@ -203,17 +238,6 @@ export function SolicitacaoCard({
           </div>
         )}
 
-        {status === 'EM_VALIDACAO_DA_REABILITACAO' && (
-          <div style={{ fontSize: 12, marginBottom: 8, color: '#0F766E' }}>
-            Aguardando validação...
-          </div>
-        )}
-
-        {status === 'EXECUCAO_AUTORIZADA' && (
-          <div style={{ fontSize: 12, marginBottom: 8, color: '#1E40AF' }}>
-            Aguardando execução
-          </div>
-        )}
       </div>
 
       {/* ── Footer with contextual action buttons ── */}
@@ -333,7 +357,7 @@ export function SolicitacaoCard({
                 fontSize: 12,
                 fontWeight: 600,
                 color: '#FFFFFF',
-                background: '#16A34A',
+                background: '#0038A8',
                 borderRadius: 4,
                 textDecoration: 'none',
                 textAlign: 'center',
@@ -344,6 +368,20 @@ export function SolicitacaoCard({
           )}
         </div>
       )}
+
+      {/* Mobile-only: protocolo no pé do card */}
+      <div
+        className="sm:hidden"
+        style={{
+          padding: '6px 16px 10px',
+          fontSize: 12,
+          fontWeight: 500,
+          color: '#94A3B8',
+          textAlign: 'left',
+        }}
+      >
+        #{protocolo}
+      </div>
     </ClickableCard>
   )
 }

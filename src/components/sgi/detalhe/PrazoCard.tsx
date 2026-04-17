@@ -231,57 +231,169 @@ export default function PrazoCard(props: PrazoCardProps) {
     const desab = toDate(dataDesabilitacao) ?? now
     const diasDesabilitado = differenceInDays(now, desab)
     const maxDias = prazoMaximoDias ?? 0
-    const pct = maxDias > 0 ? Math.min((diasDesabilitado / maxDias) * 100, 100) : 0
+
+    // Prazo planejado pelo usuário (periodoFim - periodoInicio)
+    const inicio = toDate(periodoInicio)
+    const fim = toDate(periodoFim)
+    const prazoPlanejado = inicio && fim ? differenceInDays(fim, inicio) : 0
+
+    // A barra usa o prazo planejado como referência principal
+    const referencia = prazoPlanejado > 0 ? prazoPlanejado : maxDias
+    const pct = referencia > 0 ? Math.min((diasDesabilitado / referencia) * 100, 100) : 0
+
+    // Marcador do limite máximo na barra (se diferente do planejado)
+    const maxMarkerPct = prazoPlanejado > 0 && maxDias > 0 && maxDias !== prazoPlanejado
+      ? Math.min((maxDias / referencia) * 100, 100)
+      : 0
+
+    // Texto da contagem
+    const diasRestantes = referencia > 0 ? referencia - diasDesabilitado : 0
+
+    // Determinar nível de urgência — alinhado com lógica da tabela (dias restantes)
+    const excedeuMax = maxDias > 0 && diasDesabilitado >= maxDias
+    // Critico (pulsa) apenas no último dia ou quando já excedeu
+    // — evita ruído visual em solicitações com prazo de 2+ dias
+    const critico = excedeuMax || diasRestantes <= 1
 
     let barColor: string
-    if (pct > 80) {
+    let dotColor: string
+    if (excedeuMax) {
       barColor = '#DC2626'
-    } else if (pct > 50) {
+      dotColor = '#DC2626'
+    } else if (diasRestantes <= 1) {
+      // Reabilitar hoje/amanhã → laranja forte
+      barColor = '#EA580C'
+      dotColor = '#EA580C'
+    } else if (diasRestantes <= 2) {
+      // Reabilitar em 2 dias → âmbar
       barColor = '#D97706'
+      dotColor = '#D97706'
     } else {
       barColor = '#16A34A'
+      dotColor = '#16A34A'
     }
 
     return (
-      <div style={wrapStyle}>
-        <div style={{ ...leftStyle, flex: 1 }}>
-          <span className="material-symbols-outlined" style={iconStyle}>
-            lock_open
+      <div
+        style={{
+          backgroundColor: '#FFFFFF',
+          border: `1px solid ${critico ? '#FECACA' : '#E2E8F0'}`,
+          borderRadius: 10,
+          padding: '14px 16px',
+          fontFamily: 'Inter, sans-serif',
+        }}
+      >
+        {/* Top row: pulse dot + title + days badge */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
+          {/* Pulsing dot */}
+          <div style={{ position: 'relative', width: 12, height: 12, flexShrink: 0 }}>
+            <span
+              className=""
+              style={{
+                display: 'block',
+                width: 12,
+                height: 12,
+                borderRadius: '50%',
+                backgroundColor: dotColor,
+                // Variáveis CSS consumidas pela keyframe sgi-pulse em globals.css
+                ['--sgi-pulse-color' as any]: `${dotColor}66`,
+                ['--sgi-pulse-color-fade' as any]: `${dotColor}00`,
+              }}
+            />
+          </div>
+
+          <span style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', flex: 1 }}>
+            Desabilitado há {diasDesabilitado} dia{diasDesabilitado !== 1 ? 's' : ''}
           </span>
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={textPrimaryStyle}>
-              Tempo desabilitado: {diasDesabilitado} dia{diasDesabilitado !== 1 ? 's' : ''}
-            </div>
-            {maxDias > 0 && (
-              <>
-                <div style={textSecondaryStyle}>
-                  Prazo máximo: {maxDias} dia{maxDias !== 1 ? 's' : ''}
-                </div>
-                {/* Progress bar */}
-                <div
-                  style={{
-                    marginTop: 6,
-                    height: 4,
-                    backgroundColor: '#E2E8F0',
-                    borderRadius: 2,
-                    overflow: 'hidden',
-                    width: '100%',
-                    maxWidth: 200,
-                  }}
-                >
-                  <div
-                    style={{
-                      height: '100%',
-                      width: `${pct}%`,
-                      backgroundColor: barColor,
-                      borderRadius: 2,
-                      transition: 'width 300ms',
-                    }}
-                  />
-                </div>
-              </>
+
+          {/* Days remaining badge — cores alinhadas com a tabela */}
+          {referencia > 0 && (() => {
+            let badgeBg: string, badgeText: string
+            if (excedeuMax) {
+              badgeBg = '#FEE2E2'; badgeText = '#DC2626'
+            } else if (diasRestantes <= 1) {
+              badgeBg = '#FFF7ED'; badgeText = '#C2410C'
+            } else if (diasRestantes <= 2) {
+              badgeBg = '#FEF3C7'; badgeText = '#92400E'
+            } else {
+              badgeBg = '#F0FDF4'; badgeText = '#16A34A'
+            }
+            return (
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 600,
+                  padding: '2px 8px',
+                  borderRadius: 10,
+                  backgroundColor: badgeBg,
+                  color: badgeText,
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                {diasRestantes > 0
+                  ? `${diasRestantes}d restante${diasRestantes !== 1 ? 's' : ''}`
+                  : `${Math.abs(diasRestantes)}d excedido${Math.abs(diasRestantes) !== 1 ? 's' : ''}`}
+              </span>
+            )
+          })()}
+        </div>
+
+        {/* Progress bar */}
+        {referencia > 0 && (
+          <div
+            style={{
+              height: 6,
+              backgroundColor: '#E2E8F0',
+              borderRadius: 3,
+              overflow: 'visible',
+              width: '100%',
+              position: 'relative',
+              marginBottom: 8,
+            }}
+          >
+            <div
+              style={{
+                height: '100%',
+                width: `${Math.min(pct, 100)}%`,
+                backgroundColor: barColor,
+                borderRadius: 3,
+                transition: 'width 300ms',
+              }}
+            />
+            {/* Marker for class maximum when different from planned */}
+            {maxMarkerPct > 0 && maxMarkerPct < 100 && (
+              <div
+                style={{
+                  position: 'absolute',
+                  top: -2,
+                  left: `${maxMarkerPct}%`,
+                  width: 2,
+                  height: 10,
+                  backgroundColor: '#DC2626',
+                  borderRadius: 1,
+                }}
+                title={`Limite máximo: ${maxDias} dias`}
+              />
             )}
           </div>
+        )}
+
+        {/* Bottom info row */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+          {prazoPlanejado > 0 && (
+            <span style={{ fontSize: 11, color: '#64748B' }}>
+              Prazo planejado: {prazoPlanejado}d
+            </span>
+          )}
+          {prazoPlanejado > 0 && maxDias > 0 && (
+            <span style={{ fontSize: 11, color: '#CBD5E1' }}>·</span>
+          )}
+          {maxDias > 0 && (
+            <span style={{ fontSize: 11, color: excedeuMax ? '#DC2626' : '#64748B', fontWeight: excedeuMax ? 600 : 400 }}>
+              Máximo: {maxDias}d
+            </span>
+          )}
         </div>
       </div>
     )

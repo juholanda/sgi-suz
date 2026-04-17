@@ -17,6 +17,8 @@ interface BannerConfig {
 }
 
 const TERMINAL_STATUSES = ['ENCERRADA', 'REJEITADA', 'CANCELADA']
+// Status que já mostram o alerta de prazo dentro do PrazoInlineBar — não duplicar aqui
+const PRAZO_INLINE_STATUSES = ['DESABILITADO', 'EM_VALIDACAO_DA_REABILITACAO']
 
 export default function AlertaBanner({
   prazoMaximoAtingido,
@@ -25,30 +27,45 @@ export default function AlertaBanner({
   status,
 }: AlertaBannerProps) {
   const banners: BannerConfig[] = []
+  const isTerminal = TERMINAL_STATUSES.includes(status)
+  const usaInlineBar = PRAZO_INLINE_STATUSES.includes(status)
 
   if (prazoMaximoAtingido) {
-    banners.push({
-      key: 'prazo-max',
-      bgColor: '#FEF2F2',
-      borderColor: '#DC2626',
-      textColor: '#7F1D1D',
-      icon: 'warning',
-      message: 'Prazo máximo atingido — ação imediata necessária',
-    })
+    if (isTerminal && status === 'ENCERRADA') {
+      // Histórico: encerrada fora do prazo — tom informativo, não exige ação
+      banners.push({
+        key: 'prazo-max-historico',
+        bgColor: '#FEF2F2',
+        borderColor: '#DC2626',
+        textColor: '#7F1D1D',
+        icon: 'history',
+        message: 'Encerrada fora do prazo máximo',
+      })
+    } else if (!isTerminal && !usaInlineBar) {
+      // Em andamento: ação imediata necessária (DESABILITADO/EM_VALIDACAO usam o InlineBar)
+      banners.push({
+        key: 'prazo-max',
+        bgColor: '#FEF2F2',
+        borderColor: '#DC2626',
+        textColor: '#7F1D1D',
+        icon: 'warning',
+        message: 'Prazo máximo atingido — ação imediata necessária',
+      })
+    }
   }
 
-  if (prazoPrevitoAtingido && !prazoMaximoAtingido) {
+  if (prazoPrevitoAtingido && !prazoMaximoAtingido && !isTerminal && !usaInlineBar) {
     banners.push({
       key: 'prazo-previsto',
       bgColor: '#FFFBEB',
       borderColor: '#D97706',
       textColor: '#78350F',
       icon: 'warning',
-      message: 'Prazo previsto atingido — risco de violação SLA',
+      message: 'Prazo previsto atingido — risco de exceder o prazo máximo',
     })
   }
 
-  if (classeNumero === 4 && !TERMINAL_STATUSES.includes(status)) {
+  if (classeNumero === 4 && !isTerminal) {
     banners.push({
       key: 'classe-4',
       bgColor: '#FFF7ED',

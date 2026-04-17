@@ -28,7 +28,17 @@ async function getMetrics(plantaId: string) {
     prisma.solicitacao.count({ where: { status: 'EXECUCAO_AUTORIZADA', ...scope } }),
     prisma.solicitacao.count({ where: { status: 'EM_VALIDACAO_DA_REABILITACAO', ...scope } }),
     prisma.solicitacao.count({
-      where: { prazoMaximoAtingido: true, status: { in: ANDAMENTO }, ...scope },
+      where: {
+        AND: [
+          scope,
+          {
+            OR: [
+              { prazoMaximoAtingido: true, status: { in: ANDAMENTO } },
+              { status: 'EXECUCAO_AUTORIZADA', periodoFim: { lt: new Date() } },
+            ],
+          },
+        ],
+      },
     }),
   ])
 
@@ -103,8 +113,13 @@ function getTabWhere(tab: TabKey): any {
 }
 
 function getBaseWhere(perfilAtivo: string | undefined, userId: string, plantaId: string): any {
+  // Solicitante/Executante only see their own (but can create in any area)
   if (!perfilAtivo || perfilAtivo === 'SOLICITANTE' || perfilAtivo === 'EXECUTANTE') {
     return { OR: [{ solicitanteId: userId }, { executanteId: userId }], ...buildPlantaScope(plantaId) }
+  }
+  // Aprovador/Gestor: vê tudo na planta EXCETO rascunhos
+  if (perfilAtivo === 'APROVADOR' || perfilAtivo === 'GESTOR_SMS') {
+    return { ...buildPlantaScope(plantaId), status: { not: 'RASCUNHO' } }
   }
   return { ...buildPlantaScope(plantaId) }
 }
@@ -201,7 +216,7 @@ export default async function DashboardPage({
   ])
 
   const kpiCards = [
-    { label: 'Desabilitados agora', value: metrics.desabilitadosAgora, icon: 'warning', color: '#EA580C', bgColor: '#FFF7ED' },
+    { label: 'Desabilitados agora', value: metrics.desabilitadosAgora, icon: 'warning', color: '#DC2626', bgColor: '#FEE2E2' },
     { label: 'Em aprovação', value: metrics.emAprovacao, icon: 'hourglass_top', color: '#AC6F00', bgColor: '#FEF5E5' },
     { label: 'Execução autorizada', value: metrics.execucaoAutorizada, icon: 'engineering', color: '#1E40AF', bgColor: '#EFF6FF' },
     { label: 'Aguardando validação', value: metrics.aguardandoValidacao, icon: 'verified', color: '#0D9488', bgColor: '#F0FDFA' },
@@ -214,9 +229,11 @@ export default async function DashboardPage({
       {/* ─── Bloco 1: Bem-vindo ─── */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>Bem-vindo(a) a {plantaNome}</h1>
+          <h1 className="text-xl font-bold" style={{ color: '#0F172A' }}>
+            Olá, {session?.user?.name?.split(' ')[0]}!
+          </h1>
           <p className="text-sm mt-0.5" style={{ color: '#475569' }}>
-            Olá, {session?.user?.name?.split(' ')[0]}. Veja o que precisa da sua atenção.
+            Bem-vindo de volta a {plantaNome}.
           </p>
         </div>
         {isSolicitante && (
@@ -279,8 +296,10 @@ export default async function DashboardPage({
         </div>
       </div>
 
-      {/* ─── Bloco 3: Tabs + filtros (bloco branco) ─── */}
+      {/* ─── Bloco 3: Tabs + filtros ─── */}
+      {/* Desktop: bloco branco */}
       <div
+        className="hidden sm:block"
         style={{
           background: '#FFFFFF',
           border: '1px solid #E2E8F0',
@@ -289,17 +308,37 @@ export default async function DashboardPage({
           marginBottom: 16,
         }}
       >
-        {/* Tabs */}
         <NavigationTabs
           tabs={TABS.map(t => ({ key: t.key, label: t.label, icon: t.icon, count: tabCounts[t.key] }))}
           activeTab={activeTab}
           defaultTab="todas"
         />
-
-        {/* Search + filters + view toggle */}
         <div style={{ paddingTop: 16 }}>
           <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} showViewToggle />
         </div>
+      </div>
+
+      {/* Mobile: título + ações (lupa/filtros visuais, sem interação por enquanto) + chips */}
+      <div className="sm:hidden" style={{ marginBottom: 16 }}>
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 12,
+            marginBottom: 12,
+          }}
+        >
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', margin: 0 }}>
+            Solicitações
+          </h2>
+          <SolicitacoesFilters areas={areas.map(a => ({ id: a.id, nome: a.nome, planta: { nome: a.planta.nome } }))} showViewToggle />
+        </div>
+        <NavigationTabs
+          tabs={TABS.map(t => ({ key: t.key, label: t.label, icon: t.icon, count: tabCounts[t.key] }))}
+          activeTab={activeTab}
+          defaultTab="todas"
+        />
       </div>
 
       {/* Results */}

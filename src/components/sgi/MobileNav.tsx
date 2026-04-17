@@ -25,10 +25,9 @@ export default function MobileNav({ isAprovador = false, isSolicitante = false }
   const pathname = usePathname()
 
   const items: NavItem[] = [
-    { href: '/dashboard',    label: 'Início',       icon: 'home' },
-    { href: '/metricas',     label: 'Métricas',     icon: 'insights' },
-    { href: '/solicitacoes', label: 'Solicitações', icon: 'description' },
-    { href: '/perfil',       label: 'Perfil',       icon: 'manage_accounts' },
+    { href: '/dashboard', label: 'Início',   icon: 'home' },
+    { href: '/metricas',  label: 'Métricas', icon: 'insights' },
+    { href: '/perfil',    label: 'Perfil',   icon: 'manage_accounts' },
   ]
 
   return (
@@ -50,7 +49,7 @@ export default function MobileNav({ isAprovador = false, isSolicitante = false }
             className={`mobile-nav-item${active ? ' active' : ''}`}
           >
             <Icon name={item.icon} />
-            <span className="text-[10px] font-medium leading-none">{item.label}</span>
+            <span className="text-xs font-medium leading-none">{item.label}</span>
             {active && (
               <span
                 className="absolute bottom-0 w-6 h-0.5"

@@ -64,7 +64,7 @@ export default function DashboardTabs({ todas, andamento, encerradas, rascunhos 
       {/* Tab bar */}
       <div
         className="flex gap-0 overflow-x-auto"
-        style={{ borderBottom: '1px solid #E2E8F0', scrollbarWidth: 'none' }}
+        style={{ borderBottom: '1px solid #E2E8F0', scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}
       >
         {TABS.map(t => {
           const isActive = tab === t.key

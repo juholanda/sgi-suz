@@ -32,6 +32,7 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const [open, setOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
   // Read current values from URL
@@ -41,6 +42,7 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
   const currentSort = searchParams.get('sort') ?? 'recentes'
   const currentTipo = searchParams.get('tipo') ?? ''
   const currentStatus = searchParams.get('statusFiltro') ?? ''
+  const currentPrazo = searchParams.get('prazo') ?? ''
 
   const [search, setSearch] = useState(currentSearch)
 
@@ -70,15 +72,16 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
     navigate({ search: search.trim() || null })
   }
 
-  const hasActiveFilters = currentClasse.length > 0 || currentAreaId || currentSearch || currentTipo || currentStatus
+  const hasActiveFilters = currentClasse.length > 0 || currentAreaId || currentSearch || currentTipo || currentStatus || currentPrazo
+  const activeFilterCount = [currentClasse.length > 0, !!currentAreaId, !!currentSearch, !!currentTipo, !!currentStatus, !!currentPrazo].filter(Boolean).length
 
   const currentView = searchParams.get('view') ?? 'table'
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Top bar: search + filters (left) / sort + view toggle (right) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        {/* Left: search + filters */}
+
+      {/* ── Desktop: full search bar + filters ── */}
+      <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <form onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: 8, flex: 1, minWidth: 280 }}>
           <div style={{ maxWidth: 360, flex: '1 1 auto' }}>
             <Input
@@ -123,14 +126,14 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
                   marginLeft: 4,
                 }}
               >
-                {[currentClasse.length > 0, !!currentAreaId, !!currentSearch, !!currentTipo, !!currentStatus].filter(Boolean).length}
+                {activeFilterCount}
               </span>
             )}
           </Button>
         </form>
 
         {/* Right: sort + view toggle */}
-        <div className="hidden sm:flex" style={{ alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
             <span style={{ fontSize: 14, color: '#64748B', whiteSpace: 'nowrap' }}>Ordenar por</span>
             <select
@@ -154,7 +157,111 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
         </div>
       </div>
 
-      {/* Advanced filters panel */}
+      {/* ── Mobile: icon buttons for search + filter (interação desativada por enquanto) ── */}
+      <div className="sm:hidden">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Search icon button */}
+          <button
+            type="button"
+            aria-disabled="true"
+            onClick={e => e.preventDefault()}
+            style={{
+              width: 40,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: mobileSearchOpen || currentSearch ? '#EBF0FB' : '#F8FAFC',
+              border: '1px solid',
+              borderColor: mobileSearchOpen || currentSearch ? '#0038A8' : '#E2E8F0',
+              borderRadius: 10,
+              color: mobileSearchOpen || currentSearch ? '#0038A8' : '#64748B',
+              cursor: 'pointer',
+              flexShrink: 0,
+              position: 'relative',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>search</span>
+            {currentSearch && (
+              <span style={{
+                position: 'absolute', top: -3, right: -3,
+                width: 8, height: 8, borderRadius: '50%',
+                background: '#0038A8',
+              }} />
+            )}
+          </button>
+
+          {/* Filter icon button */}
+          <button
+            type="button"
+            aria-disabled="true"
+            onClick={e => e.preventDefault()}
+            style={{
+              width: 40,
+              height: 40,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: open || hasActiveFilters ? '#EBF0FB' : '#F8FAFC',
+              border: '1px solid',
+              borderColor: open || hasActiveFilters ? '#0038A8' : '#E2E8F0',
+              borderRadius: 10,
+              color: open || hasActiveFilters ? '#0038A8' : '#64748B',
+              cursor: 'pointer',
+              flexShrink: 0,
+              position: 'relative',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: 20 }}>tune</span>
+            {hasActiveFilters && (
+              <span style={{
+                position: 'absolute', top: -4, right: -4,
+                minWidth: 16, height: 16, borderRadius: 999,
+                background: '#0038A8', color: '#FFF',
+                fontSize: 10, fontWeight: 700,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '0 4px',
+              }}>
+                {activeFilterCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Mobile search expanded */}
+        {mobileSearchOpen && (
+          <form
+            onSubmit={handleSearchSubmit}
+            style={{ display: 'flex', gap: 8, marginTop: 10 }}
+          >
+            <div style={{ flex: 1 }}>
+              <Input
+                leadingIcon="search"
+                size="md"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                placeholder="TAG, protocolo, solicitante..."
+                autoFocus
+              />
+            </div>
+            {search && (
+              <button
+                type="button"
+                onClick={() => { setSearch(''); navigate({ search: null }) }}
+                style={{
+                  width: 40, height: 40, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 10,
+                  color: '#64748B', cursor: 'pointer', flexShrink: 0,
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: 18 }}>close</span>
+              </button>
+            )}
+          </form>
+        )}
+      </div>
+
+      {/* Advanced filters panel — shared by desktop and mobile */}
       {open && (
         <div
           ref={ref}
@@ -234,6 +341,22 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
             </select>
           </div>
 
+          {/* Prazo */}
+          <div style={{ flex: '1 1 170px', minWidth: 150 }}>
+            <label className="field-label">Prazo</label>
+            <select
+              value={currentPrazo}
+              onChange={e => navigate({ prazo: e.target.value || null })}
+              className="field-input"
+              style={{ height: 36, fontSize: 13 }}
+            >
+              <option value="">Todos os prazos</option>
+              <option value="excedido">Prazo excedido</option>
+              <option value="proximo">Próximo do prazo</option>
+              <option value="dentro">Dentro do prazo</option>
+            </select>
+          </div>
+
           {/* Limpar */}
           <Button
             variant="danger-outline"
@@ -243,7 +366,8 @@ export function SolicitacoesFilters({ areas, showViewToggle = false }: Props) {
             disabled={!hasActiveFilters}
             onClick={() => {
               setSearch('')
-              navigate({ search: null, classe: null, areaId: null, tipo: null, statusFiltro: null })
+              setMobileSearchOpen(false)
+              navigate({ search: null, classe: null, areaId: null, tipo: null, statusFiltro: null, prazo: null })
             }}
           >
             Limpar

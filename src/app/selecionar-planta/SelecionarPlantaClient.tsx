@@ -19,6 +19,23 @@ const PERFIL_ICONS: Record<string, string> = {
   ADMINISTRADOR: 'admin_panel_settings',
 }
 
+// Imagens representativas de cada unidade (cenário real de fábrica de celulose/papel)
+const PLANTA_IMAGES: Record<string, string> = {
+  'planta-aracruz': 'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=240&q=80&fit=crop&auto=format',
+  'planta-limeira': 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=240&q=80&fit=crop&auto=format',
+  'planta-ribas':   'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=240&q=80&fit=crop&auto=format',
+}
+const PLANTA_IMAGE_FALLBACK = 'https://images.unsplash.com/photo-1581091870622-1c6a4eea9cee?w=240&q=80&fit=crop&auto=format'
+
+function getPlantaImage(id: string, nome: string): string {
+  if (PLANTA_IMAGES[id]) return PLANTA_IMAGES[id]
+  const lowered = nome.toLowerCase()
+  if (lowered.includes('aracruz')) return PLANTA_IMAGES['planta-aracruz']
+  if (lowered.includes('limeira')) return PLANTA_IMAGES['planta-limeira']
+  if (lowered.includes('ribas'))   return PLANTA_IMAGES['planta-ribas']
+  return PLANTA_IMAGE_FALLBACK
+}
+
 interface PlantaOption {
   id: string
   nome: string
@@ -116,48 +133,48 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
       {/* Logo */}
       <div className="flex items-center gap-3 mb-8">
         <div
-          className="w-10 h-10 flex items-center justify-center text-sm font-bold text-white"
-          style={{ background: '#0038A8', borderRadius: '8px' }}
+          className="flex items-center justify-center font-bold text-white"
+          style={{ width: 44, height: 44, background: '#0038A8', borderRadius: '10px', fontSize: 16, flexShrink: 0 }}
         >
           S
         </div>
         <div>
-          <div className="text-base font-bold" style={{ color: '#0F172A', lineHeight: 1.2 }}>SGI</div>
-          <div className="text-xs" style={{ color: '#94A3B8', lineHeight: 1.2 }}>Suzano</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: '#0F172A', lineHeight: 1.2 }}>SGI</div>
+          <div style={{ fontSize: 13, color: '#94A3B8', lineHeight: 1.2 }}>Suzano</div>
         </div>
       </div>
 
       {/* Heading */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-1" style={{ color: '#0F172A' }}>Selecionar planta</h1>
-        <p className="text-sm" style={{ color: '#64748B' }}>Escolha a unidade em que deseja atuar hoje</p>
+        <h1 style={{ fontSize: 26, fontWeight: 700, color: '#0F172A', margin: '0 0 4px' }}>Selecionar planta</h1>
+        <p style={{ fontSize: 15, color: '#64748B', margin: 0 }}>Escolha a unidade em que deseja atuar hoje</p>
       </div>
 
       {/* User identity card */}
       <div
-        className="flex items-center gap-3 p-3 mb-6"
-        style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '10px' }}
+        className="flex items-center gap-3 mb-6"
+        style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '14px 16px' }}
       >
         <div
-          className="flex items-center justify-center shrink-0 text-sm font-bold text-white"
-          style={{ width: 40, height: 40, borderRadius: '50%', background: '#0038A8' }}
+          className="flex items-center justify-center shrink-0 font-bold text-white"
+          style={{ width: 44, height: 44, borderRadius: '50%', background: '#0038A8', fontSize: 16 }}
         >
           {userName.charAt(0).toUpperCase()}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold truncate" style={{ color: '#0F172A' }}>{userName}</p>
-          <p className="text-xs truncate" style={{ color: '#64748B' }}>{userEmail}</p>
-          <p className="text-xs mt-0.5" style={{ color: '#94A3B8' }}>Matrícula {userMatricula}</p>
+          <p style={{ fontSize: 15, fontWeight: 600, color: '#0F172A', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userName}</p>
+          <p style={{ fontSize: 13, color: '#64748B', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</p>
+          <p style={{ fontSize: 12, color: '#94A3B8', margin: '2px 0 0' }}>Matrícula {userMatricula}</p>
         </div>
         <span
-          className="shrink-0 text-xs font-medium px-2 py-0.5"
-          style={{ background: '#DCFCE7', color: '#16A34A', borderRadius: '20px' }}
+          className="shrink-0"
+          style={{ fontSize: 12, fontWeight: 600, padding: '3px 10px', background: '#DCFCE7', color: '#16A34A', borderRadius: '20px' }}
         >
           Conectado
         </span>
       </div>
 
-      {/* Plant cards — stacked vertically */}
+      {/* Plant cards */}
       <div className="space-y-3 mb-6">
         {plantas.map(planta => {
           const isLoading = selecting === planta.id
@@ -170,8 +187,8 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
               style={{
                 background: 'white',
                 border: '1.5px solid #E2E8F0',
-                borderRadius: '10px',
-                padding: '14px 16px',
+                borderRadius: '12px',
+                padding: '18px 20px',
                 cursor: selecting || signingOut ? 'wait' : 'pointer',
                 opacity: selecting && !isLoading ? 0.5 : 1,
                 boxShadow: '0 1px 3px rgba(0,0,0,0.06)',
@@ -187,43 +204,72 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'
               }}
             >
-              {/* Icon */}
+              {/* Thumbnail real da unidade */}
               <div
-                className="flex items-center justify-center shrink-0"
-                style={{ width: 42, height: 42, borderRadius: '9px', background: '#EBF0FB', color: '#0038A8' }}
+                className="relative flex items-center justify-center shrink-0 overflow-hidden"
+                style={{
+                  width: 56,
+                  height: 56,
+                  borderRadius: '12px',
+                  background: 'linear-gradient(135deg, #0038A8 0%, #1E3A8A 100%)',
+                  color: '#FFFFFF',
+                }}
               >
-                {isLoading ? (
+                {/* Ícone de fallback atrás da imagem (aparece se a imagem falhar) */}
+                <Icon name="factory" size={26} />
+
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={getPlantaImage(planta.id, planta.nome)}
+                  alt={planta.nome}
+                  className="absolute inset-0 w-full h-full object-cover"
+                  style={{ filter: isLoading ? 'brightness(0.55)' : 'none' }}
+                  onError={e => { e.currentTarget.style.display = 'none' }}
+                />
+                {isLoading && (
                   <span
-                    className="inline-block w-5 h-5 border-2 rounded-full animate-spin"
-                    style={{ borderColor: '#0038A8', borderTopColor: 'transparent' }}
+                    className="relative inline-block border-2 rounded-full animate-spin"
+                    style={{ width: 22, height: 22, borderColor: '#FFFFFF', borderTopColor: 'transparent', zIndex: 1 }}
                   />
-                ) : (
-                  <Icon name="factory" size={22} />
                 )}
               </div>
 
               {/* Info */}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold mb-1" style={{ color: '#0F172A' }}>{planta.nome}</p>
-                <div className="flex flex-wrap gap-1">
-                  {Array.from(new Set(planta.perfis)).map(p => (
-                    <span
-                      key={p}
-                      className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5"
-                      style={{ background: '#F1F5F9', color: '#374151', borderRadius: '20px', border: '1px solid #E2E8F0' }}
-                    >
-                      <Icon name={PERFIL_ICONS[p] ?? 'person'} size={11} />
-                      {PERFIL_LABELS[p] ?? p}
+                <p style={{ fontSize: 16, fontWeight: 600, color: '#0F172A', margin: '0 0 6px' }}>{planta.nome}</p>
+                <div className="flex flex-wrap items-center gap-y-1" style={{ gap: '0' }}>
+                  {Array.from(new Set(planta.perfis)).map((p, idx, arr) => (
+                    <span key={p} className="inline-flex items-center">
+                      <span
+                        className="inline-flex items-center gap-1"
+                        style={{ fontSize: 13, fontWeight: 400, color: '#64748B' }}
+                      >
+                        <Icon name={PERFIL_ICONS[p] ?? 'person'} size={13} />
+                        {PERFIL_LABELS[p] ?? p}
+                      </span>
+                      {idx < arr.length - 1 && (
+                        <span
+                          style={{
+                            display: 'inline-block',
+                            width: 3,
+                            height: 3,
+                            borderRadius: '50%',
+                            background: '#CBD5E1',
+                            margin: '0 6px',
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
                     </span>
                   ))}
                 </div>
               </div>
 
-              {/* Arrow */}
-              <div className="shrink-0" style={{ color: isLoading ? '#94A3B8' : '#0038A8' }}>
+              {/* Arrow / estado */}
+              <div className="shrink-0 flex items-center" style={{ color: isLoading ? '#94A3B8' : '#0038A8' }}>
                 {isLoading
-                  ? <span className="text-xs" style={{ color: '#64748B' }}>Abrindo...</span>
-                  : <Icon name="arrow_forward" size={18} />
+                  ? <span style={{ fontSize: 13, color: '#64748B' }}>Abrindo…</span>
+                  : <Icon name="arrow_forward_ios" size={20} />
                 }
               </div>
             </button>
@@ -235,11 +281,13 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
       <button
         onClick={handleSignOut}
         disabled={!!selecting || signingOut}
-        className="w-full flex items-center justify-center gap-2 py-2 text-sm"
+        className="w-full flex items-center justify-center gap-2"
         style={{
+          height: 48,
+          fontSize: 15,
           background: 'none',
           border: '1px solid #E2E8F0',
-          borderRadius: '8px',
+          borderRadius: '10px',
           color: signingOut ? '#94A3B8' : '#64748B',
           cursor: selecting || signingOut ? 'not-allowed' : 'pointer',
         }}
@@ -251,8 +299,8 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
         }}
       >
         {signingOut
-          ? <><span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />Saindo...</>
-          : <><Icon name="logout" size={16} />Sair e trocar conta</>
+          ? <><span className="inline-block border-2 border-current border-t-transparent rounded-full animate-spin" style={{ width: 18, height: 18 }} />Saindo…</>
+          : <><Icon name="logout" size={20} />Sair e trocar conta</>
         }
       </button>
     </div>

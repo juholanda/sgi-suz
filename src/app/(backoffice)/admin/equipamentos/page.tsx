@@ -1,19 +1,21 @@
 'use client'
 import { useEffect, useState } from 'react'
+import ImportarExcelButton from '@/app/(app)/backoffice/equipamentos/ImportarExcelButton'
 
 interface AreaSimple { id: string; nome: string; planta: { nome: string } }
 interface Equipamento {
   id: string
   tag: string
   descricao: string
+  funcaoProtegida: string | null
   ativo: boolean
   areaId: string
   area: { nome: string; planta: { nome: string } }
 }
 
-interface FormState { tag: string; descricao: string; areaId: string; ativo: boolean }
+interface FormState { tag: string; descricao: string; funcaoProtegida: string; areaId: string; ativo: boolean }
 
-const emptyForm = (): FormState => ({ tag: '', descricao: '', areaId: '', ativo: true })
+const emptyForm = (): FormState => ({ tag: '', descricao: '', funcaoProtegida: '', areaId: '', ativo: true })
 
 export default function EquipamentosPage() {
   const [equipamentos, setEquipamentos] = useState<Equipamento[]>([])
@@ -47,7 +49,7 @@ export default function EquipamentosPage() {
   }
 
   const openEdit = (e: Equipamento) => {
-    setForm({ tag: e.tag, descricao: e.descricao, areaId: e.areaId, ativo: e.ativo })
+    setForm({ tag: e.tag, descricao: e.descricao, funcaoProtegida: e.funcaoProtegida ?? '', areaId: e.areaId, ativo: e.ativo })
     setFormError('')
     setModal({ open: true, editing: e })
   }
@@ -56,7 +58,8 @@ export default function EquipamentosPage() {
 
   const handleSave = async () => {
     if (!form.tag.trim()) { setFormError('TAG é obrigatória'); return }
-    if (!form.descricao.trim()) { setFormError('Descrição é obrigatória'); return }
+    if (!form.descricao.trim()) { setFormError('Nome é obrigatório'); return }
+    if (!form.funcaoProtegida.trim()) { setFormError('Função do intertravamento é obrigatória'); return }
     if (!form.areaId) { setFormError('Selecione uma área'); return }
     setSaving(true)
     setFormError('')
@@ -86,7 +89,7 @@ export default function EquipamentosPage() {
     await fetch(`/api/backoffice/equipamentos/${e.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ tag: e.tag, descricao: e.descricao, areaId: e.areaId, ativo: !e.ativo }),
+      body: JSON.stringify({ tag: e.tag, descricao: e.descricao, funcaoProtegida: e.funcaoProtegida, areaId: e.areaId, ativo: !e.ativo }),
     })
     loadData()
   }
@@ -94,7 +97,8 @@ export default function EquipamentosPage() {
   const filtered = busca
     ? equipamentos.filter(e =>
         e.tag.toLowerCase().includes(busca.toLowerCase()) ||
-        e.descricao.toLowerCase().includes(busca.toLowerCase())
+        e.descricao.toLowerCase().includes(busca.toLowerCase()) ||
+        (e.funcaoProtegida ?? '').toLowerCase().includes(busca.toLowerCase())
       )
     : equipamentos
 
@@ -105,12 +109,15 @@ export default function EquipamentosPage() {
           <h1 style={{ fontSize: '20px', fontWeight: 700, color: '#0F172A', margin: 0 }}>Equipamentos</h1>
           <p style={{ fontSize: '14px', color: '#475569', marginTop: '2px', marginBottom: 0 }}>Backoffice · TAGs e intertravamentos cadastrados</p>
         </div>
-        <button
-          onClick={openCreate}
-          style={{ padding: '8px 16px', fontSize: '14px', fontWeight: 500, color: 'white', background: '#0038A8', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
-        >
-          + Novo Equipamento
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <ImportarExcelButton onImportDone={loadData} />
+          <button
+            onClick={openCreate}
+            style={{ padding: '8px 16px', fontSize: '14px', fontWeight: 500, color: 'white', background: '#0038A8', borderRadius: '4px', border: 'none', cursor: 'pointer' }}
+          >
+            + Novo Equipamento
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -124,23 +131,23 @@ export default function EquipamentosPage() {
           <input
             value={busca}
             onChange={e => setBusca(e.target.value)}
-            placeholder="Buscar por TAG ou descrição..."
+            placeholder="Buscar por TAG, nome ou função..."
             className="field-input"
           />
         </div>
         <table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
             <tr style={{ background: '#F8FAFC' }}>
-              {['TAG', 'Descrição', 'Planta', 'Área', 'Status', 'Ações'].map(h => (
+              {['TAG', 'Nome', 'Função', 'Planta', 'Área', 'Status', 'Ações'].map(h => (
                 <th key={h} style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 500, color: '#6B7280' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: '32px', fontSize: '14px', color: '#94A3B8' }}>Carregando...</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '32px', fontSize: '14px', color: '#94A3B8' }}>Carregando...</td></tr>
             ) : filtered.length === 0 ? (
-              <tr><td colSpan={6} style={{ textAlign: 'center', padding: '32px', fontSize: '14px', color: '#94A3B8' }}>Nenhum equipamento encontrado</td></tr>
+              <tr><td colSpan={7} style={{ textAlign: 'center', padding: '32px', fontSize: '14px', color: '#94A3B8' }}>Nenhum equipamento encontrado</td></tr>
             ) : filtered.map(e => (
               <tr key={e.id} style={{ borderTop: '1px solid #F1F5F9' }}>
                 <td style={{ padding: '12px 16px' }}>
@@ -149,6 +156,7 @@ export default function EquipamentosPage() {
                   </span>
                 </td>
                 <td style={{ padding: '12px 16px', fontSize: '14px', color: '#0F172A' }}>{e.descricao}</td>
+                <td style={{ padding: '12px 16px', fontSize: '14px', color: '#475569' }}>{e.funcaoProtegida ?? '—'}</td>
                 <td style={{ padding: '12px 16px', fontSize: '14px', color: '#475569' }}>{e.area.planta.nome}</td>
                 <td style={{ padding: '12px 16px', fontSize: '14px', color: '#475569' }}>{e.area.nome}</td>
                 <td style={{ padding: '12px 16px' }}>
@@ -197,12 +205,22 @@ export default function EquipamentosPage() {
             </div>
 
             <div style={{ marginBottom: '16px' }}>
-              <label className="field-label">Descrição <span className="field-required">*</span></label>
+              <label className="field-label">Nome <span className="field-required">*</span></label>
               <input
                 value={form.descricao}
                 onChange={e => setForm(f => ({ ...f, descricao: e.target.value }))}
                 className="field-input"
-                placeholder="Ex: Controlador de Fluxo da Linha 1"
+                placeholder="Ex: Sensor de nível do tanque de licor"
+              />
+            </div>
+
+            <div style={{ marginBottom: '16px' }}>
+              <label className="field-label">Função do intertravamento <span className="field-required">*</span></label>
+              <input
+                value={form.funcaoProtegida}
+                onChange={e => setForm(f => ({ ...f, funcaoProtegida: e.target.value }))}
+                className="field-input"
+                placeholder="Ex: Trip de nível alto do tanque de licor"
               />
             </div>
 

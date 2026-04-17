@@ -1,5 +1,6 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
+import { usePathname } from 'next/navigation'
 import Sidebar from './Sidebar'
 import MobileNav from './MobileNav'
 import MobileHeader from './MobileHeader'
@@ -27,6 +28,13 @@ interface Props {
 }
 
 export default function AppLayoutClient({ children, user, perfisReais, plantas, perfilInicial }: Props) {
+  const pathname = usePathname()
+
+  // Rotas que gerenciam o próprio header/nav mobile (experience "app nativo")
+  const isNativeMobileRoute =
+    pathname.startsWith('/solicitacoes/nova') ||
+    (/^\/solicitacoes\/.+/.test(pathname) && !pathname.endsWith('/solicitacoes'))
+
   const [perfilAtivo, setPerfilAtivo] = useState<string>(perfilInicial)
   const [plantaAtiva, setPlantaAtiva] = useState<string>('')
   const [notifCount, setNotifCount] = useState(0)
@@ -115,23 +123,25 @@ export default function AppLayoutClient({ children, user, perfisReais, plantas, 
         />
       </div>
 
-      {/* Main — com header mobile no topo */}
-      <main className="flex-1 overflow-auto pb-20 md:pb-0 min-w-0">
-        <MobileHeader
-          user={user}
-          perfil={perfilAtivo}
-          perfisReais={perfisReais}
-          planta={plantaAtiva}
-          plantas={plantas}
-          notifCount={notifCount}
-          onToggleNotif={() => setShowNotif(s => !s)}
-          onSwitchPerfil={switchPerfil}
-          onSwitchPlanta={switchPlanta}
-        />
+      {/* Main */}
+      <main className={`flex-1 overflow-auto min-w-0 ${isNativeMobileRoute ? 'md:pb-0' : 'pb-20 md:pb-0'}`}>
+        {!isNativeMobileRoute && (
+          <MobileHeader
+            user={user}
+            perfil={perfilAtivo}
+            perfisReais={perfisReais}
+            planta={plantaAtiva}
+            plantas={plantas}
+            notifCount={notifCount}
+            onToggleNotif={() => setShowNotif(s => !s)}
+            onSwitchPerfil={switchPerfil}
+            onSwitchPlanta={switchPlanta}
+          />
+        )}
         {children}
       </main>
 
-      <MobileNav isAprovador={isAprovador} isSolicitante={isSolicitante} />
+      {!isNativeMobileRoute && <MobileNav isAprovador={isAprovador} isSolicitante={isSolicitante} />}
 
       {/* Notification drawer — global, fora do sidebar para não ser cortado */}
       <NotificacaoDrawer
