@@ -163,7 +163,7 @@ export function getAcoesPermitidas(opts: {
     if (status === 'DESABILITADO') {
       acoes.push({
         id: 'CONCLUIR_REABILITACAO',
-        label: 'Enviar para validação',
+        label: 'Registrar reabilitação',
         icon: 'task_alt',
         variant: 'primary',
         requiresConfirmation: true,

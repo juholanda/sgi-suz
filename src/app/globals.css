@@ -99,8 +99,8 @@
   /* Em andamento */
   --color-status-execucao-autorizada: #2563EB;
   --color-status-em-execucao: #0038A8;
-  /* Alerta operacional — intertravamento desabilitado */
-  --color-status-desabilitado: #EA580C;
+  /* Alerta operacional — intertravamento desabilitado (vermelho crítico) */
+  --color-status-desabilitado: #DC2626;
   /* Retorno à segurança */
   --color-status-em-reabilitacao: #0D9488;
   --color-status-em-validacao-da-reabilitacao: #0F766E;
@@ -168,6 +168,15 @@
   --font-weight-bold: 700;
 }
 /* TOKENS:END */
+
+/* Animações de pulse removidas — UI estática por opção de design */
+
+/* ─── Hide scrollbar utility ────────────────────────────────────────── */
+.overflow-x-auto::-webkit-scrollbar,
+[style*="overflow-x: auto"]::-webkit-scrollbar,
+[style*="overflowX: auto"]::-webkit-scrollbar {
+  display: none;
+}
 
 @layer base {
   * {
@@ -335,6 +344,9 @@ body {
 /* Base field input */
 .field-input {
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   height: 40px;
   padding: 0 var(--space-4);   /* 0 12px */
   font-size: var(--font-size-base);
@@ -348,6 +360,32 @@ body {
     border-color 120ms ease,
     box-shadow 120ms ease;
   line-height: 1;
+}
+
+/* Native date/time inputs have intrinsic width on iOS/Safari that overflows
+   grid/flex containers. Force them to shrink to the container while keeping
+   the native appearance (so the selected value stays vertically centered). */
+input.field-input[type="date"],
+input.field-input[type="datetime-local"],
+input.field-input[type="time"],
+input.field-input[type="month"],
+input.field-input[type="week"] {
+  -webkit-min-logical-width: 0;
+  min-width: 0;
+  max-width: 100%;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Zero the internal iOS date editor min-width (caused overflow on small screens) */
+input.field-input[type="date"]::-webkit-date-and-time-value,
+input.field-input[type="datetime-local"]::-webkit-date-and-time-value,
+input.field-input[type="time"]::-webkit-date-and-time-value,
+input.field-input[type="month"]::-webkit-date-and-time-value,
+input.field-input[type="week"]::-webkit-date-and-time-value {
+  min-width: 0;
+  max-width: 100%;
+  text-align: left;
 }
 
 /* Textarea variant */
@@ -647,4 +685,61 @@ select.field-input {
   --radius-md: 4px;
   --radius-lg: 4px;
   --radius-xl: 6px;
+}
+
+/* ── Mobile typography scale ───────────────────────────────────────────────
+   No mobile a escala sobe um degrau para manter hierarquia coerente e
+   evitar o auto-zoom do iOS (que dispara quando font-size < 16px em inputs).
+   Desktop não é afetado.
+   ────────────────────────────────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  :root {
+    --font-size-2xs: 11px;   /* era 10 → captions muito pequenas */
+    --font-size-xs:  12px;   /* era 12 → mantém (hints, badges) */
+    --font-size-sm:  14px;   /* era 13 → labels de campo */
+    --font-size-base: 16px;  /* era 14 → corpo de texto e inputs */
+    --font-size-md:  18px;   /* era 16 → títulos médios */
+    --font-size-lg:  20px;   /* era 18 → títulos de seção */
+  }
+
+  /* Garante que inputs não disparam zoom mesmo com fontSize inline */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Alvos de toque confortáveis (Apple HIG: mínimo 44px) */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select {
+    min-height: 48px !important;
+  }
+
+  /* Checkbox e radio maiores para toque fácil */
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 20px !important;
+    height: 20px !important;
+    min-height: unset !important;
+  }
+
+  /* Botões — alvos de toque maiores, fonte proporcional à escala mobile */
+  .btn-sm {
+    height: 40px;
+    font-size: 14px;
+  }
+  .btn-md {
+    height: 48px;
+    font-size: 16px;
+  }
+  .btn-lg {
+    height: 52px;
+    font-size: 18px;
+  }
+
+  /* Link button — área de toque mínima sem visual de bloco */
+  .btn-link {
+    min-height: 40px;
+    display: inline-flex;
+    align-items: center;
+    font-size: 14px;
+  }
 }

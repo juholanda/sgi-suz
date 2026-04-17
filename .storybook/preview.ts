@@ -4,6 +4,14 @@ import tokens from '../design-system/tokens';
 
 const preview: Preview = {
   parameters: {
+    // Garante que componentes que usam next/navigation (ClickableCard, etc.)
+    // recebam um router mockado em Docs mode sem crash
+    nextjs: {
+      appDirectory: true,
+      navigation: {
+        pathname: '/',
+      },
+    },
     controls: {
       matchers: {
        color: /(background|color)$/i,

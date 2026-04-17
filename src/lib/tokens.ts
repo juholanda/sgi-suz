@@ -53,9 +53,10 @@ export const tokens = {
       // Em andamento — trabalho ativo (azul)
       EXECUCAO_AUTORIZADA: { bg: '#EFF6FF', text: '#1E40AF', border: '#93C5FD', dot: '#2563EB' },
 
-      // Alerta operacional — ⚠ intertravamento DESABILITADO (laranja forte)
-      // Este é o estado mais crítico do ponto de vista de segurança
-      DESABILITADO: { bg: '#FFF7ED', text: '#7C2D12', border: '#FB923C', dot: '#EA580C' },
+      // Alerta operacional — ⚠ intertravamento DESABILITADO (vermelho de alarme)
+      // Este é o estado mais crítico do ponto de vista de segurança — usa vermelho
+      // para diferenciar claramente dos estados "em análise" (laranja/âmbar)
+      DESABILITADO: { bg: '#FEE2E2', text: '#7F1D1D', border: '#F87171', dot: '#DC2626' },
 
       // Retorno à segurança — validação da reabilitação (âmbar)
       EM_VALIDACAO_DA_REABILITACAO:  { bg: '#FEF5E5', text: '#AC6F00', border: '#F9D89C', dot: '#AC6F00' },

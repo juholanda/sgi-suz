@@ -24,11 +24,24 @@ export interface ClickableCardProps {
   className?: string
 }
 
+// Safe router hook — returns null if not inside a Next.js app router (e.g. Storybook docs)
+function useSafeRouter() {
+  try {
+    return useRouter()
+  } catch {
+    return null
+  }
+}
+
 export function ClickableCard({ href, children, style, className }: ClickableCardProps) {
-  const router = useRouter()
+  const router = useSafeRouter()
 
   function navigate() {
-    router.push(href)
+    if (router) {
+      router.push(href)
+    } else if (typeof window !== 'undefined' && href && href !== '#') {
+      window.location.href = href
+    }
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLDivElement>) {

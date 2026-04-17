@@ -17,6 +17,7 @@ const TabsList = React.forwardRef<
       "w-full border-b border-[#E2E8F0] flex items-center gap-x-1 overflow-x-auto text-sm",
       className,
     )}
+    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' } as React.CSSProperties}
     aria-label="Navegação por abas"
     {...props}
   />

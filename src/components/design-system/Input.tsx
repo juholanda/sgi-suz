@@ -103,7 +103,7 @@ function FieldWrapper({
   children: React.ReactNode
 }) {
   return (
-    <div>
+    <div style={{ minWidth: 0 }}>
       {label && (
         <label className="field-label" htmlFor={id}>
           {renderLabel(label)}
