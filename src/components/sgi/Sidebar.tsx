@@ -119,6 +119,12 @@ export default function Sidebar({
 
   const W = collapsed ? '68px' : '240px'
 
+  // Publica largura do sidebar como CSS var global — usada por footers fixos
+  // (ex: AcoesFooter) para respeitar o espaço ocupado em desktop.
+  useEffect(() => {
+    document.documentElement.style.setProperty('--sgi-sidebar-w', W)
+  }, [W])
+
   return (
     <aside
       className="flex flex-col shrink-0 h-full relative"

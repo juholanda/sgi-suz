@@ -252,8 +252,16 @@ export default function AcoesFooter({
 
   return (
     <>
+      {/* Em md+ o footer respeita a largura do sidebar (CSS var publicada
+          pelo componente Sidebar). Em mobile fica edge-to-edge. */}
+      <style>{`
+        @media (min-width: 768px) {
+          .sgi-acoes-footer { left: var(--sgi-sidebar-w, 240px) !important; }
+        }
+      `}</style>
       {/* Fixed footer — always visible at viewport bottom */}
       <div
+        className="sgi-acoes-footer"
         style={{
           position: 'fixed',
           bottom: 0,
