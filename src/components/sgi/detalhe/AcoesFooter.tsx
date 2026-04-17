@@ -40,37 +40,51 @@ function Modal({
   onClose: () => void
   wide?: boolean
 }) {
+  const maxW = wide ? 560 : 460
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 overflow-y-auto"
       style={{ background: 'rgba(0,0,0,0.4)' }}
+      onClick={onClose}
     >
       <div
-        className="bg-white w-full my-4 p-6"
-        style={{ borderRadius: 8, maxWidth: wide ? 640 : 480 }}
+        className="bg-white w-full p-5 sm:p-6 overflow-y-auto"
+        style={{
+          borderRadius: '16px 16px 0 0',
+          maxHeight: '92vh',
+          maxWidth: maxW,
+        }}
+        onClick={e => e.stopPropagation()}
       >
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-          <h3 style={{ fontSize: 16, fontWeight: 600, color: '#0F172A', margin: 0 }}>{title}</h3>
-          <button
-            onClick={onClose}
-            style={{
-              width: 28,
-              height: 28,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#94A3B8',
-              fontSize: 18,
-              borderRadius: 4,
-            }}
-          >
-            {'\u2715'}
-          </button>
+        <style>{`
+          @media (min-width: 640px) {
+            .sgi-modal-card { border-radius: 10px !important; }
+          }
+        `}</style>
+        <div className="sgi-modal-card">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+            <h3 style={{ fontSize: 16, fontWeight: 600, color: '#0F172A', margin: 0 }}>{title}</h3>
+            <button
+              onClick={onClose}
+              style={{
+                width: 32,
+                height: 32,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#F1F5F9',
+                border: 'none',
+                cursor: 'pointer',
+                color: '#64748B',
+                fontSize: 18,
+                borderRadius: 8,
+              }}
+            >
+              {'\u2715'}
+            </button>
+          </div>
+          {children}
         </div>
-        {children}
       </div>
     </div>
   )
@@ -206,7 +220,7 @@ export default function AcoesFooter({
         setModal('CHECKLIST_REAB')
         break
       case 'CONCLUIR_REABILITACAO':
-        setModal('CONCLUIR_REABILITACAO')
+        setModal('CHECKLIST_REAB')
         break
       case 'APROVAR':
         setModal('APROVAR')
@@ -238,12 +252,13 @@ export default function AcoesFooter({
 
   return (
     <>
-      {/* Sticky footer — visible at the bottom, respects sidebar */}
+      {/* Fixed footer — always visible at viewport bottom */}
       <div
-        className="fixed-footer-actions"
         style={{
-          position: 'sticky',
+          position: 'fixed',
           bottom: 0,
+          left: 0,
+          right: 0,
           zIndex: 40,
           background: '#FFFFFF',
           borderTop: '1px solid #E2E8F0',
@@ -273,39 +288,153 @@ export default function AcoesFooter({
           )}
 
           {/* Action buttons */}
-          {acoes.length > 0 && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-              {acoes.map(acao => {
-                const style = getButtonStyle(acao.variant)
-                return (
-                  <button
-                    key={acao.id}
-                    onClick={() => handleAcaoClick(acao)}
-                    disabled={loading}
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      padding: '8px 16px',
-                      fontSize: 13,
-                      fontWeight: 600,
-                      borderRadius: 6,
-                      cursor: loading ? 'not-allowed' : 'pointer',
-                      opacity: loading ? 0.6 : 1,
-                      transition: 'opacity 150ms',
-                      whiteSpace: 'nowrap',
-                      ...style,
-                    }}
+          {acoes.length > 0 && (() => {
+            const aprovarAcao = acoes.find(a => a.id === 'APROVAR')
+            const rejeitarAcao = acoes.find(a => a.id === 'REJEITAR')
+            const isAprovarRejeitarPair = !!aprovarAcao && !!rejeitarAcao && acoes.length === 2
+
+            return (
+              <>
+                {/* ── Mobile: Rejeitar (esq, vermelho) + Aprovar (dir, verde) full-width ── */}
+                {isAprovarRejeitarPair && (
+                  <div className="sm:hidden grid grid-cols-2 gap-2.5">
+                    <button
+                      onClick={() => handleAcaoClick(rejeitarAcao!)}
+                      disabled={loading}
+                      style={{
+                        height: 48,
+                        fontSize: 16,
+                        fontWeight: 600,
+                        background: '#DC2626',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: 8,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.6 : 1,
+                      }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 18, lineHeight: 1 }}>thumb_down</span>
+                      Rejeitar
+                    </button>
+                    <button
+                      onClick={() => handleAcaoClick(aprovarAcao!)}
+                      disabled={loading}
+                      style={{
+                        height: 48,
+                        fontSize: 16,
+                        fontWeight: 600,
+                        background: '#16A34A',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: 8,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 6,
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.6 : 1,
+                      }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 18, lineHeight: 1 }}>thumb_up</span>
+                      Aprovar
+                    </button>
+                  </div>
+                )}
+
+                {/* ── Desktop: par APROVAR/REJEITAR com Rejeitar (esq, vermelho) + Aprovar (dir, verde) ── */}
+                {isAprovarRejeitarPair ? (
+                  <div className="hidden sm:flex items-center gap-2">
+                    <button
+                      onClick={() => handleAcaoClick(rejeitarAcao!)}
+                      disabled={loading}
+                      className="text-sm"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '8px 16px',
+                        fontWeight: 600,
+                        background: '#DC2626',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: 6,
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.6 : 1,
+                        transition: 'opacity 150ms',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>thumb_down</span>
+                      Rejeitar
+                    </button>
+                    <button
+                      onClick={() => handleAcaoClick(aprovarAcao!)}
+                      disabled={loading}
+                      className="text-sm"
+                      style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        padding: '8px 16px',
+                        fontWeight: 600,
+                        background: '#16A34A',
+                        color: '#FFFFFF',
+                        border: 'none',
+                        borderRadius: 6,
+                        cursor: loading ? 'not-allowed' : 'pointer',
+                        opacity: loading ? 0.6 : 1,
+                        transition: 'opacity 150ms',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>thumb_up</span>
+                      Aprovar
+                    </button>
+                  </div>
+                ) : (
+                  /* ── Desktop: demais ações (não é par APROVAR/REJEITAR) ── */
+                  <div
+                    className="flex"
+                    style={{ flexWrap: 'wrap', gap: 8, alignItems: 'center' }}
                   >
-                    <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>
-                      {acao.icon}
-                    </span>
-                    {acao.label}
-                  </button>
-                )
-              })}
-            </div>
-          )}
+                    {acoes.map(acao => {
+                      const style = getButtonStyle(acao.variant)
+                      return (
+                        <button
+                          key={acao.id}
+                          onClick={() => handleAcaoClick(acao)}
+                          disabled={loading}
+                          className="text-[13px] sm:text-sm"
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '8px 16px',
+                            fontWeight: 600,
+                            borderRadius: 6,
+                            cursor: loading ? 'not-allowed' : 'pointer',
+                            opacity: loading ? 0.6 : 1,
+                            transition: 'opacity 150ms',
+                            whiteSpace: 'nowrap',
+                            ...style,
+                          }}
+                        >
+                          <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>
+                            {acao.icon}
+                          </span>
+                          {acao.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </>
+            )
+          })()}
         </div>
       </div>
 
@@ -419,33 +548,66 @@ export default function AcoesFooter({
 
       {/* Checklist Desabilitacao */}
       {modal === 'CHECKLIST_DESAB' && (
-        <Modal title="Checklist de Execucao em Campo" onClose={() => setModal(null)} wide>
-          <div style={{ padding: '8px 12px', background: '#FEF3C7', color: '#92400E', borderRadius: 6, fontSize: 13, marginBottom: 16 }}>
-            Leia atentamente cada item antes de responder. Todos os itens sao obrigatorios. N.A. deve ser justificado.
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <Modal title="Checklist de Execução em Campo" onClose={() => setModal(null)} wide>
+          <p style={{ fontSize: 13, color: '#64748B', marginBottom: 16, marginTop: 0 }}>
+            Leia atentamente cada item antes de responder. N.A. deve ser justificado.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {checklistDesab.map((item, i) => {
               if (item.hidden) return null
+              const selected = item.resposta
               return (
-                <div key={item.numero} style={{ border: '1px solid #E2E8F0', borderRadius: 6, padding: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 24, padding: '2px 6px', background: '#EBF0FB', color: '#0038A8', borderRadius: 4, fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{item.numero}</span>
-                    <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.4 }}>{item.descricao}</p>
+                <div key={item.numero}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 22, padding: '2px 6px', background: '#F1F5F9', color: '#64748B', borderRadius: 4, fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{item.numero}</span>
+                    <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.4, flex: 1 }}>{item.descricao}</p>
+                    <span style={{ fontSize: 11, color: '#CBD5E1', whiteSpace: 'nowrap', flexShrink: 0 }}>Obrigatório</span>
                   </div>
-                  <div style={{ display: 'flex', gap: 12, marginLeft: 34 }}>
-                    {(['SIM', 'NA'] as const).map(opt => (
-                      <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                        <input type="radio" name={`desab-${item.numero}`} value={opt} checked={item.resposta === opt} onChange={() => updateChecklist(setChecklistDesab, i, 'resposta', opt)} style={{ accentColor: '#0038A8' }} />
-                        <span style={{ fontSize: 13, fontWeight: 500, color: opt === 'SIM' ? '#16A34A' : '#6B7280' }}>{opt === 'NA' ? 'N.A.' : 'SIM'}</span>
-                      </label>
-                    ))}
+                  <div style={{ display: 'flex', gap: 8, marginLeft: 30 }}>
+                    {(['SIM', 'NA'] as const).map(opt => {
+                      const isActive = selected === opt
+                      const cardBorder = isActive
+                        ? (opt === 'SIM' ? '#16A34A' : '#D97706')
+                        : '#E2E8F0'
+                      const textColor = isActive
+                        ? (opt === 'SIM' ? '#16A34A' : '#92400E')
+                        : '#94A3B8'
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => updateChecklist(setChecklistDesab, i, 'resposta', opt)}
+                          style={{
+                            flex: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            padding: '10px 12px',
+                            background: '#FFFFFF',
+                            border: `2px solid ${cardBorder}`,
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            transition: 'all 150ms',
+                          }}
+                        >
+                          {isActive && (
+                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: textColor, lineHeight: 1 }}>
+                              {opt === 'SIM' ? 'check_circle' : 'help'}
+                            </span>
+                          )}
+                          <span style={{ fontSize: 13, fontWeight: 600, color: textColor }}>
+                            {opt === 'SIM' ? 'Sim' : 'N.A.'}
+                          </span>
+                        </button>
+                      )
+                    })}
                   </div>
                   {item.resposta === 'NA' && (
-                    <div style={{ marginLeft: 34, marginTop: 8 }}>
-                      <input className="w-full px-3 py-1.5 text-sm border outline-none" style={{ borderColor: '#EAB308', borderRadius: 6 }} placeholder="Justificativa obrigatoria para N.A. *" value={item.observacao} onChange={e => updateChecklist(setChecklistDesab, i, 'observacao', e.target.value)} />
+                    <div style={{ marginLeft: 30, marginTop: 8 }}>
+                      <input className="w-full px-3 py-1.5 text-sm border outline-none" style={{ borderColor: '#EAB308', borderRadius: 6 }} placeholder="Justificativa obrigatória para N.A. *" value={item.observacao} onChange={e => updateChecklist(setChecklistDesab, i, 'observacao', e.target.value)} />
                     </div>
                   )}
-                  {item.resposta === '' && <p style={{ marginLeft: 34, marginTop: 4, fontSize: 11, color: '#EF4444', marginBottom: 0 }}>Item obrigatorio</p>}
                 </div>
               )
             })}
@@ -459,9 +621,9 @@ export default function AcoesFooter({
               disabled={!checklistValido(checklistDesab) || checklistDesab.some(i => !i.hidden && i.resposta === 'NA' && !i.observacao.trim()) || loading}
               onClick={() => executarAcao('CONFIRMAR_DESABILITACAO', { checklistItems: checklistDesab.filter(i => !i.hidden).map(i => ({ numero: i.numero, descricao: i.descricao, resposta: i.resposta, observacao: i.observacao || undefined })) })}
               className="px-5 py-2 text-sm font-medium text-white"
-              style={{ background: checklistValido(checklistDesab) && !checklistDesab.some(i => !i.hidden && i.resposta === 'NA' && !i.observacao.trim()) ? '#EA580C' : '#94A3B8', borderRadius: 6, border: 'none', cursor: 'pointer' }}
+              style={{ background: checklistValido(checklistDesab) && !checklistDesab.some(i => !i.hidden && i.resposta === 'NA' && !i.observacao.trim()) ? '#0038A8' : '#94A3B8', borderRadius: 6, border: 'none', cursor: 'pointer' }}
             >
-              {loading ? 'Confirmando...' : 'Confirmar Desabilitacao'}
+              {loading ? 'Confirmando...' : 'Confirmar Desabilitação'}
             </button>
           </div>
         </Modal>
@@ -469,45 +631,81 @@ export default function AcoesFooter({
 
       {/* Checklist Reabilitacao */}
       {modal === 'CHECKLIST_REAB' && (
-        <Modal title="Checklist de Reabilitacao" onClose={() => setModal(null)} wide>
-          <div style={{ padding: '8px 12px', background: '#CCFBF1', color: '#0F766E', borderRadius: 6, fontSize: 13, marginBottom: 16 }}>
-            Confirme cada item antes de concluir a reabilitacao. Todos os itens sao obrigatorios.
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {checklistReab.map((item, i) => (
-              <div key={item.numero} style={{ border: '1px solid #E2E8F0', borderRadius: 6, padding: 12 }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, marginBottom: 10 }}>
-                  <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 24, padding: '2px 6px', background: '#CCFBF1', color: '#0F766E', borderRadius: 4, fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{item.numero}</span>
-                  <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.4 }}>
-                    {item.numero === 1 && tipo === 'FISICO' ? `${item.descricao} (incluindo cartao de advertencia)` : item.descricao}
-                  </p>
-                </div>
-                <div style={{ display: 'flex', gap: 12, marginLeft: 34 }}>
-                  {(['SIM', 'NA'] as const).map(opt => (
-                    <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                      <input type="radio" name={`reab-${item.numero}`} value={opt} checked={item.resposta === opt} onChange={() => updateChecklist(setChecklistReab, i, 'resposta', opt)} style={{ accentColor: '#0D9488' }} />
-                      <span style={{ fontSize: 13, fontWeight: 500, color: opt === 'SIM' ? '#16A34A' : '#6B7280' }}>{opt === 'NA' ? 'N.A.' : 'SIM'}</span>
-                    </label>
-                  ))}
-                </div>
-                {item.resposta === 'NA' && (
-                  <div style={{ marginLeft: 34, marginTop: 8 }}>
-                    <input className="w-full px-3 py-1.5 text-sm border outline-none" style={{ borderColor: '#EAB308', borderRadius: 6 }} placeholder="Justificativa para N.A. *" value={item.observacao} onChange={e => updateChecklist(setChecklistReab, i, 'observacao', e.target.value)} />
+        <Modal title="Checklist de Reabilitação" onClose={() => setModal(null)} wide>
+          <p style={{ fontSize: 13, color: '#64748B', marginBottom: 16, marginTop: 0 }}>
+            Confirme cada item antes de concluir a reabilitação. N.A. deve ser justificado.
+          </p>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {checklistReab.map((item, i) => {
+              const selected = item.resposta
+              const descricao = item.numero === 1 && tipo === 'FISICO'
+                ? `${item.descricao} (incluindo cartão de advertência)`
+                : item.descricao
+              return (
+                <div key={item.numero}>
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 6 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', minWidth: 22, padding: '2px 6px', background: '#F1F5F9', color: '#64748B', borderRadius: 4, fontSize: 11, fontWeight: 700, flexShrink: 0 }}>{item.numero}</span>
+                    <p style={{ fontSize: 13, color: '#374151', margin: 0, lineHeight: 1.4, flex: 1 }}>{descricao}</p>
+                    <span style={{ fontSize: 11, color: '#CBD5E1', whiteSpace: 'nowrap', flexShrink: 0 }}>Obrigatório</span>
                   </div>
-                )}
-                {item.resposta === '' && <p style={{ marginLeft: 34, marginTop: 4, fontSize: 11, color: '#EF4444', marginBottom: 0 }}>Item obrigatorio</p>}
-              </div>
-            ))}
+                  <div style={{ display: 'flex', gap: 8, marginLeft: 30 }}>
+                    {(['SIM', 'NA'] as const).map(opt => {
+                      const isActive = selected === opt
+                      const cardBorder = isActive
+                        ? (opt === 'SIM' ? '#16A34A' : '#D97706')
+                        : '#E2E8F0'
+                      const textColor = isActive
+                        ? (opt === 'SIM' ? '#16A34A' : '#92400E')
+                        : '#94A3B8'
+                      return (
+                        <button
+                          key={opt}
+                          type="button"
+                          onClick={() => updateChecklist(setChecklistReab, i, 'resposta', opt)}
+                          style={{
+                            flex: 1,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            gap: 6,
+                            padding: '10px 12px',
+                            background: '#FFFFFF',
+                            border: `2px solid ${cardBorder}`,
+                            borderRadius: 8,
+                            cursor: 'pointer',
+                            transition: 'all 150ms',
+                          }}
+                        >
+                          {isActive && (
+                            <span className="material-symbols-outlined" style={{ fontSize: 16, color: textColor, lineHeight: 1 }}>
+                              {opt === 'SIM' ? 'check_circle' : 'help'}
+                            </span>
+                          )}
+                          <span style={{ fontSize: 13, fontWeight: 600, color: textColor }}>
+                            {opt === 'SIM' ? 'Sim' : 'N.A.'}
+                          </span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                  {item.resposta === 'NA' && (
+                    <div style={{ marginLeft: 30, marginTop: 8 }}>
+                      <input className="w-full px-3 py-1.5 text-sm border outline-none" style={{ borderColor: '#EAB308', borderRadius: 6 }} placeholder="Justificativa obrigatória para N.A. *" value={item.observacao} onChange={e => updateChecklist(setChecklistReab, i, 'observacao', e.target.value)} />
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </div>
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 20 }}>
             <button onClick={() => setModal(null)} className="px-4 py-2 text-sm border" style={{ borderColor: '#E2E8F0', borderRadius: 6, color: '#475569', background: 'white', cursor: 'pointer' }}>Cancelar</button>
             <button
               disabled={!checklistValido(checklistReab) || checklistReab.some(i => i.resposta === 'NA' && !i.observacao.trim()) || loading}
-              onClick={() => executarAcao('INICIAR_REABILITACAO_COMPLETA', { checklistItems: checklistReab.map(i => ({ numero: i.numero, descricao: i.descricao, resposta: i.resposta, observacao: i.observacao || undefined })) })}
+              onClick={() => executarAcao('CONCLUIR_REABILITACAO', { checklistItems: checklistReab.map(i => ({ numero: i.numero, descricao: i.descricao, resposta: i.resposta, observacao: i.observacao || undefined })) })}
               className="px-5 py-2 text-sm font-medium text-white"
-              style={{ background: checklistValido(checklistReab) && !checklistReab.some(i => i.resposta === 'NA' && !i.observacao.trim()) ? '#0D9488' : '#94A3B8', borderRadius: 6, border: 'none', cursor: 'pointer' }}
+              style={{ background: checklistValido(checklistReab) && !checklistReab.some(i => i.resposta === 'NA' && !i.observacao.trim()) ? '#0038A8' : '#94A3B8', borderRadius: 6, border: 'none', cursor: 'pointer' }}
             >
-              {loading ? 'Confirmando...' : 'Concluir Reabilitacao'}
+              {loading ? 'Confirmando...' : 'Confirmar Reabilitação'}
             </button>
           </div>
         </Modal>

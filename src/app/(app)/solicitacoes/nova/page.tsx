@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { ClasseBadge } from '@/components/sgi/ClasseBadge'
+import { StatusBadge } from '@/components/sgi/StatusBadge'
 import { ClasseNum } from '@/lib/tokens'
 import { Input, Select, Textarea } from '@/components/design-system/Input'
 import { Checkbox } from '@/components/design-system/Checkbox'
@@ -95,9 +96,9 @@ const COR_CLASSE: Record<string, string> = {
 }
 
 const TIPO_OPTIONS = [
-  { value: 'LOGICO', label: 'Lógico', description: 'Instrumento lógico de controle' },
-  { value: 'FISICO', label: 'Físico', description: 'Bloqueio físico / válvula' },
-  { value: 'DISPOSITIVO_SEGURANCA', label: 'Disp. Segurança', description: 'Dispositivo de segurança' },
+  { value: 'LOGICO', label: 'Lógico', description: 'Instrumento lógico de controle', icon: 'memory' },
+  { value: 'FISICO', label: 'Físico', description: 'Bloqueio físico / válvula', icon: 'precision_manufacturing' },
+  { value: 'DISPOSITIVO_SEGURANCA', label: 'Disp. Segurança', description: 'Dispositivo de segurança', icon: 'shield' },
 ]
 
 function Icon({ name, size = 20 }: { name: string; size?: number }) {
@@ -133,6 +134,7 @@ export default function NovaSolicitacaoPage() {
   const [etapa, setEtapa] = useState<Etapa>(1)
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<FieldError>({})
+  const [apiError, setApiError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const scrollRef    = useRef<HTMLDivElement>(null)
   const [submitted, setSubmitted] = useState<SubmittedData | null>(null)
@@ -229,7 +231,7 @@ export default function NovaSolicitacaoPage() {
       .then((data: any) => {
         if (data.error) return
         setEditProtocolo(data.protocolo)
-        const fmtDate = (d: string | null) => d ? d.slice(0, 10) : ''
+        const fmtDate = (d: string | null) => d ? d.slice(0, 16) : '' // YYYY-MM-DDTHH:mm for datetime-local
         setForm({
           areaId: data.areaId ?? '',
           equipamentoId: data.equipamentoId ?? '',
@@ -322,11 +324,6 @@ export default function NovaSolicitacaoPage() {
 
   function validateEtapa2(): boolean {
     const e: FieldError = {}
-    // Must have at least the mandatory measures selected (they auto-select, so this is almost always valid)
-    const mandatoryCount = medidas.filter(m => m.obrigatoria).length
-    if (form.medidasIds.length < mandatoryCount) {
-      e.medidasIds = 'As medidas obrigatórias devem ser selecionadas'
-    }
     setErrors(e)
     return Object.keys(e).length === 0
   }
@@ -378,6 +375,7 @@ export default function NovaSolicitacaoPage() {
 
   async function handleSalvarRascunho() {
     setLoading(true)
+    setApiError(null)
     try {
       const formData = new FormData()
       formData.append('data', JSON.stringify({
@@ -391,7 +389,14 @@ export default function NovaSolicitacaoPage() {
         method: isEditMode ? 'PUT' : 'POST',
         body: formData,
       })
-      if (res.ok) router.push('/solicitacoes')
+      if (res.ok) {
+        router.push('/solicitacoes')
+      } else {
+        const err = await res.json().catch(() => null)
+        setApiError(err?.error ? JSON.stringify(err.error) : `Erro ao salvar rascunho (${res.status})`)
+      }
+    } catch (e: any) {
+      setApiError(e.message ?? 'Erro de conexão ao salvar rascunho')
     } finally {
       setLoading(false)
     }
@@ -399,6 +404,7 @@ export default function NovaSolicitacaoPage() {
 
   async function handleEnviar() {
     setLoading(true)
+    setApiError(null)
     try {
       const formData = new FormData()
       formData.append('data', JSON.stringify({
@@ -412,6 +418,11 @@ export default function NovaSolicitacaoPage() {
         method: isEditMode ? 'PUT' : 'POST',
         body: formData,
       })
+      if (!res.ok) {
+        const err = await res.json().catch(() => null)
+        setApiError(err?.error ? JSON.stringify(err.error) : `Erro ao enviar solicitação (${res.status})`)
+        return
+      }
       const data = await res.json()
       setSubmitted({
         id: data.id,
@@ -424,6 +435,8 @@ export default function NovaSolicitacaoPage() {
         periodoInicio: form.periodoInicio,
         periodoFim: form.periodoFim,
       })
+    } catch (e: any) {
+      setApiError(e.message ?? 'Erro de conexão ao enviar solicitação')
     } finally {
       setLoading(false)
     }
@@ -432,10 +445,15 @@ export default function NovaSolicitacaoPage() {
   // ── Tela de confirmação pós-envio ───────────────────────────────────────────
   if (submitted) {
     const cor = COR_CLASSE[submitted.classeNumero] ?? '#64748B'
-    const fmtDate = (s: string) => s ? new Date(s + 'T00:00:00').toLocaleDateString('pt-BR') : '—'
+    const fmtDate = (s: string) => {
+      if (!s) return '—'
+      // Suporta tanto 'YYYY-MM-DD' quanto 'YYYY-MM-DDTHH:mm'
+      const d = new Date(s.includes('T') ? s : s + 'T00:00:00')
+      return isNaN(d.getTime()) ? '—' : d.toLocaleDateString('pt-BR')
+    }
 
     return (
-      <div className="p-4 md:p-6 w-full max-w-2xl mx-auto">
+      <div className="p-4 md:p-6 w-full max-w-2xl mx-auto" style={{ minHeight: '100vh', background: '#FFFFFF' }}>
         {/* Success header */}
         <div className="flex flex-col items-center text-center mb-8 pt-4">
           <div
@@ -457,12 +475,7 @@ export default function NovaSolicitacaoPage() {
             <p className="text-xs font-medium mb-0.5" style={{ color: '#475569' }}>Protocolo</p>
             <p className="text-lg font-bold" style={{ color: '#0038A8' }}>{submitted.protocolo}</p>
           </div>
-          <span
-            className="text-xs font-semibold px-3 py-1"
-            style={{ background: '#DBEAFE', color: '#1D4ED8', borderRadius: '20px' }}
-          >
-            Em aprovação
-          </span>
+          <StatusBadge status="EM_APROVACAO" />
         </div>
 
         {/* Details */}
@@ -536,10 +549,10 @@ export default function NovaSolicitacaoPage() {
             variant="outline"
             size="md"
             fullWidth
-            leadingIcon="list"
-            onClick={() => router.push('/solicitacoes')}
+            leadingIcon="home"
+            onClick={() => router.push('/dashboard')}
           >
-            Minhas solicitações
+            Voltar ao início
           </Button>
         </div>
       </div>
@@ -550,8 +563,33 @@ export default function NovaSolicitacaoPage() {
     // H — White background; G — flex column so sticky footer works
     <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: '#FFFFFF' }}>
 
-      {/* I — Structured header with protocol info and tabs */}
-      <div className="px-4 md:px-6 pt-4 md:pt-6" style={{ background: '#FFFFFF' }}>
+      {/* ── Mobile native top bar (só mobile, substitui MobileHeader global) ── */}
+      <div
+        className="md:hidden flex items-center px-3 shrink-0"
+        style={{ height: 52, background: '#FFFFFF', borderBottom: '1px solid #E2E8F0' }}
+      >
+        <button
+          type="button"
+          onClick={() => router.push('/solicitacoes')}
+          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 36, height: 36, color: '#0F172A' }}
+          aria-label="Voltar"
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 24, lineHeight: 1 }}>arrow_back</span>
+        </button>
+        <span className="flex-1 text-center text-sm font-semibold" style={{ color: '#0F172A' }}>
+          {isEditMode ? 'Editar rascunho' : 'Nova solicitação'}
+        </span>
+        <button
+          type="button"
+          onClick={() => router.push('/solicitacoes')}
+          style={{ fontSize: 13, fontWeight: 500, color: '#64748B', padding: '4px 8px' }}
+        >
+          Cancelar
+        </button>
+      </div>
+
+      {/* I — Desktop header (breadcrumb + título) */}
+      <div className="hidden md:block px-6 pt-6" style={{ background: '#FFFFFF' }}>
         {/* Breadcrumb */}
         <div className="flex items-center gap-2 mb-3 md:mb-4">
           <a
@@ -560,10 +598,10 @@ export default function NovaSolicitacaoPage() {
             style={{ color: '#64748B' }}
           >
             <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>arrow_back</span>
-            <span className="hidden sm:inline">Solicitações</span>
+            Solicitações
           </a>
-          <span className="hidden sm:inline text-sm" style={{ color: '#CBD5E1' }}>/</span>
-          <span className="hidden sm:inline text-sm font-medium" style={{ color: '#0F172A' }}>{isEditMode ? 'Editar rascunho' : 'Nova solicitação'}</span>
+          <span className="text-sm" style={{ color: '#CBD5E1' }}>/</span>
+          <span className="text-sm font-medium" style={{ color: '#0F172A' }}>{isEditMode ? 'Editar rascunho' : 'Nova solicitação'}</span>
         </div>
 
         {/* Protocol / title row */}
@@ -579,7 +617,7 @@ export default function NovaSolicitacaoPage() {
           </span>
         </div>
 
-      </div>
+      </div> {/* fim desktop header */}
 
       {/* Scrollable content area */}
       <div ref={scrollRef} className="px-4 py-4 md:px-6 md:py-6" style={{ flex: 1, overflowY: 'auto', minHeight: 0 }}>
@@ -693,7 +731,7 @@ export default function NovaSolicitacaoPage() {
             {/* ETAPA 1 — Identificação */}
             {etapa === 1 && (
               <div className="space-y-5">
-                <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 1 — Equipamento e contexto</h2>
+                <h2 className="text-2xl sm:text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 1 — Equipamento e contexto</h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Select
@@ -742,20 +780,6 @@ export default function NovaSolicitacaoPage() {
                       <InfoRow icon="security" label="Função do intertravamento" value={equipSelecionado.funcaoProtegida ?? '—'} />
                       <InfoRow icon="location_on" label="Área" value={equipSelecionado.area.nome} />
                     </div>
-                    {(autoFilledTipo || autoFilledClasse) && (
-                      <div
-                        className="flex items-center gap-2 mt-2 px-3 py-2 text-xs"
-                        style={{ background: '#EBF0FB', color: '#0038A8', borderRadius: '4px', border: '1px solid #BFD0F0' }}
-                      >
-                        <span className="material-symbols-outlined" style={{ fontSize: 14, lineHeight: 1 }}>auto_fix_high</span>
-                        <span>
-                          Campos pré-preenchidos automaticamente:
-                          {autoFilledTipo && <strong className="ml-1">Tipo ({equipSelecionado.tipo})</strong>}
-                          {autoFilledTipo && autoFilledClasse && ' · '}
-                          {autoFilledClasse && <strong className="ml-1">Classe {equipSelecionado.classeNumero}</strong>}
-                        </span>
-                      </div>
-                    )}
                   </div>
                 )}
 
@@ -778,11 +802,19 @@ export default function NovaSolicitacaoPage() {
                             cursor: 'pointer',
                           }}
                         >
-                          <div
-                            className="font-semibold text-sm mb-0.5"
-                            style={{ color: isSelected ? '#0038A8' : '#0F172A' }}
-                          >
-                            {opt.label}
+                          <div className="flex items-center gap-2 mb-0.5">
+                            <span
+                              className="material-symbols-outlined"
+                              style={{ fontSize: 18, color: isSelected ? '#0038A8' : '#64748B', lineHeight: 1 }}
+                            >
+                              {opt.icon}
+                            </span>
+                            <span
+                              className="font-semibold text-base sm:text-sm"
+                              style={{ color: isSelected ? '#0038A8' : '#0F172A' }}
+                            >
+                              {opt.label}
+                            </span>
                           </div>
                           <div
                             className="text-xs"
@@ -790,9 +822,6 @@ export default function NovaSolicitacaoPage() {
                           >
                             {opt.description}
                           </div>
-                          {autoFilledTipo && isSelected && (
-                            <div className="text-xs mt-1" style={{ color: '#0038A8' }}>pré-preenchido</div>
-                          )}
                         </button>
                       )
                     })}
@@ -829,7 +858,7 @@ export default function NovaSolicitacaoPage() {
                         key={c}
                         type="button"
                         onClick={() => set('classeNumero', String(c))}
-                        className="flex-1 py-2.5 text-sm font-medium border transition-all"
+                        className="flex-1 py-2.5 text-base sm:text-sm font-medium border transition-all"
                         style={{
                           borderRadius: '6px',
                           borderColor: form.classeNumero === String(c) ? COR_CLASSE[String(c)] : '#E2E8F0',
@@ -840,9 +869,6 @@ export default function NovaSolicitacaoPage() {
                       >
                         <div className="font-semibold">Classe {c}</div>
                         <div className="text-xs opacity-80">{PRAZO_MAX[String(c)]}</div>
-                        {autoFilledClasse && form.classeNumero === String(c) && (
-                          <div className="text-xs mt-0.5" style={{ color: '#0038A8' }}>pré-preenchido</div>
-                        )}
                       </button>
                     ))}
                     {/* Classe 5 — desabilitada, RF-012 */}
@@ -850,7 +876,7 @@ export default function NovaSolicitacaoPage() {
                       <button
                         type="button"
                         disabled
-                        className="w-full py-2.5 text-sm border cursor-not-allowed opacity-40"
+                        className="w-full py-2.5 text-base sm:text-sm border cursor-not-allowed opacity-40"
                         style={{ borderRadius: '6px', borderColor: '#E2E8F0', background: '#F8FAFC', color: '#94A3B8' }}
                       >
                         <div className="font-semibold">Classe 5</div>
@@ -925,7 +951,7 @@ export default function NovaSolicitacaoPage() {
             {/* ETAPA 2 — Contingência + Anexos */}
             {etapa === 2 && (
               <div className="space-y-4">
-                <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 2 — Medidas e anexos</h2>
+                <h2 className="text-2xl sm:text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 2 — Medidas e anexos</h2>
 
                 {/* ── Bloco 1: Medidas ── */}
                 <div className="border p-5" style={{ borderColor: '#E2E8F0', borderRadius: '8px' }}>
@@ -955,23 +981,22 @@ export default function NovaSolicitacaoPage() {
                           return (
                             <label
                               key={medida.id}
+                              onClick={(e) => {
+                                e.preventDefault()
+                                const newIds = isSelected
+                                  ? form.medidasIds.filter(id => id !== medida.id)
+                                  : [...form.medidasIds, medida.id]
+                                set('medidasIds', newIds)
+                              }}
                               style={{
                                 display: 'flex',
                                 alignItems: 'flex-start',
                                 gap: 8,
-                                cursor: isObrigatorio ? 'default' : 'pointer',
+                                cursor: 'pointer',
                                 padding: '4px 0',
                               }}
                             >
-                              {/* Custom checkbox visual */}
                               <span
-                                onClick={() => {
-                                  if (isObrigatorio) return
-                                  const newIds = isSelected
-                                    ? form.medidasIds.filter(id => id !== medida.id)
-                                    : [...form.medidasIds, medida.id]
-                                  set('medidasIds', newIds)
-                                }}
                                 style={{
                                   display: 'inline-flex',
                                   width: 18,
@@ -983,8 +1008,6 @@ export default function NovaSolicitacaoPage() {
                                   border: `1.5px solid ${isSelected ? '#0038A8' : '#CBD5E1'}`,
                                   background: isSelected ? '#0038A8' : 'white',
                                   marginTop: 1,
-                                  cursor: isObrigatorio ? 'default' : 'pointer',
-                                  opacity: isObrigatorio ? 0.85 : 1,
                                   flexShrink: 0,
                                   transition: 'background 0.1s ease',
                                 }}
@@ -1041,8 +1064,8 @@ export default function NovaSolicitacaoPage() {
                         </div>
                       )}
 
-                      {/* Adicionar medida customizada */}
-                      <div style={{ display: 'flex', gap: 8 }}>
+                      {/* Adicionar medida customizada — empilhado no mobile, lado a lado no desktop */}
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <input
                           type="text"
                           placeholder="Adicionar outra medida..."
@@ -1057,11 +1080,13 @@ export default function NovaSolicitacaoPage() {
                           }}
                           style={{
                             flex: 1,
+                            minWidth: 0,
+                            width: '100%',
                             padding: '8px 12px',
-                            fontSize: 13,
                             border: '1px solid #E2E8F0',
                             borderRadius: 4,
                             outline: 'none',
+                            boxSizing: 'border-box',
                           }}
                         />
                         <button
@@ -1072,6 +1097,7 @@ export default function NovaSolicitacaoPage() {
                             set('medidasCustom', [...form.medidasCustom, novaMedida.trim()])
                             setNovaMedida('')
                           }}
+                          className="w-full sm:w-auto shrink-0"
                           style={{
                             padding: '8px 16px',
                             background: novaMedida.trim() ? '#0038A8' : '#E2E8F0',
@@ -1080,6 +1106,7 @@ export default function NovaSolicitacaoPage() {
                             border: 'none',
                             fontSize: 13,
                             cursor: novaMedida.trim() ? 'pointer' : 'not-allowed',
+                            whiteSpace: 'nowrap',
                           }}
                         >
                           Adicionar
@@ -1137,11 +1164,21 @@ export default function NovaSolicitacaoPage() {
                         >
                           {a.preview ? (
                             // eslint-disable-next-line @next/next/no-img-element
-                            <img src={a.preview} alt="" className="w-10 h-10 object-cover" style={{ borderRadius: '4px' }} />
+                            <img
+                              src={a.preview}
+                              alt=""
+                              className="w-10 h-10 object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                              style={{ borderRadius: '4px' }}
+                              onClick={() => window.open(a.preview, '_blank')}
+                            />
                           ) : (
                             <div
-                              className="w-10 h-10 flex items-center justify-center"
+                              className="w-10 h-10 flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
                               style={{ background: '#FEE2E2', borderRadius: '4px' }}
+                              onClick={() => {
+                                const url = URL.createObjectURL(a.file)
+                                window.open(url, '_blank')
+                              }}
                             >
                               <Icon name="picture_as_pdf" size={22} />
                             </div>
@@ -1169,7 +1206,7 @@ export default function NovaSolicitacaoPage() {
             {/* ETAPA 3 — Revisão */}
             {etapa === 3 && (
               <div className="space-y-5">
-                <h2 className="text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 3 — Revisão e envio</h2>
+                <h2 className="text-2xl sm:text-base font-semibold" style={{ color: '#0F172A' }}>Etapa 3 — Revisão e envio</h2>
 
                 {/* D — Lighter dividers: borderColor #F1F5F9 */}
                 <div className="border" style={{ borderColor: '#F1F5F9', borderRadius: '6px', overflow: 'hidden' }}>
@@ -1190,7 +1227,80 @@ export default function NovaSolicitacaoPage() {
                   <ResumoRow label="Motivo" value={form.motivoDesabilitacao} />
                   <ResumoRow label="Medidas" value={buildMedidasText() || '—'} last />
                   {anexos.length > 0 && (
-                    <ResumoRow label="Anexos" value={`${anexos.length} arquivo(s): ${anexos.map(a => a.file.name).join(', ')}`} last />
+                    <>
+                      <ResumoRow label="Anexos" value={`${anexos.length} arquivo(s)`} last />
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '8px 16px 12px' }}>
+                        {anexos.map((a, i) => {
+                          const isImage = a.file.type.startsWith('image/')
+                          const isPdf = a.file.type === 'application/pdf'
+                          return (
+                            <div
+                              key={i}
+                              style={{
+                                width: 80,
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 4,
+                              }}
+                            >
+                              <div
+                                onClick={() => {
+                                  const url = a.preview ?? URL.createObjectURL(a.file)
+                                  window.open(url, '_blank')
+                                }}
+                                style={{
+                                  width: 72,
+                                  height: 72,
+                                  borderRadius: 6,
+                                  border: '1px solid #E2E8F0',
+                                  overflow: 'hidden',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  background: '#F8FAFC',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                {isImage && a.preview ? (
+                                  <img
+                                    src={a.preview}
+                                    alt={a.file.name}
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                  />
+                                ) : (
+                                  <span
+                                    className="material-symbols-outlined"
+                                    style={{ fontSize: 28, color: isPdf ? '#DC2626' : '#64748B' }}
+                                  >
+                                    {isPdf ? 'picture_as_pdf' : 'description'}
+                                  </span>
+                                )}
+                              </div>
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  color: '#475569',
+                                  textAlign: 'center',
+                                  lineHeight: 1.2,
+                                  overflow: 'hidden',
+                                  textOverflow: 'ellipsis',
+                                  whiteSpace: 'nowrap',
+                                  maxWidth: 80,
+                                  display: 'block',
+                                }}
+                                title={a.file.name}
+                              >
+                                {a.file.name}
+                              </span>
+                              <span style={{ fontSize: 9, color: '#94A3B8' }}>
+                                {formatBytes(a.file.size)}
+                              </span>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </>
                   )}
                 </div>
 
@@ -1249,6 +1359,18 @@ export default function NovaSolicitacaoPage() {
         </div>
       </div>
 
+      {/* Error banner */}
+      {apiError && (
+        <div
+          className="mx-4 md:mx-6 mb-2 px-4 py-3 flex items-center gap-2 text-sm"
+          style={{ background: '#FEF2F2', border: '1px solid #FCA5A5', borderRadius: 6, color: '#991B1B' }}
+        >
+          <span className="material-symbols-outlined" style={{ fontSize: 18, color: '#DC2626' }}>error</span>
+          <span style={{ flex: 1 }}>{apiError}</span>
+          <button onClick={() => setApiError(null)} style={{ cursor: 'pointer', background: 'none', border: 'none', color: '#991B1B', fontSize: 16 }}>✕</button>
+        </div>
+      )}
+
       {/* G — Sticky footer, always at bottom */}
       <div
         className="px-4 py-3 md:px-6 md:py-4"
@@ -1260,52 +1382,45 @@ export default function NovaSolicitacaoPage() {
           boxShadow: '0 -4px 16px rgba(0,0,0,0.07)',
         }}
       >
-        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 w-full max-w-4xl mx-auto">
-          <div className="flex gap-2">
-            {/* B — Cancelar styled exactly like Anterior (same white/gray border style) */}
+        <div className="flex items-center justify-between gap-2 w-full max-w-4xl mx-auto">
+          {/* Esquerda: Cancelar (desktop) + Anterior */}
+          <div className="flex gap-2 shrink-0">
             <button
               type="button"
               onClick={() => router.push('/solicitacoes')}
-              className="text-xs sm:text-sm"
+              className="hidden md:inline-flex"
               style={{
-                display: 'inline-flex',
                 alignItems: 'center',
                 gap: 6,
                 padding: '8px 12px',
+                fontSize: 13,
                 fontWeight: 500,
                 borderRadius: '6px',
                 border: '1px solid #E2E8F0',
                 background: 'white',
                 color: '#374151',
                 cursor: 'pointer',
+                whiteSpace: 'nowrap',
               }}
             >
               Cancelar
             </button>
             {etapa > 1 && (
-              <button
+              <Button
                 type="button"
+                variant="outline"
+                size="md"
                 onClick={() => setEtapa(e => (e - 1) as Etapa)}
-                className="text-xs sm:text-sm"
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '8px 12px',
-                  fontWeight: 500,
-                  borderRadius: '6px',
-                  border: '1px solid #E2E8F0',
-                  background: 'white',
-                  color: '#374151',
-                  cursor: 'pointer',
-                }}
+                leadingIcon="arrow_back"
+                className="md:!py-2 md:!px-4 md:!text-sm"
               >
-                <span className="material-symbols-outlined" style={{ fontSize: 16, lineHeight: 1 }}>arrow_back</span>
                 Anterior
-              </button>
+              </Button>
             )}
           </div>
-          <div className="flex gap-2">
+
+          {/* Direita: Salvar rascunho + Próximo/Enviar */}
+          <div className="flex gap-2 shrink-0">
             <Button
               type="button"
               variant="secondary"
@@ -1313,9 +1428,10 @@ export default function NovaSolicitacaoPage() {
               onClick={handleSalvarRascunho}
               disabled={loading}
               leadingIcon="save"
+              className="md:!py-2 md:!px-4 md:!text-sm"
             >
-              <span className="hidden sm:inline">Salvar rascunho</span>
-              <span className="sm:hidden">Rascunho</span>
+              <span className="hidden md:inline">Salvar rascunho</span>
+              <span className="md:hidden">Salvar</span>
             </Button>
             {etapa < 3 ? (
               <Button
@@ -1324,13 +1440,12 @@ export default function NovaSolicitacaoPage() {
                 size="md"
                 onClick={avancar}
                 trailingIcon="arrow_forward"
-                fullWidth
+                className="md:!py-2 md:!px-4 md:!text-sm"
               >
-                <span className="hidden sm:inline">Próximo: {ETAPAS[etapa].label}</span>
-                <span className="sm:hidden">Próximo</span>
+                <span className="hidden lg:inline">Próximo: {ETAPAS[etapa].label}</span>
+                <span className="lg:hidden">Próximo</span>
               </Button>
             ) : (
-              /* F — "Enviar solicitação" with send icon on the right */
               <Button
                 type="button"
                 variant="primary"
@@ -1339,9 +1454,10 @@ export default function NovaSolicitacaoPage() {
                 disabled={!form.cienteRiscos}
                 loading={loading}
                 trailingIcon={loading ? undefined : 'send'}
-                fullWidth
+                className="md:!py-2 md:!px-4 md:!text-sm"
               >
-                {loading ? 'Enviando...' : 'Enviar solicitação'}
+                <span className="hidden sm:inline">{loading ? 'Enviando...' : 'Enviar solicitação'}</span>
+                <span className="sm:hidden">{loading ? '...' : 'Enviar'}</span>
               </Button>
             )}
           </div>
