@@ -214,9 +214,9 @@ export default function NovaSolicitacaoPage() {
       .then(data => {
         if (Array.isArray(data)) {
           setMedidas(data)
-          // Auto-select mandatory measures
-          const obrigatorias = data.filter((m: MedidaContingencial) => m.obrigatoria).map((m: MedidaContingencial) => m.id)
-          setForm(prev => ({ ...prev, medidasIds: obrigatorias }))
+          // Obrigatórias permanecem marcadas visualmente como "Obrigatório"
+          // (via medida.obrigatoria), mas o usuário precisa marcar o checkbox
+          // explicitamente — não selecionamos automaticamente.
         }
       })
       .catch(() => {})
@@ -539,7 +539,7 @@ export default function NovaSolicitacaoPage() {
             onClick={() => {
               setSubmitted(null)
               setEtapa(1)
-              setForm({ areaId: '', equipamentoId: '', executanteId: '', tipo: '', classeNumero: '', funcaoIntertravamento: '', motivoDesabilitacao: '', periodoInicio: '', periodoFim: '', medidasContingenciais: '', cienteRiscos: false, medidasIds: medidas.filter(m => m.obrigatoria).map(m => m.id), medidasCustom: [] })
+              setForm({ areaId: '', equipamentoId: '', executanteId: '', tipo: '', classeNumero: '', funcaoIntertravamento: '', motivoDesabilitacao: '', periodoInicio: '', periodoFim: '', medidasContingenciais: '', cienteRiscos: false, medidasIds: [], medidasCustom: [] })
               setAnexos([])
             }}
           >
