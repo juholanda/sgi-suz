@@ -36,7 +36,7 @@ export async function POST(
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params: _params }: { params: { id: string } }
 ) {
   const session = await auth()
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -44,8 +44,6 @@ export async function DELETE(
   const { perfilId } = await req.json()
   if (!perfilId) return NextResponse.json({ error: 'ID do perfil é obrigatório' }, { status: 400 })
 
-  await prisma.usuarioPerfil.delete({
-    where: { id: perfilId, userId: params.id },
-  })
+  await prisma.usuarioPerfil.delete({ where: { id: perfilId } })
   return NextResponse.json({ ok: true })
 }
