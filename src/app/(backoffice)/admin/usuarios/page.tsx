@@ -56,6 +56,64 @@ const thS = (active: boolean) => ({
   whiteSpace: 'nowrap' as const, color: active ? '#0038A8' : '#6B7280',
 })
 
+// Groups perfis by plant then by area, deduplicating roles
+function PerfisCell({ perfis }: { perfis: UsuarioPerfil[] }) {
+  if (perfis.length === 0) {
+    return <span style={{ fontSize: '12px', color: '#94A3B8' }}>Sem perfil</span>
+  }
+
+  const byPlant = new Map<string | null, {
+    nome: string | null
+    byArea: Map<string | null, { areaNome: string | null; roles: Set<string> }>
+  }>()
+
+  for (const p of perfis) {
+    const pk = p.plantaId
+    if (!byPlant.has(pk)) byPlant.set(pk, { nome: p.planta?.nome ?? null, byArea: new Map() })
+    const plant = byPlant.get(pk)!
+    const ak = p.areaId
+    if (!plant.byArea.has(ak)) plant.byArea.set(ak, { areaNome: p.area?.nome ?? null, roles: new Set() })
+    plant.byArea.get(ak)!.roles.add(p.perfil)
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      {Array.from(byPlant.entries()).map(([plantaId, { nome, byArea }]) => (
+        <div key={plantaId ?? 'global'}>
+          <div style={{
+            fontSize: '10px', fontWeight: 700, color: '#94A3B8',
+            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px',
+          }}>
+            {nome ?? 'Todas as plantas'}
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', paddingLeft: '8px', borderLeft: '2px solid #E2E8F0' }}>
+            {Array.from(byArea.entries()).map(([areaId, { areaNome, roles }]) => (
+              <div key={areaId ?? 'no-area'} style={{ display: 'flex', flexWrap: 'wrap', gap: '3px', alignItems: 'center' }}>
+                {Array.from(roles).map(perfil => {
+                  const colors = PERFIL_COLORS[perfil] ?? { bg: '#F1F5F9', text: '#475569' }
+                  return (
+                    <span key={perfil} style={{
+                      fontSize: '11px', padding: '1px 6px', fontWeight: 600,
+                      background: colors.bg, color: colors.text, borderRadius: '3px',
+                    }}>
+                      {PERFIL_LABELS[perfil]}
+                    </span>
+                  )
+                })}
+                {areaNome && (
+                  <span style={{ fontSize: '11px', color: '#94A3B8', marginLeft: '2px' }}>
+                    {areaNome}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 export default function UsuariosPage() {
   const [usuarios, setUsuarios] = useState<Usuario[]>([])
   const [cargos, setCargos] = useState<Cargo[]>([])
@@ -211,7 +269,7 @@ export default function UsuariosPage() {
               <th onClick={() => toggle('nome')} style={thS(sk==='nome')}>Nome{ico('nome')}</th>
               <th onClick={() => toggle('email')} style={thS(sk==='email')}>E-mail{ico('email')}</th>
               <th onClick={() => toggle('cargo')} style={thS(sk==='cargo')}>Cargo{ico('cargo')}</th>
-              <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 500, color: '#6B7280' }}>Perfis</th>
+              <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 500, color: '#6B7280' }}>Perfis por Planta / Área</th>
               <th onClick={() => toggle('status')} style={thS(sk==='status')}>Status{ico('status')}</th>
               <th style={{ textAlign: 'left', padding: '12px 16px', fontSize: '12px', fontWeight: 500, color: '#6B7280' }}>Ações</th>
             </tr>
@@ -222,30 +280,18 @@ export default function UsuariosPage() {
             ) : display.length === 0 ? (
               <tr><td colSpan={7} style={{ textAlign: 'center', padding: '32px', fontSize: '14px', color: '#94A3B8' }}>Nenhum usuário encontrado</td></tr>
             ) : display.map(u => (
-              <tr key={u.id} style={{ borderTop: '1px solid #F1F5F9' }}>
-                <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 500, color: '#0038A8' }}>{u.matricula}</td>
-                <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 500, color: '#0F172A' }}>{u.nome}</td>
+              <tr key={u.id} style={{ borderTop: '1px solid #F1F5F9', verticalAlign: 'top' }}>
+                <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 500, color: '#0038A8', whiteSpace: 'nowrap' }}>{u.matricula}</td>
+                <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{u.nome}</td>
                 <td style={{ padding: '12px 16px', fontSize: '13px', color: '#475569' }}>{u.email}</td>
-                <td style={{ padding: '12px 16px', fontSize: '13px', color: '#475569' }}>{u.cargo?.nome || '—'}</td>
-                <td style={{ padding: '12px 16px' }}>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                    {u.perfis.map(p => {
-                      const colors = PERFIL_COLORS[p.perfil] ?? { bg: '#F1F5F9', text: '#475569' }
-                      return (
-                        <span key={p.id} style={{ fontSize: '12px', padding: '2px 8px', fontWeight: 500, background: colors.bg, color: colors.text, borderRadius: '4px' }}>
-                          {PERFIL_LABELS[p.perfil]}
-                          {p.planta && <span style={{ opacity: 0.7 }}> · {p.planta.nome}</span>}
-                          {p.area && <span style={{ opacity: 0.7 }}> / {p.area.nome}</span>}
-                        </span>
-                      )
-                    })}
-                    {u.perfis.length === 0 && <span style={{ fontSize: '12px', color: '#94A3B8' }}>Sem perfil</span>}
-                  </div>
+                <td style={{ padding: '12px 16px', fontSize: '13px', color: '#475569', whiteSpace: 'nowrap' }}>{u.cargo?.nome || '—'}</td>
+                <td style={{ padding: '12px 16px', maxWidth: '320px' }}>
+                  <PerfisCell perfis={u.perfis} />
                 </td>
-                <td style={{ padding: '12px 16px' }}>
+                <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
                   <span style={{ fontSize: '12px', padding: '2px 8px', fontWeight: 500, borderRadius: '4px', background: u.ativo ? '#D1FAE5' : '#F1F5F9', color: u.ativo ? '#065F46' : '#64748B' }}>{u.ativo ? 'Ativo' : 'Inativo'}</span>
                 </td>
-                <td style={{ padding: '12px 16px', display: 'flex', gap: '8px' }}>
+                <td style={{ padding: '12px 16px', display: 'flex', gap: '8px', whiteSpace: 'nowrap' }}>
                   <button onClick={() => openEdit(u)} style={{ fontSize: '12px', color: '#0038A8', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>Editar</button>
                   <button onClick={() => handleToggle(u)} style={{ fontSize: '12px', color: u.ativo ? '#DC2626' : '#16A34A', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>{u.ativo ? 'Inativar' : 'Reativar'}</button>
                 </td>
