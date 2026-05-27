@@ -1,6 +1,6 @@
 'use client'
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { signOut } from 'next-auth/react'
 
 const PERFIL_LABELS: Record<string, string> = {
@@ -19,7 +19,6 @@ const PERFIL_ICONS: Record<string, string> = {
   ADMINISTRADOR: 'admin_panel_settings',
 }
 
-// Imagens representativas de cada unidade (cenário real de fábrica de celulose/papel)
 const PLANTA_IMAGES: Record<string, string> = {
   'planta-aracruz': 'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=240&q=80&fit=crop&auto=format',
   'planta-limeira': 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=240&q=80&fit=crop&auto=format',
@@ -70,9 +69,6 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
     setSelecting(plantaId)
     localStorage.setItem('sgi_demo_planta', plantaId)
     document.cookie = `sgi_planta_ativa=${plantaId};path=/;max-age=86400`
-    // Reset perfil ativo para o primeiro perfil válido desta planta
-    // Evita que cookie de perfil de outra planta (ex: APROVADOR em Aracruz)
-    // apareça ao entrar em uma planta onde o usuário só é Solicitante/Executante
     const firstPerfil = Array.from(new Set(perfis))[0]
     if (firstPerfil) {
       localStorage.setItem('sgi_demo_perfil', firstPerfil)
@@ -81,12 +77,19 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
     router.push('/dashboard')
   }
 
+  // Auto-select when the user only has access to one active plant
+  useEffect(() => {
+    if (plantas.length === 1) {
+      handleSelect(plantas[0].id, plantas[0].perfis)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   async function handleSignOut() {
     setSigningOut(true)
     await signOut({ callbackUrl: '/login' })
   }
 
-  // ── Painel da imagem (desktop) ─────────────────────────────────────────────
   const imagePanel = (
     <div className="relative" style={{ height: '100%' }}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -126,11 +129,21 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
     </div>
   )
 
-  // ── Conteúdo do formulário ─────────────────────────────────────────────────
+  // If only 1 plant, show a loading state while auto-selecting
+  if (plantas.length === 1) {
+    return (
+      <div style={{ minHeight: '100svh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F8FAFC' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ width: 40, height: 40, border: '3px solid #E2E8F0', borderTopColor: '#0038A8', borderRadius: '50%', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
+          <p style={{ fontSize: 15, color: '#475569', margin: 0 }}>Entrando em {plantas[0].nome}…</p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
+      </div>
+    )
+  }
+
   const formContent = (
     <div className="w-full" style={{ maxWidth: '380px' }}>
-
-      {/* Logo */}
       <div className="flex items-center gap-3 mb-8">
         <div
           className="flex items-center justify-center font-bold text-white"
@@ -144,13 +157,11 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
         </div>
       </div>
 
-      {/* Heading */}
       <div className="mb-6">
         <h1 style={{ fontSize: 26, fontWeight: 700, color: '#0F172A', margin: '0 0 4px' }}>Selecionar planta</h1>
         <p style={{ fontSize: 15, color: '#64748B', margin: 0 }}>Escolha a unidade em que deseja atuar hoje</p>
       </div>
 
-      {/* User identity card */}
       <div
         className="flex items-center gap-3 mb-6"
         style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px', padding: '14px 16px' }}
@@ -174,7 +185,6 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
         </span>
       </div>
 
-      {/* Plant cards */}
       <div className="space-y-3 mb-6">
         {plantas.map(planta => {
           const isLoading = selecting === planta.id
@@ -204,7 +214,6 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
                 e.currentTarget.style.boxShadow = '0 1px 3px rgba(0,0,0,0.06)'
               }}
             >
-              {/* Thumbnail real da unidade */}
               <div
                 className="relative flex items-center justify-center shrink-0 overflow-hidden"
                 style={{
@@ -215,9 +224,7 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
                   color: '#FFFFFF',
                 }}
               >
-                {/* Ícone de fallback atrás da imagem (aparece se a imagem falhar) */}
                 <Icon name="factory" size={26} />
-
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={getPlantaImage(planta.id, planta.nome)}
@@ -234,7 +241,6 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
                 )}
               </div>
 
-              {/* Info */}
               <div className="flex-1 min-w-0">
                 <p style={{ fontSize: 16, fontWeight: 600, color: '#0F172A', margin: '0 0 6px' }}>{planta.nome}</p>
                 <div className="flex flex-wrap items-center gap-y-1" style={{ gap: '0' }}>
@@ -265,7 +271,6 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
                 </div>
               </div>
 
-              {/* Arrow / estado */}
               <div className="shrink-0 flex items-center" style={{ color: isLoading ? '#94A3B8' : '#0038A8' }}>
                 {isLoading
                   ? <span style={{ fontSize: 13, color: '#64748B' }}>Abrindo…</span>
@@ -277,7 +282,6 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
         })}
       </div>
 
-      {/* Sign out */}
       <button
         onClick={handleSignOut}
         disabled={!!selecting || signingOut}
@@ -308,7 +312,6 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
 
   return (
     <div style={{ fontFamily: 'var(--font-sans, Inter, system-ui, sans-serif)', minHeight: '100svh' }}>
-      {/* MOBILE */}
       <div className="md:hidden flex flex-col min-h-screen">
         <div className="relative" style={{ height: '20vh', flexShrink: 0 }}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -328,7 +331,6 @@ export default function SelecionarPlantaClient({ plantas, userName, userEmail, u
         </div>
       </div>
 
-      {/* DESKTOP — 50/50 grid */}
       <div className="hidden md:grid" style={{ gridTemplateColumns: '1fr 1fr', height: '100svh' }}>
         <div className="flex flex-col justify-center items-center px-12 py-16 overflow-y-auto" style={{ background: '#FFFFFF', height: '100%' }}>
           {formContent}

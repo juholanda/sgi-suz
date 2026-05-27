@@ -34,9 +34,10 @@ export default async function SelecionarPlantaPage() {
     perfis: Array.from(p.perfis),
   }))
 
-  if (plantas.length === 1) redirect('/dashboard')
+  // No active plants — go to dashboard (will handle no-plant state there)
   if (plantas.length === 0) redirect('/dashboard')
 
+  // 1 or more plants — always render client so cookies get set correctly
   return (
     <SelecionarPlantaClient
       plantas={plantas}
