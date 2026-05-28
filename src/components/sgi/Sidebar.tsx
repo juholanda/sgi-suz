@@ -90,7 +90,6 @@ export default function Sidebar({
 }: Props) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
-  const [showPerfilDropdown, setShowPerfilDropdown] = useState(false)
   const [showPlantaDropdown, setShowPlantaDropdown] = useState(false)
 
   // Persist collapse state
@@ -104,7 +103,6 @@ export default function Sidebar({
     setCollapsed(next)
     localStorage.setItem('sgi_sidebar_collapsed', String(next))
     // Close any open dropdowns
-    setShowPerfilDropdown(false)
     setShowPlantaDropdown(false)
   }
 
@@ -114,8 +112,10 @@ export default function Sidebar({
   ]
 
   const plantaAtual = plantas.find(p => p.id === planta)
-  const hasMultiplePerfis = perfisReais.length > 1
   const hasMultiplePlantas = plantas.length > 1
+
+  // Monta o label de perfil(s) para exibir como subtítulo (read-only)
+  const perfilDisplay = buildDisplayPerfis(perfisReais).map(p => p.label).join(' · ')
 
   const W = collapsed ? '68px' : '240px'
 
@@ -186,14 +186,13 @@ export default function Sidebar({
         </div>
       )}
 
-      {/* ── SWITCHERS: Plant + Profile (hidden when collapsed) ─── */}
+      {/* ── SWITCHER: Plant + perfil como subtítulo (hidden when collapsed) ─── */}
       {!collapsed && (
         <div className="px-3 py-2.5 border-b shrink-0" style={{ borderColor: '#E2E8F0' }}>
-          {/* Plant selector */}
-          <div className="mb-1.5 relative">
+          <div className="relative">
             <button
-              onClick={() => { setShowPlantaDropdown(s => !s); setShowPerfilDropdown(false) }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg transition-colors text-left"
+              onClick={() => { setShowPlantaDropdown(s => !s) }}
+              className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg transition-colors text-left"
               style={{
                 background: showPlantaDropdown ? '#EBF0FB' : '#F1F5F9',
                 color: showPlantaDropdown ? '#0038A8' : '#374151',
@@ -201,11 +200,32 @@ export default function Sidebar({
                 borderColor: showPlantaDropdown ? '#0038A8' : '#E2E8F0',
               }}
             >
-              <Icon name="factory" size={14} />
-              <span className="flex-1 truncate font-medium">
-                {plantaAtual?.nome ?? 'Selecionar planta'}
-              </span>
-              {hasMultiplePlantas && <Icon name={showPlantaDropdown ? 'expand_less' : 'unfold_more'} size={16} />}
+              <Icon name="factory" size={15} />
+
+              {/* Planta + perfil empilhados */}
+              <div className="flex-1 min-w-0">
+                <div className="truncate font-semibold" style={{ fontSize: 12, lineHeight: '16px' }}>
+                  {plantaAtual?.nome ?? 'Selecionar planta'}
+                </div>
+                {perfilDisplay && (
+                  <div
+                    className="truncate"
+                    style={{
+                      fontSize: 10,
+                      lineHeight: '14px',
+                      marginTop: 1,
+                      fontWeight: 400,
+                      color: showPlantaDropdown ? '#6B9ADB' : '#94A3B8',
+                    }}
+                  >
+                    {perfilDisplay}
+                  </div>
+                )}
+              </div>
+
+              {hasMultiplePlantas && (
+                <Icon name={showPlantaDropdown ? 'expand_less' : 'unfold_more'} size={16} />
+              )}
             </button>
 
             {showPlantaDropdown && hasMultiplePlantas && (
@@ -228,51 +248,6 @@ export default function Sidebar({
                     <Icon name="factory" size={15} />
                     <span className="flex-1 truncate">{p.nome}</span>
                     {planta === p.id && <Icon name="check" size={14} />}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Profile selector */}
-          <div className="relative">
-            <button
-              onClick={() => { setShowPerfilDropdown(s => !s); setShowPlantaDropdown(false) }}
-              className="w-full flex items-center gap-2 px-2.5 py-1.5 text-xs rounded-lg transition-colors text-left"
-              style={{
-                background: showPerfilDropdown ? '#EBF0FB' : '#F1F5F9',
-                color: showPerfilDropdown ? '#0038A8' : '#374151',
-                border: '1px solid',
-                borderColor: showPerfilDropdown ? '#0038A8' : '#E2E8F0',
-              }}
-            >
-              <Icon name={PERFIL_ICONS[perfil] ?? 'person'} size={14} />
-              <span className="flex-1 truncate font-medium">
-                {PERFIL_LABELS[perfil] ?? perfil}
-              </span>
-              {hasMultiplePerfis && <Icon name={showPerfilDropdown ? 'expand_less' : 'unfold_more'} size={16} />}
-            </button>
-
-            {showPerfilDropdown && hasMultiplePerfis && (
-              <div
-                className="absolute top-full left-0 right-0 z-50 mt-1 shadow-lg overflow-hidden"
-                style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '8px' }}
-              >
-                {buildDisplayPerfis(perfisReais).map(p => (
-                  <button
-                    key={p.perfil}
-                    onClick={() => { setShowPerfilDropdown(false); onSwitchPerfil(p.perfil) }}
-                    className="w-full flex items-center gap-2 px-3 py-2 text-sm text-left"
-                    style={{
-                      background: perfil === p.perfil ? '#EBF0FB' : 'white',
-                      color: perfil === p.perfil ? '#0038A8' : '#374151',
-                      fontWeight: perfil === p.perfil ? 600 : 400,
-                      borderBottom: '1px solid #F8FAFC',
-                    }}
-                  >
-                    <Icon name={PERFIL_ICONS[p.perfil] ?? 'person'} size={15} />
-                    <span className="flex-1 truncate">{p.label}</span>
-                    {perfil === p.perfil && <Icon name="check" size={14} />}
                   </button>
                 ))}
               </div>
