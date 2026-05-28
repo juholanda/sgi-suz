@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   }
 
   const equipamento = await prisma.equipamento.findUnique({ where: { id: parsedData.equipamentoId } })
-  if (!equipamento) return NextResponse.json({ error: 'Equipamento não encontrado' }, { status: 400 })
+  if (!equipamento || !equipamento.ativo) return NextResponse.json({ error: 'Equipamento não encontrado ou inativo' }, { status: 400 })
 
   let classeRecord = null
   if (parsedData.classeNumero) {

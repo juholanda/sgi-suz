@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
 
   // Pre-load all areas for this planta (case-insensitive lookup)
   const areasInPlanta = await prisma.area.findMany({
-    where: { plantaId },
+    where: { plantaId, ativa: true },
   })
 
   // Build lookup maps: by nome (lowercase) and by codigo (lowercase)
