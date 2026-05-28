@@ -81,8 +81,8 @@ function PerfisCell({ perfis }: { perfis: UsuarioPerfil[] }) {
       {Array.from(byPlant.entries()).map(([plantaId, { nome, byArea }]) => (
         <div key={plantaId ?? 'global'}>
           <div style={{
-            fontSize: '10px', fontWeight: 700, color: '#94A3B8',
-            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px',
+            fontSize: '11px', fontWeight: 700, color: '#475569',
+            marginBottom: '4px', lineHeight: '1.3',
           }}>
             {nome ?? 'Todas as plantas'}
           </div>
@@ -150,7 +150,11 @@ export default function UsuariosPage() {
   useEffect(() => { loadData() }, [])
 
   const toggle = (key: SK) => { if (sk === key) setSd(d => d === 'asc' ? 'desc' : 'asc'); else { setSk(key); setSd('asc') } }
-  const ico = (col: SK) => sk === col ? (sd === 'asc' ? ' ▲' : ' ▼') : ' ⇅'
+  const ico = (col: SK) => (
+    <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: 'middle', marginLeft: 4, opacity: sk === col ? 1 : 0.35 }}>
+      {sk === col ? (sd === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'}
+    </span>
+  )
 
   const display = useMemo(() => {
     let d = [...usuarios]
@@ -261,8 +265,8 @@ export default function UsuariosPage() {
         )}
       </div>
 
-      <div style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+      <div style={{ background: 'white', border: '1px solid #E2E8F0', borderRadius: '4px', overflowX: 'auto' }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: '900px' }}>
           <thead>
             <tr style={{ background: '#F8FAFC' }}>
               <th onClick={() => toggle('matricula')} style={thS(sk==='matricula')}>Matrícula{ico('matricula')}</th>
@@ -285,7 +289,7 @@ export default function UsuariosPage() {
                 <td style={{ padding: '12px 16px', fontSize: '14px', fontWeight: 500, color: '#0F172A', whiteSpace: 'nowrap' }}>{u.nome}</td>
                 <td style={{ padding: '12px 16px', fontSize: '13px', color: '#475569' }}>{u.email}</td>
                 <td style={{ padding: '12px 16px', fontSize: '13px', color: '#475569', whiteSpace: 'nowrap' }}>{u.cargo?.nome || '—'}</td>
-                <td style={{ padding: '12px 16px', maxWidth: '320px' }}>
+                <td style={{ padding: '12px 16px', minWidth: '260px', maxWidth: '360px' }}>
                   <PerfisCell perfis={u.perfis} />
                 </td>
                 <td style={{ padding: '12px 16px', whiteSpace: 'nowrap' }}>
