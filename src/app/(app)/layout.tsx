@@ -18,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   const plantaIds = Array.from(new Set(perfisReais.map(p => p.plantaId).filter(Boolean))) as string[]
   const plantas = plantaIds.length > 0
-    ? await prisma.planta.findMany({ where: { id: { in: plantaIds } }, select: { id: true, nome: true } })
+    ? await prisma.planta.findMany({ where: { id: { in: plantaIds }, ativa: true }, select: { id: true, nome: true } })
     : []
 
   const cookieStore = await cookies()
