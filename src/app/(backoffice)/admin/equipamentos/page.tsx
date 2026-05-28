@@ -61,7 +61,11 @@ export default function EquipamentosPage() {
   const filteredAreas = useMemo(() => fPlanta === 'all' ? areas : areas.filter(a => a.planta.id === fPlanta), [areas, fPlanta])
 
   const toggle = (key: SK) => { if (sk === key) setSd(d => d === 'asc' ? 'desc' : 'asc'); else { setSk(key); setSd('asc') } }
-  const ico = (col: SK) => sk === col ? (sd === 'asc' ? ' ▲' : ' ▼') : ' ⇅'
+  const ico = (col: SK) => (
+    <span className="material-symbols-outlined" style={{ fontSize: 14, verticalAlign: 'middle', marginLeft: 4, opacity: sk === col ? 1 : 0.35 }}>
+      {sk === col ? (sd === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'}
+    </span>
+  )
 
   const display = useMemo(() => {
     let d = [...equipamentos]
