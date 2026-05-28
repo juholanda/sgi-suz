@@ -20,18 +20,20 @@ const PERFIL_ICONS: Record<string, string> = {
 }
 
 const PLANTA_IMAGES: Record<string, string> = {
-  'planta-aracruz': 'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=240&q=80&fit=crop&auto=format',
-  'planta-limeira': 'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=240&q=80&fit=crop&auto=format',
-  'planta-ribas':   'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=240&q=80&fit=crop&auto=format',
+  'planta-aracruz':          'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=240&q=80&fit=crop&auto=format',
+  'planta-limeira':          'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=240&q=80&fit=crop&auto=format',
+  'planta-ribas':            'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=240&q=80&fit=crop&auto=format',
+  'cmpodpc8x0000kz04no53j24d': 'https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=240&q=80&fit=crop&auto=format',
 }
 const PLANTA_IMAGE_FALLBACK = 'https://images.unsplash.com/photo-1581091870622-1c6a4eea9cee?w=240&q=80&fit=crop&auto=format'
 
 function getPlantaImage(id: string, nome: string): string {
   if (PLANTA_IMAGES[id]) return PLANTA_IMAGES[id]
   const lowered = nome.toLowerCase()
-  if (lowered.includes('aracruz')) return PLANTA_IMAGES['planta-aracruz']
-  if (lowered.includes('limeira')) return PLANTA_IMAGES['planta-limeira']
-  if (lowered.includes('ribas'))   return PLANTA_IMAGES['planta-ribas']
+  if (lowered.includes('aracruz'))  return PLANTA_IMAGES['planta-aracruz']
+  if (lowered.includes('limeira'))  return PLANTA_IMAGES['planta-limeira']
+  if (lowered.includes('ribas'))    return PLANTA_IMAGES['planta-ribas']
+  if (lowered.includes('fábrica b') || lowered.includes('fabrica b')) return PLANTA_IMAGES['cmpodpc8x0000kz04no53j24d']
   return PLANTA_IMAGE_FALLBACK
 }
 
