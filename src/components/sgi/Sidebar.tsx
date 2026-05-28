@@ -41,6 +41,24 @@ function buildDisplayPerfis(perfisReais: { perfil: string }[]): { perfil: string
     }))
 }
 
+// Miniaturas por ID de planta (mesmo mapa de SelecionarPlantaClient)
+const PLANTA_IMAGES: Record<string, string> = {
+  'planta-aracruz':            'https://images.unsplash.com/photo-1513828583688-c52646db42da?w=56&q=80&fit=crop&auto=format',
+  'planta-limeira':            'https://images.unsplash.com/photo-1504328345606-18bbc8c9d7d1?w=56&q=80&fit=crop&auto=format',
+  'planta-ribas':              'https://images.unsplash.com/photo-1587293852726-70cdb56c2866?w=56&q=80&fit=crop&auto=format',
+  'cmpodpc8x0000kz04no53j24d': 'https://images.unsplash.com/photo-1565043589221-1a6fd9ae45c7?w=56&q=80&fit=crop&auto=format',
+}
+
+function getPlantaImg(id: string, nome: string): string | null {
+  if (PLANTA_IMAGES[id]) return PLANTA_IMAGES[id]
+  const l = nome.toLowerCase()
+  if (l.includes('aracruz'))  return PLANTA_IMAGES['planta-aracruz']
+  if (l.includes('limeira'))  return PLANTA_IMAGES['planta-limeira']
+  if (l.includes('ribas'))    return PLANTA_IMAGES['planta-ribas']
+  if (l.includes('fábrica b') || l.includes('fabrica b')) return PLANTA_IMAGES['cmpodpc8x0000kz04no53j24d']
+  return null
+}
+
 const PERFIL_ICONS: Record<string, string> = {
   SOLICITANTE:   'person',
   EXECUTANTE:    'engineering',
@@ -200,7 +218,16 @@ export default function Sidebar({
                 borderColor: showPlantaDropdown ? '#0038A8' : '#E2E8F0',
               }}
             >
-              <Icon name="factory" size={15} />
+              {/* Thumbnail da planta ou ícone fallback */}
+              {plantaAtual && getPlantaImg(plantaAtual.id, plantaAtual.nome) ? (
+                <img
+                  src={getPlantaImg(plantaAtual.id, plantaAtual.nome)!}
+                  alt={plantaAtual.nome}
+                  style={{ width: 28, height: 28, borderRadius: 6, objectFit: 'cover', flexShrink: 0 }}
+                />
+              ) : (
+                <Icon name="factory" size={15} />
+              )}
 
               {/* Planta + perfil empilhados */}
               <div className="flex-1 min-w-0">
@@ -245,7 +272,15 @@ export default function Sidebar({
                       borderBottom: '1px solid #F8FAFC',
                     }}
                   >
-                    <Icon name="factory" size={15} />
+                    {getPlantaImg(p.id, p.nome) ? (
+                      <img
+                        src={getPlantaImg(p.id, p.nome)!}
+                        alt={p.nome}
+                        style={{ width: 20, height: 20, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }}
+                      />
+                    ) : (
+                      <Icon name="factory" size={15} />
+                    )}
                     <span className="flex-1 truncate">{p.nome}</span>
                     {planta === p.id && <Icon name="check" size={14} />}
                   </button>
