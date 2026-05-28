@@ -17,6 +17,7 @@ export async function GET(req: NextRequest) {
   const areas = await prisma.area.findMany({
     where: {
       ativa: true,
+      planta: { ativa: true },
       ...(plantaId ? { plantaId } : {}),
     },
     include: { planta: { select: { id: true, nome: true } } },

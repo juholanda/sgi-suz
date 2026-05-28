@@ -12,6 +12,7 @@ export async function GET(req: NextRequest) {
   const equipamentos = await prisma.equipamento.findMany({
     where: {
       ativo: true,
+      area: { ativa: true, planta: { ativa: true } },
       ...(areaId ? { areaId } : {}),
       ...(q.length > 0 ? {
         OR: [

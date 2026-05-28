@@ -7,7 +7,7 @@ export async function GET() {
   if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const areas = await prisma.area.findMany({
-    include: { planta: { select: { nome: true } } },
+    include: { planta: { select: { id: true, nome: true } } },
     orderBy: [{ planta: { nome: 'asc' } }, { nome: 'asc' }],
   })
   return NextResponse.json(areas)
