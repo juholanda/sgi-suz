@@ -124,8 +124,22 @@ export default function Sidebar({
     setShowPlantaDropdown(false)
   }
 
+  // Itens dinâmicos por perfil
+  const hasPerfil = (p: string) => perfisReais.some(r => r.perfil === p)
+  const roleItems: NavItem[] = []
+  if (hasPerfil('SOLICITANTE') || hasPerfil('EXECUTANTE')) {
+    roleItems.push({ href: '/solicitacoes', label: 'Solicitações', icon: 'description' })
+  }
+  if (hasPerfil('APROVADOR') || hasPerfil('GESTOR_SMS') || hasPerfil('ADMINISTRADOR')) {
+    roleItems.push({ href: '/aprovacoes', label: 'Aprovações', icon: 'task_alt' })
+  }
+  if (hasPerfil('EXECUTANTE') || hasPerfil('GESTOR_SMS') || hasPerfil('ADMINISTRADOR')) {
+    roleItems.push({ href: '/execucao', label: 'Execução', icon: 'build' })
+  }
+
   const navItems: NavItem[] = [
     ...commonItems,
+    ...roleItems,
     ...bottomItems,
   ]
 
@@ -320,8 +334,8 @@ export default function Sidebar({
           )
         })}
 
-        {/* Backoffice */}
-        <div
+        {/* Backoffice — visível apenas para ADMINISTRADOR e GESTOR_SMS */}
+        {(hasPerfil('ADMINISTRADOR') || hasPerfil('GESTOR_SMS')) && <div
           className="border-t"
           style={{ borderColor: '#E2E8F0', marginTop: 8, paddingTop: 8, padding: collapsed ? '8px 0 0 0' : '8px 0 0 0' }}
         >
@@ -344,7 +358,7 @@ export default function Sidebar({
               Backoffice
             </Link>
           )}
-        </div>
+        </div>}
       </nav>
 
       {/* ── FOOTER: avatar + name | notif + logout ──────────────── */}
