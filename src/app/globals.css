@@ -190,6 +190,11 @@ body {
   color: var(--color-text);
 }
 
+/* Form elements não herdam font por padrão em vários browsers */
+input, textarea, select, button {
+  font-family: inherit;
+}
+
 /* ─── Sidebar nav item — all interactive states ──────────────────────── */
 .sidebar-nav-item {
   display: flex;

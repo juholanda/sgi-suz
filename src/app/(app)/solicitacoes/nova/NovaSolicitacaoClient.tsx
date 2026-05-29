@@ -1068,6 +1068,8 @@ export default function NovaSolicitacaoClient({ initialAreas, initialMedidas, in
                             outline: 'none',
                             boxSizing: 'border-box',
                             fontSize: 13,
+                            fontFamily: 'inherit',
+                            color: '#374151',
                           }}
                         />
                         <button
