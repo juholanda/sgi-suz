@@ -10,6 +10,7 @@
  */
 
 import { cookies } from 'next/headers'
+import { redirect } from 'next/navigation'
 import { prisma } from './db'
 
 // ─── Read active context from cookies ────────────────────────────────────────
@@ -24,13 +25,13 @@ export async function getPlantaAtiva(): Promise<string | null> {
 }
 
 /**
- * Returns the active planta ID or throws.
+ * Returns the active planta ID or redirects to /selecionar-planta.
  * Use in pages that REQUIRE planta context.
  */
 export async function requirePlantaAtiva(): Promise<string> {
   const plantaId = await getPlantaAtiva()
   if (!plantaId) {
-    throw new Error('Nenhuma planta ativa selecionada.')
+    redirect('/selecionar-planta')
   }
   return plantaId
 }
