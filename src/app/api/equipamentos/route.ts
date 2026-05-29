@@ -16,8 +16,8 @@ export async function GET(req: NextRequest) {
       ...(areaId ? { areaId } : {}),
       ...(q.length > 0 ? {
         OR: [
-          { tag: { contains: q } },
-          { descricao: { contains: q } },
+          { tag: { contains: q, mode: 'insensitive' } },
+          { descricao: { contains: q, mode: 'insensitive' } },
         ],
       } : {}),
     },
