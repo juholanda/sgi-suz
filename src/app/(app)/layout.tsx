@@ -25,6 +25,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const plantaCookie = cookieStore.get('sgi_planta_ativa')?.value
   const perfilCookie = cookieStore.get('sgi_perfil_ativo')?.value
 
+  // Se não há cookie de planta ativa (expirou ou nunca foi definido),
+  // redireciona para a seleção de planta — nunca deixa a app em estado indefinido
+  const plantaCookieValida = plantaCookie && plantas.some(p => p.id === plantaCookie)
+  if (!plantaCookieValida) {
+    redirect('/selecionar-planta')
+  }
+
   // Filtra perfis pela planta ativa para evitar que perfis de outras plantas
   // (ex: APROVADOR em Aracruz) apareçam ao usar uma planta diferente (ex: Limeira)
   const perfisNaPlantaAtiva = plantaCookie
