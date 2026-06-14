@@ -50,7 +50,7 @@ function Modal({
       <div
         className="bg-white w-full p-5 sm:p-6 overflow-y-auto"
         style={{
-          borderRadius: '16px 16px 0 0',
+          borderRadius: '16px',
           maxHeight: '92vh',
           maxWidth: maxW,
         }}

@@ -665,7 +665,7 @@ export default function AcoesButtons({
 function Modal({ title, children, onClose, wide }: { title: string; children: React.ReactNode; onClose: () => void; wide?: boolean }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style={{ background: 'rgba(0,0,0,0.4)' }}>
-      <div className="bg-white w-full my-4 p-6" style={{ borderRadius: '4px', maxWidth: wide ? '640px' : '480px' }}>
+      <div className="bg-white w-full my-4 p-6" style={{ borderRadius: '16px', maxWidth: wide ? '640px' : '480px' }}>
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-semibold" style={{ color: '#0F172A' }}>{title}</h3>
           <button onClick={onClose} className="text-sm" style={{ color: '#94A3B8' }}>✕</button>
